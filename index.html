@@ -1,0 +1,66 @@
+<!--
+   This file is part of Kairos.
+
+    Kairos is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Kairos is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
+--> 
+ 
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<link rel="stylesheet" href="resources/webix/codebase/webix.css" type="text/css" media="screen" charset="utf-8">
+		<link rel="stylesheet" href="resources/alertify.core.css" type="text/css" media="screen" charset="utf-8">
+		<link rel="stylesheet" href="resources/alertify.default.css" type="text/css" media="screen" charset="utf-8">
+		<script src="resources/webix/codebase/webix.js" type="text/javascript" charset="utf-8"></script>
+        <script type="text/javascript" src="resources/alertify.min.js"></script>
+        <script type="text/javascript" src="resources/lodash.min.js"></script>
+        <script type="text/javascript" src="resources/paper-full.min.js"></script>
+        <script type="text/javascript" src="resources/d3.min.js"></script>
+        <script type="text/javascript" src="resources/d3pie.min.js"></script>
+        <script type="text/javascript" src="resources/d3.tip.js"></script>
+        <script type="text/javascript" src="resources/md5.min.js"></script>
+        <script type="text/javascript" src="resources/async.js"></script>
+        <script type="text/javascript" src="resources/jquery.min.js"></script>
+        <script type="text/javascript" src="resources/log4javascript.js"></script>
+		<script type="text/javascript" src="charter.js" charset="utf-8"></script>
+        <script type = "text/javascript" >
+            history.pushState(null, null, 'index.html');
+            window.addEventListener('popstate', function(event) {
+                history.pushState(null, null, 'index.html');
+            });
+        </script>
+		<title>KAIROS</title>
+		<style type="text/css">
+            body {height:100%; overflow: hidden}
+            body.waiting * { cursor: progress; }
+            .xtoolbar{border-top: 0px}
+            .webix_tree_N {background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABuElEQVQ4T52TT0hVQRTGf+feOw9vgb0QJKJtts0/lbsWLnVlhovWrQLBjS0jEB+0uU9rkURwQSRy4ca1roRaBEUrbRFGkWg9Ie2N1Xt3Jub+KQ1DnrOZOeee833fmfuNvH4xuXK5d6Qf64FNwFrAZme3GxebLG8NIKAavFmeXx+feHJT7M/Vhq3tB9BM69PioiEFygElB3CxKORMwsTYvSkxX59p6vUw6y5YcsY/caHCgbsaoL2Nh9H8nJiNO5rauxDbzOQVK2X+d+U5962jg+jxRizmbY9GN0PkQPMRrYdSDqBdET3di8Ws92j2k5MBzO7GYj70arQJD6o/TkB6B2VFNP09FrN9RaNPoKCsmI7cCHtXNXUT4h3L+7fAgJxVVCu7sdhf17T9YVseQU4HVCv1WGyzX2MJW+DPvOD5OUByXYO0DkCJamUnFpuMamhVgXPkKWYevJ8Tm9xtgATgHs9/nHfYRdkIlJm6vzIrm2s3Pp7rGrhA+hsK+zpXFs486hzwZeuTHhp8NCzdl1TfrZGLtzs7284nSfqGQXxAgefhiQI/AALwFH6p5O/UGt8WFl89X335eek3uy/LMTGOtwkAAAAASUVORK5CYII='); background-position: 0px 4px;}
+            .webix_tree_A {background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB4klEQVQ4T52TP2gUQRTGvzdzizfBcLcHEZFrRETsU1j4pxVtREwQe7WwkdSWQQsV7DQoOhBFjkulEojB2AiCjRCQEBVFzs7EmJCb7N3uvCeztxEL4XIOu7xh9ns/vp35hl6NnVw4fvnKEQztBtIMEAYYEPEAC4QZgEB8b06KoNoOcw8eLV+dmx+jrGHTn2a4RIkLXfnLwiAOc4b8DQkwZqhyGZXVVVyavHWdft277dqd1MB7SAAUIglOpHCwvRZqWIOgohRu3H88TR8vnHErS5+MdBJAqdxueLZrEOejKLlDACO1KqaWv1mar8au3RVDobffoJ4gAGJSaCablmaGqm4LbEiKr/0gOUBQ0yXMZs5Sw8Rui9kQBgVovGRn6UVlxCVeDO28HyzBgcazdNPSQrzXpQKzA+d/JL1f0HiarFt6t6f+HwCgphUeujVLHw4edl3QQA7CidYU4e6PlqWvx064dGAAIVbAnaVFSyvj513CYgbYQwgRYk24+eb1NPmJiXTDU0lxBvQ5ipD0PJI6wrBmXGs+maLP50639o8erSNEMb9MxWb/0xIBIbGK8P39W3dqZvYsHYqi0fED9YuVXeV9G132zkseKU1AFLSKoBWgoRBpoKSg21m63vzSaiy6zvPfmOf2Nv5Gs+MAAAAASUVORK5CYII='); background-position: 0px 4px;}
+            .webix_tree_L {background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAABnUlEQVQ4T4WTv2vCQBTH75EougiOKf0zOvQfCMG10Mm5Q1Ynx0zVycklg3AgCB3EoYPg0CH/RTelgiARbSKncMaUd/La65HawCP3430/d+/dezCdTt88z7vP85yh4Xc+n5XhnMZZlqk5GgCw8Xj8HgTBI+R5LtM0tclRF+hrCMA5/hFQLpeZ7/vPcDweRZqmVVOIjtesUqmwbrc7hM1mI+I4rkopleB0Ov1r6Fur1dhgMOAwn89FkiRVU4xO12ClUomNRqMLAEOg65oiHayPMQec8x8A5gDF5GTGT3u0j4AwDC+A/X6vkqhnuiiBBEFfDKHf73NYLBZCCKFCKILQGr6/Cej1ehyWy+UvQNHb62AqMNu2WafT4bBarRSgqPJ0mF6VWK2WZbEgCDis12txOBy+Abpj0ZjKGW/Qbrc5bLdbdQOk0qbeC7RGMOoFBLRarSFIKWWSJKoXqJlMkQnHJ8QQms1mCLPZ7MN13Vs6ARvlLxidjuLJZCJ8338Ax3HuGo3GU71ev5FSZvpVKft6iwOAtdvtPqMoeonj+PULWSaZzoj2bfMAAAAASUVORK5CYII='); background-position: 0px 4px;}
+            .webix_tree_C {background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB7UlEQVQ4T52TTWjUQBTH/28y2U3Wyi6VLdKmfixYhF4VvHj0LkLvHuxVj171YqFQ0IOHCtJABakoVboKXjysoIjgQUHxUBSEUkGRwjrJbjLvyWTjB7iFtpPkTWZ47/f+M/OGLq9dfHb29MwpnWvkYsHMEGZYEbBwMWb3zwIrFgSCkRRL9+5+bC88mqH2xsMs+craUr9wlN+BEAADiAjKXsCwCHQVW14Xc5fmr9Him1vGdNOQXfYCUGZ0gSgVuL4EO3UOrfdp3Lmxskzn718w7z5/CHt5H0SqyOo+Z/8xblSoKx4RNJtNfGqvxxRdOWaSbi9UygX/32jInLBAj/jov05iiq5OmTyxIQ3zHIoEHKBSryB99TOmybmWyczeAPnLXkzR/GFjExtilwqCehX2RR7TxEJkuOcAOye4JQSNCvi5xBRdHzeccbjNcodOu6IKG1Wojopp4uZBI3sCBNAdL6ZDS9GuFbhiCkcD6KcqpqMPjhibulPY+R64+1E7UIV+4i3T8c5UlvzI9DZ1NNiDoiz/tjy3aEyOALftIp1cnf5iWhLZPheOLPhzIIWqwTswpUodKIx932/ez66fo3qrdmLszOhsXlPjaZdt2rNQilDxFchT0L4H3/egPQXPJ1QC7amEtjYfb65svP229gsodBWvltNvpAAAAABJRU5ErkJggg=='); background-position: 0px 4px;}
+            .webix_tree_C {background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB7UlEQVQ4T52TTWjUQBTH/28y2U3Wyi6VLdKmfixYhF4VvHj0LkLvHuxVj171YqFQ0IOHCtJABakoVboKXjysoIjgQUHxUBSEUkGRwjrJbjLvyWTjB7iFtpPkTWZ47/f+M/OGLq9dfHb29MwpnWvkYsHMEGZYEbBwMWb3zwIrFgSCkRRL9+5+bC88mqH2xsMs+craUr9wlN+BEAADiAjKXsCwCHQVW14Xc5fmr9Him1vGdNOQXfYCUGZ0gSgVuL4EO3UOrfdp3Lmxskzn718w7z5/CHt5H0SqyOo+Z/8xblSoKx4RNJtNfGqvxxRdOWaSbi9UygX/32jInLBAj/jov05iiq5OmTyxIQ3zHIoEHKBSryB99TOmybmWyczeAPnLXkzR/GFjExtilwqCehX2RR7TxEJkuOcAOye4JQSNCvi5xBRdHzeccbjNcodOu6IKG1Wojopp4uZBI3sCBNAdL6ZDS9GuFbhiCkcD6KcqpqMPjhibulPY+R64+1E7UIV+4i3T8c5UlvzI9DZ1NNiDoiz/tjy3aEyOALftIp1cnf5iWhLZPheOLPhzIIWqwTswpUodKIx932/ez66fo3qrdmLszOhsXlPjaZdt2rNQilDxFchT0L4H3/egPQXPJ1QC7amEtjYfb65svP229gsodBWvltNvpAAAAABJRU5ErkJggg=='); background-position: 0px 4px;}
+            .webix_tree_D {background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAADIklEQVR42qWTS0wTURSG/06n087U+CbBYi0dEJWpoFHjo01MFNr4iMaFCD7jwkeMuhRjVIjGuPYdF6LGhYj4wBijLnh13KoLsA8ohYrCtLQUMdoWCp5O1ZC49CYnM3Pnnu+c//73avCfQzP14/rNm0aHw7ErNTa2PplMFU1MTMxmGGaS47iYnuO8iUSipbm5ueHM6erkP4BXr98cG/k2emV8cpIVDAJ4noNOlwkddCwLrVYLliI9kU5Go9FDm13OB38B52pqFpstokev10PgDTAIPAS9QE8DOB0la7TQsAxYRgOGYZFOp9HY2GC6UFs7oAKOnzjpWL12nVtLlXieh5GCNxphICDH6dTqWoaBhiLTRTwex507dbZbN651qoBdlVX2ioqdsp4SDQYjVdGApy4yANKODDgDyEiJj4zALct4++at9OL5008qYO++/XanyyVTJjZv2gSdlsHnz/2IDA3hZ+InzPPnQ7RaEYmE4fF2wd/tg+x+Jz2uf5gFHDh40J6fb5XFggKUl5dhunEaenqD8Pp8GBxUYJOKsay0FEMEDPaG8OHje3g6P0n3793NAioqK+3OcqesUIWioiIUiiLGx9MI9vVBCYdhys1Fzty51FEEw7EYhkmG7Jalpme/Jezes9e+ZetWOU3v69asRjQSgd/fhWHarFQqBdO8XCy1SWDJ0r5QP3x+P9ztbVJjQ0MWcPjIUbtVFOV5eXlwOZ2YOZ0k9PTC4/OqEkpsNpSWliBM3QQy814PvCTh9u1bWUCZ0+moqqxyf//xAxLpXVRQiHB0CN2BHjXJbDajwJqvwobjMQwMKHjypNHW3tqatdFkytt25drVpkRqDKtWrkBEURAmGaOj3zFGczk5c2BZsAAGsjlE7nQHAjh7uno9SWz/c5TFi5cuvxcLC2eUbdyAmdOMCASD6PSQBGUQy0pKVBfC4QjtQQgtbW3KxZrzyylvYOplkrbv2HHh1KlqF22YMdRPlbq6CaCoZ0AqXoKOjo5vdXV1Lx/V19fS+q5/buPvkSMIQrHFYlnI6rhZqVRyMplMxr5++eInRzz0Pzp18S/M6k0gl861MAAAAABJRU5ErkJggg=='); background-position: 0px 4px;}
+            .webix_tree_B {background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAB3ElEQVQ4T52Sv2sUQRTHv29m78eeOXYvEQWxMf9AGouQTrBIESSIWtqZ8gqrFDY2BylsbEIg6MAmSiSYIlqYYBDBIqIipDpt4m/BXwl3mdvL7s2T2dyaRAhxLZb33TfzPvPmzZfOXn+yUh0ZGiwLIO4AzAw2DGNsRDd2c8wQIGy1Babn7tcf3x2/SLeW25HX+u60YlsMMHaKjNnVNm//DTM6BnDzEj/bBUzUxmp0I/iko9aWaxfs6SbZ3O0g1SnA5i3NHpPrweydiYDOXX2u39Q/u3rbQBAlHdhWkpjoVHSvB4CY4R/tw7v6jKLC0Iw2uuGSELs7D1KUQhlwyog3lhQVzwSaI+0y0tXDOXa6ouAh+vpIkTs8nwCQFeB6aH9cVFQaffB/gKKPcH1BUc+lZc0mzN5BwYN+e09R+fJTDbPt/sPN9z4HRKmC5lqgyBtb1eA4E8D6RZZ8NF/eVlSprmnmKBPA+kSWKmisTinqG1/X3Mk6A4Y80ovNZzcDOlZrRibccA58xj1O/GNL6yP/OH49vDZFfvXFh+KpgZMw+22bTCz11l+R8oT4xxf9bXLkPMHrP50buHCFcpUTCFsdY+KkUjgSkPZzQI6ESLQE8jnJUWMzfD0/h/evFn8D5g4CVABjDFAAAAAASUVORK5CYII='); background-position: 0px 4px;}
+            .webix_tree_T {background-image: url('data:image/png;base64,AAABAAEAEBAQAAEABAAoAQAAFgAAACgAAAAQAAAAIAAAAAEABAAAAAAAgAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAZEw1AM+4oQDv2MEA////AP/17QCPeGEAr5iBAL+okQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEREREREAAAFFUzMyJxAAAUNzhzdnEAABQ3OHN2cQAAFDc4c3ZxAAAUNzhzdnEAABQ3OHN2cQAAFDc4c3ZxAAAUNzhzdnEAABQ3OHN2cQAAFFUzMyJxAAEREREREREQAURVMzMidxAAERERERERAAAAFgAAYQAAAAABEREQAADgBwAAwAMAAMADAADAAwAAwAMAAMADAADAAwAAwAMAAMADAADAAwAAwAMAAIABAACAAQAAwAMAAPPPAAD4HwAA'); background-position: 0px 4px;}
+            .webix_layout_toolbar.webix_toolbar{background:rgba(0,102,204,1)}
+            .webix_menu-x .webix_list_item{background:rgba(29,174,64,0.5)}
+            .active button{background:rgba(111,0,111,1)}
+            .inactive button{background:rgba(82,82,122,1)}
+		</style>
+		</style>
+	</head>
+	<body>
+		<script src="client.js" type="text/javascript" charset="utf-8"></script>
+	</body>
+</html>
