@@ -566,6 +566,10 @@ class Kairos:
         return web.Response(content_type='application/octet-stream', text=open('/kairos/client.js').read())
     
     @trace_call
+    def odbreload(s):
+        return s.odb.db_reload()
+    
+    @trace_call
     def odbget(s, root=False, database=None, user=None, password=None):
         if root:
             if not s.odbroot:
@@ -1597,6 +1601,7 @@ class Kairos:
         upload = multipart['upload']
         nodesdb = multipart['nodesdb'] if 'nodesdb' in multipart else params['nodesdb'][0]
         x = s.odbget(database=nodesdb)
+        x = s.odbreload()
         clusterid = [y.id for y in x if y.name==b'objects'][0]
         filename = upload.filename
         content = upload.file.read()

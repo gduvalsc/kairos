@@ -148,3 +148,4 @@ elif args.service in ['createuser', 'deleteuser', 'changepassword', 'createrole'
 elif args.service in ['uploadobject', 'uploadnode']:
 	pass
 else: wlog(str(result))
+exit(0)
