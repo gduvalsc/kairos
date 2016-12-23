@@ -65,7 +65,7 @@ class Buffer:
         if c in s.collections:
             x = s.collections[c]
             v['kairos_nodeid'] = n
-            x['buffer'].append(v)
+            x['buffer'].append(v.copy())
             x['length'] += 1
             if x['length'] == s.size: s.flush(c)
         else:
@@ -97,6 +97,11 @@ class Cache:
         logging.debug('Executing request: ' + req[0])
         c=s.sqlite.cursor()
         c.execute(*req)
+        return c
+    def executemany(s,*req):
+        logging.debug('Executing request: ' + req[0])
+        c=s.sqlite.cursor()
+        c.executemany(*req)
         return c
     def desc(s,source=None,table=None):
         d=OrderedDict()
@@ -1251,9 +1256,10 @@ class Kairos:
             context.patterninsert = context.patterninsert[:-1] + ')'
         
         def action(context, buff):
-            for e in buff:
-                hcache.execute(context.patterninsert, tuple([e[k] for k in sorted(e.keys())]))
-
+            parameter = []
+            for e in buff: parameter.append(tuple([e[k] for k in sorted(e.keys())]))
+            hcache.executemany(context.patterninsert, parameter)
+            
         buff = Buffer(init=init, action=action)
         def listener(col, d, v, n):
             buff.push(col, d, v, n)
