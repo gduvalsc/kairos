@@ -20,15 +20,15 @@ As said above, `KAIROS` can be extended to other domains by experts in these dom
 
 ###### Drop down menus
 
-![dropdown](https://raw.github.com/gduvalsc/kairos/master/dropdown.png)
+![dropdown](pictures/dropdown.png)
 
 ###### A look to the main "wait events" of an Oracle database during a particular day (precision: one minute)
 
-![sample1](https://raw.github.com/gduvalsc/kairos/master/sample1.png)
+![sample1](pictures/sample1.png)
 
 ###### A view to NMON statistics
 
-![sample2](https://raw.github.com/gduvalsc/kairos/master/sample2.png)
+![sample2](pictures/sample2.png)
 
 ## Documentation
 
@@ -57,28 +57,28 @@ When you install `DOCKER`, if `VIRTUALBOX` is not installed under the host syste
 
 `DOCKER` must be installed from this adress: [https://www.docker.com/products/docker-toolbox](https://www.docker.com/products/docker-toolbox)
 
-![dockerdownload](https://raw.github.com/gduvalsc/kairos/master/dockerdownload.png)
+![dockerdownload](pictures/dockerdownload.png)
 
 Under `Mac OS X`, the method is the same, selecting the apple button instead.
 
 In the actual version of `DOCKER`, there are roughly 200 Megabytes to download, so a few minutes of patience ...
 
-![dockerbeingdownloaded](https://raw.github.com/gduvalsc/kairos/master/dockerbeingdownloaded.png)
+![dockerbeingdownloaded](pictures/dockerbeingdownloaded.png)
 
 After a while, once the file is downloaded, the installation can start with the following exchanges:
 
-![dockerinstallation1](https://raw.github.com/gduvalsc/kairos/master/dockerinstallation1.png)
-![dockerinstallation2](https://raw.github.com/gduvalsc/kairos/master/dockerinstallation2.png)
-![dockerinstallation3](https://raw.github.com/gduvalsc/kairos/master/dockerinstallation3.png)
-![dockerinstallation4](https://raw.github.com/gduvalsc/kairos/master/dockerinstallation4.png)
-![dockerinstallation5](https://raw.github.com/gduvalsc/kairos/master/dockerinstallation5.png)
-![dockerinstallation6](https://raw.github.com/gduvalsc/kairos/master/dockerinstallation6.png)
+![dockerinstallation1](pictures/dockerinstallation1.png)
+![dockerinstallation2](pictures/dockerinstallation2.png)
+![dockerinstallation3](pictures/dockerinstallation3.png)
+![dockerinstallation4](pictures/dockerinstallation4.png)
+![dockerinstallation5](pictures/dockerinstallation5.png)
+![dockerinstallation6](pictures/dockerinstallation6.png)
 
 Until this step, `DOCKER` and `VIRTUALBOX` installations are over.
 
 2 shortcuts have been inserted on the desktop for the next steps ...
 
-![desktopshortcuts](https://raw.github.com/gduvalsc/kairos/master/desktopshortcuts.png)
+![desktopshortcuts](pictures/desktopshortcuts.png)
 
 If we call "Docker Quicstart Terminal", `VIRTUALBOX` is launched automatically and a virtual machine named "default" is created. I don't like this way of doing things. In my mind, the name of the virtual machine running `DOCKER` should be "docker".
 
@@ -92,7 +92,7 @@ docker-machine
 
 The following screen is then displayed:
 
-![dockermachine](https://raw.github.com/gduvalsc/kairos/master/dockermachine.png)
+![dockermachine](pictures/dockermachine.png)
 
 Without any parameter, the "docker-machine" command lists all available options.
 
@@ -104,7 +104,7 @@ docker-machine ls
 
 In our case, just after installation, the list is obviously empty:
 
-![dockermachineempty](https://raw.github.com/gduvalsc/kairos/master/dockermachineempty.png)
+![dockermachineempty](pictures/dockermachineempty.png)
 
 We are now ready to create a new `DOCKER` machine and assign the name "docker":
 
@@ -114,7 +114,7 @@ docker-machine create --driver virtualbox docker
 docker-machine ls
 ```
 
-![dockermachinecreate](https://raw.github.com/gduvalsc/kairos/master/dockermachinecreate.png)
+![dockermachinecreate](pictures/dockermachinecreate.png)
 
 Now the "docker" virtual machine is created. With the "ls" option of "docker-machine" command, we can see the state of the virtual machine (Stopped or Running) as weel as the IP adress used.
 
@@ -124,7 +124,7 @@ To stop the "docker" virtual machine:
 docker-machine stop docker
 ```
 
-![dockermachinestopped](https://raw.github.com/gduvalsc/kairos/master/dockermachinestopped.png)
+![dockermachinestopped](pictures/dockermachinestopped.png)
 
 To start again the "docker" machine:
 
@@ -132,7 +132,7 @@ To start again the "docker" machine:
 docker-machine start docker
 ```
 
-![dockermachinerestarted](https://raw.github.com/gduvalsc/kairos/master/dockermachinerestarted.png)
+![dockermachinerestarted](pictures/dockermachinerestarted.png)
 
 As stated, the "docker" machine can have a different IP adress when it's restarted. This must be checked with "docker-machine ls". When the IP adress is modified, certificates attached to this system must be regenerated:
 
@@ -140,15 +140,15 @@ As stated, the "docker" machine can have a different IP adress when it's restart
 docker-machine regenerate-certs docker
 ```
 
-![dockermachineregenerated](https://raw.github.com/gduvalsc/kairos/master/dockermachineregenerated.png)
+![dockermachineregenerated](pictures/dockermachineregenerated.png)
 
 From Virtualbox, we can see the following screen:
 
-![virtualbox](https://raw.github.com/gduvalsc/kairos/master/virtualbox.png)
+![virtualbox](pictures/virtualbox.png)
 
 Until this step, `DOCKER` installation and configuration are normally over, but a small inconvenience persists: indeed, `DOCKER` installed `VIRTUALBOX`, but the "vboxmanage" command is not accessible:
 
-![vboxmanageunavailable](https://raw.github.com/gduvalsc/kairos/master/vboxmanageunavailable.png)
+![vboxmanageunavailable](pictures/vboxmanageunavailable.png)
 
 To solve this problem, it's necessary to update the "PATH" environment variable with the path to the `VIRTUALBOX` commands.
 
@@ -158,11 +158,11 @@ There are several ways to do this. The quickest is probably to update directly t
 regedit
 ```
 
-![windowsregedit](https://raw.github.com/gduvalsc/kairos/master/windowsregedit.png)
+![windowsregedit](pictures/windowsregedit.png)
 
 The key, whose name is displayed in the bottom of the screen must be updated. In the "Path" variable, at the end, the following string ";C:\Program Files\Oracle\Virtualbox" must be added:
 
-![windowsregeditupdate](https://raw.github.com/gduvalsc/kairos/master/windowsregeditupdate.png)
+![windowsregeditupdate](pictures/windowsregeditupdate.png)
 
 The `WINDOWS` session must be restarted to take into account the new "Path" value.
 
@@ -172,7 +172,7 @@ After restart:
 vboxmanage list vms
 ```
 
-![vboxmanagelistvms](https://raw.github.com/gduvalsc/kairos/master/vboxmanagelistvms.png)
+![vboxmanagelistvms](pictures/vboxmanagelistvms.png)
 
 This time, `DOCKER` and `VIRTUALBOX` installations as well as environment configuration are over.
 
@@ -232,7 +232,7 @@ Before to use this command, a set of "environment variables" must be initialized
 docker-machine env docker
 ```
 
-![dockerenv](https://raw.github.com/gduvalsc/kairos/master/dockerenv.png)
+![dockerenv](pictures/dockerenv.png)
 
 We can set variables with a "copy-paste" of the 4 commands "SET...", we can also "copy-past" the command "FOR ..." on the last line.
 
@@ -251,7 +251,7 @@ docker-machine images
 
 At the beginning, we have obviously the following picture:
 
-![dockerimagesempty](https://raw.github.com/gduvalsc/kairos/master/dockerimagesempty.png)
+![dockerimagesempty](pictures/dockerimagesempty.png)
 
 To download `KAIROS`, we have only to do:
 
@@ -265,7 +265,7 @@ When a new version of the software is delivered, most of the chunks will remain 
 
 During the "dwonload" process, we can see something looking like this:
 
-![dockerimageduringdownload](https://raw.github.com/gduvalsc/kairos/master/dockerimageduringdownload.png)
+![dockerimageduringdownload](pictures/dockerimageduringdownload.png)
 
 When the "download" operation is over, we can see the downloaded image like this:
 
@@ -273,7 +273,7 @@ When the "download" operation is over, we can see the downloaded image like this
 docker images
 ```
 
-![dockerimages](https://raw.github.com/gduvalsc/kairos/master/dockerimages.png)
+![dockerimages](pictures/dockerimages.png)
 
 ### Kairos container creation
 
@@ -284,7 +284,7 @@ docker create --name kairos -it --net=host --device /dev/mem --privileged -v /c/
 docker ps -a
 ```
 
-![kairoscontainercreate](https://raw.github.com/gduvalsc/kairos/master/kairoscontainercreate.png)
+![kairoscontainercreate](pictures/kairoscontainercreate.png)
 
 Once crated, this container can be started with this command:
 
@@ -299,7 +299,7 @@ docker exec -it kairos bash
 ps -ef
 ```
 
-![kairospsef](https://raw.github.com/gduvalsc/kairos/master/kairospsef.png)
+![kairospsef](pictures/kairospsef.png)
  
  We can now check that the application is available by using a browser on the host system with the following URL:
 
@@ -307,7 +307,7 @@ ps -ef
 https://localhost:3443
 ```
 
-![kairos](https://raw.github.com/gduvalsc/kairos/master/kairos.png)
+![kairos](pictures/kairos.png)
 
 Now the container creation is over.
 
@@ -322,47 +322,3 @@ and to stop the container with:
 ```
 docker stop kairos
 ```
-
-### Kairos container configuration
-
-This software is not free. It's the property of GDSC (Gerard Duval Software & Consulting). The software has been recorded on [http://www.copyrightfrance.com](http://www.copyrightfrance.com). 
-
-This software is protected by a key and this key must be installed in each container.
-
-If the key is not installed, the first login attempt (user: "admin", password "admin") will lead to the error "System has not been signed!". In the same way, the attempt to transport a `KAIROS` container from one system to another, will lead to another error.
-
-To sign a container, the following process must be done (we assume that the container is started):
-
-```
-docker exec kairos kairos -sgetsystemid
-```
-
-A message like the following is then displayed:
-
-![kairosgetsystemid](https://raw.github.com/gduvalsc/kairos/master/kairosgetsystemid.png)
-
-A message must be sent to gerard.duval@gdsoftconsulting.com with this key (The message must contain the key in characters, not an image of the key).
-
-You will receive an other message with a signed key. This last key should have to be installed in the kairos container like this:
-
-```
-docker exec kairos kairos -sstoresystemid --message 5644ea92d13c4c119c81897711014a5ead662b3046609753235d0c625209d60eae07212c56aa736d9097bf5faa8bd518ee7984e096dc1fa7d0d7f3229fa6bb822c799cd497935a2fff60e606aef2b8e7e81ec628da64ac9ed6909db54c0a0b9334630026949be755cb30a6b3f31d9c43eb1b3fdf78afe2ade60eade47f53d95431a0b20c5c699fb82bd726478398f5810c3085dc768854305b91a0a1f971aec73c8dc684aab76d5d6f5e1bb592996ea8da932c65978df6524b4e003bdc55ac683800fc2651e3466afaf65e10be4d3a416a0e09e7c1a2cd0e55d34e9a90399463be8513a09656e672bbb93c1c94767e2712ea227e07b4cbf9054243aa3254eb97
-```
-
-If everything is going well, the following message will be returned:
-
-```
-{"data": "System id stored!", "success": true}
-```
-
-If not, the following message will be returned:
-
-```
-*** Invalid signed message!
-```
-
-This step over, `KAIROS` could be used without restriction for a period of time specified when the signed key will be returned.
-
-Regards.
-
-G. Duval
