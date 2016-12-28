@@ -4,7 +4,7 @@
 
 At the beginning `KAIROS` was focusing on the `ORACLE` Database and underlying systems, but this now an open system being able to be extended by users on other layers (System, MYSQL, Postgres, Applications servers, ...)
 
-One main characteristic of `KAIROS` is to work in a disconnected way: no need to have an heavy infrastructure with agents.
+One main characteristic of `KAIROS` is the capability to work in a disconnected way: no need to have an heavy infrastructure with agents.
 
 Regarding `ORACLE` Database, everything is ready for users: a script is available to collect metrics on production systems (this script is calling AWR or Statspacks reports with the capability to get ASH data). The result of the collect is an archive (zip or compressed tar file) that has to be transferred to the `KAIROS` system.
 
@@ -16,7 +16,7 @@ As said above, `KAIROS` can be extended to other domains by experts in these dom
 
 ###### An overview of `KAIROS`desktop
 
-![desktop](https://raw.github.com/gduvalsc/kairos/master/desktop.png)
+![desktop](pictures/desktop.png)
 
 ###### Drop down menus
 
