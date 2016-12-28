@@ -53,7 +53,7 @@ When the `DOCKER` environement is started, we can start to manipulate "images" a
 
 `KAIROS` is delivered as a `DOCKER` image. From this image, we are going to create a container who will be started. Once the container is started, the `KAIROS` application is available.
 
-To download `KAIROS`, we have only to do:
+To download `KAIROS`, the following command must be issued:
 
 ```
 docker pull gdsc/kairos
@@ -62,18 +62,6 @@ docker pull gdsc/kairos
 During the first execution, everything will be downloaded and several hundred of megabytes will be downloaded. In fact, this is not a single file but a set of chunks with different sizes.
 
 When a new version of the software is delivered, most of the chunks will remain unchanged and `DOCKER` will download only the modified chunks.
-
-During the "dwonload" process, we can see something looking like this:
-
-![dockerimageduringdownload](pictures/dockerimageduringdownload.png)
-
-When the "download" operation is over, we can see the downloaded image like this:
-
-```
-docker images
-```
-
-![dockerimages](pictures/dockerimages.png)
 
 ### Kairos container creation and configuration
 
@@ -104,10 +92,7 @@ An interactive session (for `KAIROS` administrator) can even be started like thi
 
 ```
 docker exec -it kairos bash
-ps -ef
 ```
-
-![kairospsef](pictures/kairospsef.png)
  
  We can now check that the application is available by using a browser on the host system with the following URL:
 
