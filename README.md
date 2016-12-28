@@ -26,10 +26,6 @@ As said above, `KAIROS` can be extended to other domains by experts in these dom
 
 ![sample1](pictures/sample1.png)
 
-###### A view to NMON statistics
-
-![sample2](pictures/sample2.png)
-
 ## Documentation
 
 The documentation is available in the tool and [here](https://www.github.com/gduvalsc/kairos/blob/master/kairos.pdf).
@@ -79,10 +75,7 @@ The `KAIROS` container must remain a black box with no user data inside. For thi
 
 The `KAIROS` container is also listening on 2 ports (443 and 2480). These 2 ports must be routed (-p option) on ports belonging to the physical machine hosting docker. 
 
-
-![kairoscontainercreate](pictures/kairoscontainercreate.png)
-
-Once crated, this container can be started with this command:
+Once created, this container can be started with this command:
 
 ```
 docker start kairos
