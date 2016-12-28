@@ -64,8 +64,16 @@ When a new version of the software is delivered, most of the chunks will remain 
 The `KAIROS` container is created like this:
 
 ```
-docker create -it --name kairos -h kairos -p 2443:443 -p 2480:2480 -v /Users/gdsc/Documents/kairos_store/databases:/orientdb/databases -v /Users/gdsc/Documents/kairos_store/files:/orientdb/files -v /Users/gdsc/Documents/kairos_autoupload:/autoupload gdsc/kairos
-docker ps -a
+docker create 
+        -it 
+        --name kairos 
+        -h kairos 
+        -p 2443:443 
+        -p 2480:2480 
+        -v /Users/gdsc/Documents/kairos_store/databases:/orientdb/databases 
+        -v /Users/gdsc/Documents/kairos_store/files:/orientdb/files 
+        -v /Users/gdsc/Documents/kairos_autoupload:/autoupload 
+        gdsc/kairos
 ```
 
 The `KAIROS` container must remain a black box with no user data inside. For this, when the container is created, we have to specify (-v option) which directories are mounted within the container to access data. 3 directories are mounted externally:
