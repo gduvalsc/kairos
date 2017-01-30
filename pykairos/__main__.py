@@ -100,7 +100,7 @@ if args.bootstrap:
             p = subprocess.run(['kairos', '-s', 'uploadobject', '-a', 'kairos', '-p', 'root', '--nodesdb', 'kairos_system_system', '--file', o])
             if p.returncode: logging.error('Error during loading of: ' + o)
         print('', flush=True)
-        logging.info(str(len(objects)) + 'found objects in /tmp/objects!')
+        logging.info(str(len(objects)) + ' found objects in /tmp/objects!')
         obj = subprocess.run(['kairos', '-s', 'listobjects', '-a', 'kairos', '-p', 'root', '--nodesdb', 'kairos_system_system', '--systemdb', 'kairos_system_system'], stdout=subprocess.PIPE)
         lines = obj.stdout.decode().split('\n')
         logging.info("System database has " + str(int((len(lines) - 1) / 2)) + " objects.")
