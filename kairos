@@ -20,132 +20,133 @@ parser.add_argument('--to', action = 'store', dest='eto', default='', help='Node
 args = parser.parse_args()
 isadmin = False
 def wlog(m):
-	print(m) 
-	syslog.syslog(m)
+    print(m) 
+    syslog.syslog(m)
 
 global result
 async def post(client, url, data):
-	async with client.post(url, data=data) as resp:
-		assert resp.status == 200
-		return await resp.json()
+    async with client.post(url, data=data) as resp:
+        assert resp.status == 200
+        return await resp.json()
 async def get(client, url, params):
-	async with client.get(url, params=params) as resp:
-		assert resp.status == 200
-		return await resp.json()
+    async with client.get(url, params=params) as resp:
+        assert resp.status == 200
+        return await resp.json()
 async def main(loop, method, url, params):
-	async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False),loop=loop) as client:
-		global result
-		result = await post(client, url, params) if method == 'post' else await get(client, url, params)
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(verify_ssl=False),loop=loop) as client:
+        global result
+        result = await post(client, url, params) if method == 'post' else await get(client, url, params)
 
 if not args.service:
-	wlog('*** KAIROS service is mandatory!')
-	exit(1)
+    wlog('*** KAIROS service is mandatory!')
+    exit(1)
 if not args.authname and args.service not in ['uploadnode','createsystem']:
-	wlog('*** KAIROS user is mandatory!')
-	exit(1)
+    wlog('*** KAIROS user is mandatory!')
+    exit(1)
 if not args.password and args.service not in ['uploadnode','createsystem']:
-	wlog('*** KAIROS password is mandatory!')
-	exit(1)
+    wlog('*** KAIROS password is mandatory!')
+    exit(1)
 if args.service not in ['uploadnode','createsystem']:
-	loop = asyncio.get_event_loop()
-	loop.run_until_complete(main(loop, 'get', 'https://localhost/checkuserpassword', [('user', args.authname), ('password', args.password)]))
-	if not result['success']:
-		wlog('*** ' + result['message'])
-		exit(1)
-	isadmin = result['data']['adminrights']
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main(loop, 'post', 'https://localhost/checkuserpassword', [('user', args.authname), ('password', args.password)]))
+    if not result['success']:
+        wlog('*** ' + result['message'])
+        exit(1)
+    isadmin = result['data']['adminrights']
 if args.service not in ['createsystem','listusers', 'getsettings', 'createuser', 'deleteuser', 'changepassword', 'listroles', 'createrole', 'deleterole', 'listgrants', 'creategrant', 'deletegrant', 'listdatabases', 'listnodesdb', 'listsystemdb', 'getmenus', 'listobjects', 'deleteobject', 'uploadobject', 'uploadnode']:
-	wlog("*** " + args.service + " service is not handled!")
-	exit(1)
+    wlog("*** " + args.service + " service is not handled!")
+    exit(1)
 if not isadmin and args.service in ['listusers', 'createuser', 'deleteuser', 'listroles', 'createrole', 'deleterole', 'listgrants', 'creategrant', 'deletegrant']:
-	wlog("*** " + args.service + " service must be executed with admin rights!")
-	exit(1)
+    wlog("*** " + args.service + " service must be executed with admin rights!")
+    exit(1)
 parameters =dict()
 method = 'get'
 if args.service in ['getsettings', 'listnodesdb']:
-	parameters = dict(user=args.authname)
+    parameters = dict(user=args.authname)
 elif args.service in ['createuser', 'deleteuser']:
-	if not args.user:
-		wlog("*** --user option must be specified!")
-		exit(1)
-	parameters = dict(user=args.user)
+    if not args.user:
+        wlog("*** --user option must be specified!")
+        exit(1)
+    parameters = dict(user=args.user)
 elif args.service in ['createrole', 'deleterole']:
-	if not args.role:
-		wlog("*** --role option must be specified!")
-		exit(1)
-	parameters = dict(role=args.role)
+    if not args.role:
+        wlog("*** --role option must be specified!")
+        exit(1)
+    parameters = dict(role=args.role)
 elif args.service in ['creategrant', 'deletegrant']:
-	if not args.role:
-		wlog("*** --role option must be specified!")
-		exit(1)
-	if not args.user:
-		wlog("*** --user option must be specified!")
-		exit(1)
-	parameters = dict(role=args.role, user=args.user)
+    if not args.role:
+        wlog("*** --role option must be specified!")
+        exit(1)
+    if not args.user:
+        wlog("*** --user option must be specified!")
+        exit(1)
+    parameters = dict(role=args.role, user=args.user)
 elif args.service in ['getmenus', 'listobjects']:
-	if not args.nodesdb:
-		wlog("*** --nodesdb option must be specified!")
-		exit(1)
-	if not args.systemdb:
-		wlog("*** --systemdb option must be specified!")
-		exit(1)
-	parameters = dict(nodesdb=args.nodesdb, systemdb=args.systemdb)
+    if not args.nodesdb:
+        wlog("*** --nodesdb option must be specified!")
+        exit(1)
+    if not args.systemdb:
+        wlog("*** --systemdb option must be specified!")
+        exit(1)
+    parameters = dict(nodesdb=args.nodesdb, systemdb=args.systemdb)
 elif args.service in ['uploadobject', 'uploadnode']:
-	method='post'
-	if not args.nodesdb:
-		wlog("*** --nodesdb option must be specified!")
-		exit(1)
-	if not args.file:
-		wlog("*** --file option must be specified!")
-		exit(1)
-	data = aiohttp.FormData()
-	data.add_field('nodesdb', args.nodesdb)
-	data.add_field('systemdb', 'kairos_system_system')
-	data.add_field('upload', open(args.file, 'rb'), filename=os.path.basename(args.file), content_type=magic.from_file(args.file, mime=True))
+    method='post'
+    if not args.nodesdb:
+        wlog("*** --nodesdb option must be specified!")
+        exit(1)
+    if not args.file:
+        wlog("*** --file option must be specified!")
+        exit(1)
+    data = aiohttp.FormData()
+    data.add_field('nodesdb', args.nodesdb)
+    data.add_field('systemdb', 'kairos_system_system')
+    data.add_field('upload', open(args.file, 'rb'), filename=os.path.basename(args.file), content_type=magic.from_file(args.file, mime=True))
 elif args.service in ['deleteobject']:
-	if not args.id:
-		wlog("*** --id option must be specified!")
-		exit(1)
-	if not args.type:
-		wlog("*** --type option must be specified!")
-		exit(1)
-	if not args.database:
-		wlog("*** --database option must be specified!")
-		exit(1)
-	parameters = dict(id=args.id, type=args.type, database=args.database)
+    if not args.id:
+        wlog("*** --id option must be specified!")
+        exit(1)
+    if not args.type:
+        wlog("*** --type option must be specified!")
+        exit(1)
+    if not args.database:
+        wlog("*** --database option must be specified!")
+        exit(1)
+    parameters = dict(id=args.id, type=args.type, database=args.database)
 elif args.service in ['changepassword']:
-	if not args.newpassword:
-		wlog("*** --password option must be specified!")
-		exit(1)
-	parameters = dict(user=args.authname, password=args.password, new=args.newpassword)
+    method='post'
+    if not args.newpassword:
+        wlog("*** --password option must be specified!")
+        exit(1)
+    parameters = dict(user=args.authname, password=args.password, new=args.newpassword)
 else: parameters = dict()
 loop = asyncio.get_event_loop()
 params = list(parameters.items()) if method == 'get' else data
 loop.run_until_complete(main(loop, method, 'https://localhost/' + args.service, params))
 
 if not result['success']:
-	wlog('*** ' + result['message'])
-	exit(1)
+    wlog('*** ' + result['message'])
+    exit(1)
 if args.service in ['listusers']:
-	for user in result['data']:
-		wlog('id: ' + str(user['_id']) + ', user: ' + str(user['user']))
+    for user in result['data']:
+        wlog('id: ' + str(user['_id']) + ', user: ' + str(user['user']))
 elif args.service in ['listroles']:
-	for role in result['data']:
-		wlog('id: ' + str(role['_id']) + ', role: ' + str(role['role']))
+    for role in result['data']:
+        wlog('id: ' + str(role['_id']) + ', role: ' + str(role['role']))
 elif args.service in ['listgrants']:
-	for grant in result['data']:
-		wlog('id: ' + str(grant['_id']) + ', user: ' + str(grant['user']) + ', role: ' + str(grant['role']))
+    for grant in result['data']:
+        wlog('id: ' + str(grant['_id']) + ', user: ' + str(grant['user']) + ', role: ' + str(grant['role']))
 elif args.service in ['listdatabases']:
-	for database in result['data']:
-		wlog('name: ' + str(database['name']) + ', size: ' + str(database['size']))
+    for database in result['data']:
+        wlog('name: ' + str(database['name']) + ', size: ' + str(database['size']))
 elif args.service in ['listnodesdb', 'listsystemdb']:
-	for database in result['data']:
-		wlog('name: ' + str(database['name']))
+    for database in result['data']:
+        wlog('name: ' + str(database['name']))
 elif args.service in ['listobjects']:
-	for object in result['data']:
-		wlog('id: ' + str(object['id']) + ', type: ' + str(object['type']) + ', created: ' + str(object['created']) + ', origin: ' + str(object['origin']))
+    for object in result['data']:
+        wlog('id: ' + str(object['id']) + ', type: ' + str(object['type']) + ', created: ' + str(object['created']) + ', origin: ' + str(object['origin']))
 elif args.service in ['createuser', 'deleteuser', 'changepassword', 'createrole', 'deleterole', 'creategrant', 'deletegrant', 'deleteobject']:
-	wlog(result['data']['msg'])
+    wlog(result['data']['msg'])
 elif args.service in ['uploadobject', 'uploadnode']:
-	pass
+    pass
 else: wlog(str(result))
 exit(0)

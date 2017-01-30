@@ -14,7 +14,6 @@
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
 import string, random, ssl, logging, pyorient, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, sqlite3, magic, cgi, sys, multiprocessing, pyinotify, urllib, apsw, base64, jpype
-from multiprocessing import Process
 from collections import *
 from datetime import datetime
 from aiohttp import web, WSCloseCode, WSMsgType, MultiDict
@@ -375,11 +374,11 @@ class Analyzer:
         if "END" in s.contextrules:
             logging.debug(s.name + ' - Calling END at pattern ' + str(s.stats["patterns"]))
             s.contextrules["END"]["action"](s)
-        logging.debug(s.name + ' - Summary for member ' + name);
-        logging.debug(s.name + ' -    Analyzed patterns   : ' + str(s.stats["patterns"]))
-        logging.debug(s.name + ' -    Evaluated rules  : ' + str(s.stats["er"]))
-        logging.debug(s.name + ' -    Satisfied rules  : ' + str(s.stats["ser"]))
-        logging.debug(s.name + ' -    Emitted records  : ' + str(s.stats["rec"]))
+        logging.info(s.name + ' - Summary for member ' + name);
+        logging.info(s.name + ' -    Analyzed patterns   : ' + str(s.stats["patterns"]))
+        logging.info(s.name + ' -    Evaluated rules  : ' + str(s.stats["er"]))
+        logging.info(s.name + ' -    Satisfied rules  : ' + str(s.stats["ser"]))
+        logging.info(s.name + ' -    Emitted records  : ' + str(s.stats["rec"]))
         
 class NotifyEventHandler(pyinotify.ProcessEvent):
     
@@ -401,7 +400,7 @@ class NotifyEventHandler(pyinotify.ProcessEvent):
     def process_IN_ATTRIB(s, event):
         s.process_IN_MODIFY(event)
         
-class Notify:
+class KairosNotifier:
     def __init__(s):
         logging.info('Init notification process...')
         s.wm = pyinotify.WatchManager()
@@ -416,8 +415,6 @@ class Notify:
         s.eh = NotifyEventHandler()
         s.eh.wm = s.wm
         s.notifier = pyinotify.Notifier(s.wm, s.eh)
-
-    def process(s):
         import setproctitle
         multiprocessing.current_process().name = 'NotifyProcess'
         logging.info('Starting notification process...')
@@ -426,16 +423,13 @@ class Notify:
         logging.info('Process id: ' + str(os.getpid()))
         s.notifier.loop()
     
-class Kairos:
-
+class KairosWorker:
     def __init__(s, jpypeflag=True):
         s.root = 'root'
         s.admin = 'root'
         s.name = 'kairos'
         s.host = 'localhost'
         s.orientport = 2424
-        s.port = 443
-        s.SSL = True
         s.odb = pyorient.OrientDB(s.host, s.orientport)
         s.odbroot=False
         s.odbdatabase = None
@@ -453,7 +447,6 @@ class Kairos:
         async def on_shutdown(app):
             for ws in app['websockets']:
                 await ws.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
-            s.pnotify.terminate()
 
         app.on_shutdown.append(on_shutdown)
 
@@ -463,8 +456,6 @@ class Kairos:
         app.router.add_get('/client.js', s.file_client)
         app.router.add_get('/checkserverconfig', s.checkserverconfig)
         app.router.add_get('/createsystem', s.createsystem)
-        app.router.add_get('/checkuserpassword', s.checkuserpassword)
-        app.router.add_get('/changepassword', s.changepassword)
         app.router.add_get('/getsettings', s.getsettings)
         app.router.add_get('/getmenus', s.getmenus)
         app.router.add_get('/gettree', s.gettree)
@@ -510,6 +501,7 @@ class Kairos:
         app.router.add_get('/deletegrant', s.deletegrant)
         app.router.add_get('/updatesettings', s.updatesettings)
         app.router.add_get('/get_kairos_log', s.websocket_handler)
+        app.router.add_get('/get_webserver_log', s.websocket_handler)
         app.router.add_get('/get_orientdb_errfile', s.websocket_handler)
         app.router.add_get('/deleteobject', s.deleteobject)
         app.router.add_get('/downloadobject', s.downloadobject)
@@ -520,24 +512,17 @@ class Kairos:
         app.router.add_get('/linkfathernode', s.linkfathernode)
         app.router.add_get('/applyaggregator', s.applyaggregator)
         app.router.add_get('/applyliveobject', s.applyliveobject)
+        app.router.add_post('/changepassword', s.changepassword)
         app.router.add_post('/uploadobject', s.uploadobject)
+        app.router.add_post('/checkuserpassword', s.checkuserpassword)
         app.router.add_post('/uploadnode', s.uploadnode)
         app.router.add_static('/resources/', path='/kairos/resources', name='resources')
-        logging.basicConfig(format='%(asctime)s %(processName)16s %(levelname)8s %(message)s', level=logging.INFO, filename="/var/log/kairos/kairos.log")
-        logging.info('This system is configured with ' + str(multiprocessing.cpu_count()) + ' cpus.')
+        s.application = app
+        logging.basicConfig(format='%(asctime)s %(process)5s %(levelname)8s %(message)s', level=logging.INFO, filename="/var/log/kairos/kairos.log")
         import setproctitle
-        setproctitle.setproctitle('KairosMain')
+        setproctitle.setproctitle('KairosWorker')
         logging.info('Process name: ' + setproctitle.getproctitle())
         logging.info('Process id: ' + str(os.getpid()))
-        s.pnotify = Process(target=Notify().process)
-        s.pnotify.start()
-
-        if s.SSL:
-            sslcontext = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
-            sslcontext.load_cert_chain('/kairos/kairos.crt', '/kairos/kairos.key')
-            web.run_app(app, ssl_context=sslcontext, port=s.port)
-        else:
-            web.run_app(app, port=s.port)
 
     @trace_call
     async def websocket_handler(s, request):
@@ -1450,10 +1435,11 @@ class Kairos:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def checkuserpassword(s, request):
+    async def checkuserpassword(s, request):
+        multipart = await request.post()
         params = parse_qs(request.query_string)
-        user = params['user'][0]
-        password = params['password'][0]
+        user = multipart['user'] if 'user' in multipart else params['user'][0]
+        password = multipart['password'] if 'password' in multipart else params['password'][0]
         if user == s.name and password != s.admin:
             message = "Invalid password!"
             logging.warning(message)
@@ -1747,11 +1733,12 @@ class Kairos:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def changepassword(s, request):
+    async def changepassword(s, request):
+        multipart = await request.post()
         params = parse_qs(request.query_string)
-        user = params['user'][0]
-        password = params['password'][0]
-        new = params['new'][0]
+        user = multipart['user'] if 'user' in multipart else params['user'][0]
+        password = multipart['password'] if 'password' in multipart else params['password'][0]
+        new = multipart['new'] if 'new' in multipart else params['new'][0]
         s.odbget(root=True)
         databases =  s.odb.db_list().oRecordData['databases'].keys()
         try:

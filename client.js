@@ -15,7 +15,7 @@
 //    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-var VERSION = "3.00";
+var VERSION = "3.1";
 var ajaxcpt = 0;
 var desktop = {};
 desktop.variables = {};
@@ -56,6 +56,39 @@ var ajax_get_first_in_async_waterfall = function (s, p) {
             return next(null, result.data);
         };
         webix.ajax().get(s, p, {error: ferror, success: fdone});
+    };
+    return f;
+};
+
+var ajax_post_first_in_async_waterfall = function (s, p) {
+    var f = function (next) {
+        var logging = desktop.settings === undefined ? 'info' : desktop.settings.logging;
+        if (p === undefined) {
+            p = {logging: logging};
+        } else {
+            p.logging = p.logging === undefined ? logging : p.logging;
+        }
+        ajaxcpt += 1;
+        document.body.className = 'waiting';
+        var ferror = function (text, data, x) {
+            ajaxcpt -= 1;
+            if (ajaxcpt === 0) {
+                document.body.className = '';
+            }
+            return next("XMLHttpRequest, status: " + x.status + ", statusText: " + x.statusText + ", URL: " + x.responseURL);
+        };
+        var fdone = function (text, data, x) {
+            ajaxcpt -= 1;
+            if (ajaxcpt === 0) {
+                document.body.className = '';
+            }
+            var result = data.json();
+            if (!result.success) {
+                return next(result.message);
+            }
+            return next(null, result.data);
+        };
+        webix.ajax().post(s, p, {error: ferror, success: fdone});
     };
     return f;
 };
@@ -2162,7 +2195,7 @@ desktop.LOGINWINDOW = function (x) {
                     click: function () {
                         if (this.getParentView().validate()) {
                             waterfall([
-                                ajax_get_first_in_async_waterfall("checkuserpassword", {password: $$('password').getValue(), user: $$('user').getValue(), logging: 'fatal'}),
+                                ajax_post_first_in_async_waterfall("checkuserpassword", {password: $$('password').getValue(), user: $$('user').getValue(), logging: 'fatal'}),
                                 function (x) {
                                     desktop.user = $$('user').getValue();
                                     desktop.password = $$('password').getValue();
@@ -2275,7 +2308,7 @@ desktop.PASSWORDWINDOW = function () {
                                 return false;
                             }
                             waterfall([
-                                ajax_get_first_in_async_waterfall("changepassword", {password: $$('apassword').getValue(), new: $$('npassword').getValue(), user: desktop.user, logging: 'fatal'}),
+                                ajax_post_first_in_async_waterfall("changepassword", {password: $$('apassword').getValue(), new: $$('npassword').getValue(), user: desktop.user, logging: 'fatal'}),
                                 function (x) {
                                     webix.message({text: x.msg});
                                     desktop.password = $$('npassword').getValue();
@@ -3809,6 +3842,12 @@ desktop.MAINMENU = function () {
                 view: "button",
                 type: "icon",
                 icon: "newspaper-o",
+                value: "WEBSERVER log",
+            },
+            {
+                view: "button",
+                type: "icon",
+                icon: "newspaper-o",
                 value: "ORIENTDB errfile",
             },
             {
@@ -3901,6 +3940,9 @@ desktop.MAINMENU = function () {
 
                 if (itemvalue === 'KAIROS log') {
                     manage_log(desktop, prefix + "/get_kairos_log", "KAIROS log", "/var/log/kairos/kairos.log");
+                }
+                if (itemvalue === 'WEBSERVER log') {
+                    manage_log(desktop, prefix + "/get_webserver_log", "WEBSERVER log", "/var/log/kairos/webserver.log");
                 }
                 if (itemvalue === 'ORIENTDB errfile') {
                     manage_log(desktop, prefix + "/get_orientdb_errfile", "ORIENTDB errfile", "/orientdb/log/orientdb.err");
