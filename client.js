@@ -560,7 +560,7 @@ var manage_settings = function (desktop) {
     if ($$('settingswindow') !== undefined) {
         $$('settingswindow').destructor();
     }
-    falseparallel({
+    parallel({
         systemdb: ajax_get_in_async_parallel("listsystemdb"),
         nodesdb: ajax_get_in_async_parallel("listnodesdb", {user: desktop.user}),
         templates: ajax_get_in_async_parallel("listtemplates", {systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb}),
@@ -658,7 +658,7 @@ var manage_node = function (desktop, explorertreeid) {
     var buildcache = "buildcache" + desktop.windowscounter + 1;
     var dropcache = "dropcache" + desktop.windowscounter + 1;
     var closer;
-    falseparallel({
+    parallel({
         node: ajax_get_in_async_parallel("getnode", {nodesdb: nodesdb, id: selectednodeid}),
         aggregators: ajax_get_in_async_parallel("listaggregators", {systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb}),
         liveobjects: ajax_get_in_async_parallel("listliveobjects", {systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb})
@@ -1036,7 +1036,7 @@ var manage_node = function (desktop, explorertreeid) {
 var dispchoice = function (explorertreeid, node, choice) {
     desktop.lastfunction = "dispchoice";
     desktop.lastchoice = choice;
-    falseparallel({
+    parallel({
         choice: ajax_get_in_async_parallel("getchoice", {choice: choice, systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb, variables: desktop.variables}),
     }, function (x) {
         waterfall([
@@ -1067,7 +1067,7 @@ var dispchart = function (explorertreeid, node, chart, layoutpiece) {
     log.debug('Getting chart, template & colors');
     desktop.lastfunction = "dispchart";
     desktop.lastchart = chart;
-    falseparallel({
+    parallel({
         chart: ajax_get_in_async_parallel("getchart", {chart: chart, systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb, variables: desktop.variables}),
         template: ajax_get_in_async_parallel("gettemplate", {template: desktop.settings.template, systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb}),
         colors: ajax_get_in_async_parallel("getcolors", {colors: desktop.settings.colors, systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb}),
@@ -1085,7 +1085,7 @@ var dispchart = function (explorertreeid, node, chart, layoutpiece) {
                 });
             });
         });
-        falseparallel(chartqueries, function (q) {
+        parallel(chartqueries, function (q) {
             log.debug('Preparing chart');
             var uniquecid;
             var container;
@@ -1772,7 +1772,7 @@ var manage_explorer = function (desktop) {
                     click: function () {
                         var selectednodeid = $$(explorertreeid).getSelectedId();
                         $$(contextmenuid).hide();
-                        falseparallel({
+                        parallel({
                             list: ajax_get_in_async_parallel("getcharts", {systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb}),
                             node: ajax_get_in_async_parallel("getnode", {nodesdb: $$(explorertreeid).nodesdb, id: selectednodeid}),
                         }, function (x) {
@@ -1793,7 +1793,7 @@ var manage_explorer = function (desktop) {
                     click: function () {
                         var selectednodeid = $$(explorertreeid).getSelectedId();
                         $$(contextmenuid).hide();
-                        falseparallel({
+                        parallel({
                             list: ajax_get_in_async_parallel("getchoices", {systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb}),
                             node: ajax_get_in_async_parallel("getnode", {nodesdb: $$(explorertreeid).nodesdb, id: selectednodeid}),
                         }, function (x) {
@@ -1831,7 +1831,7 @@ var manage_explorer = function (desktop) {
                     click: function () {
                         $$(contextmenuid).hide();
                         var selectednodeid = $$(explorertreeid).getSelectedId();
-                        falseparallel({
+                        parallel({
                             list: ajax_get_in_async_parallel("getmemberlist", {nodesdb: $$(explorertreeid).nodesdb, id: selectednodeid}),
                             node: ajax_get_in_async_parallel("getnode", {nodesdb: $$(explorertreeid).nodesdb, id: selectednodeid}),
                         }, function (x) {
@@ -3314,7 +3314,7 @@ desktop.GRANTSWINDOW = function () {
                                 if ($$('crgrantwindow') !== undefined) {
                                     $$('crgrantwindow').destructor();
                                 }
-                                falseparallel({
+                                parallel({
                                     roles: ajax_get_in_async_parallel("listroles"),
                                     users: ajax_get_in_async_parallel("listusers")
                                 }, function (x) {

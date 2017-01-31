@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
-import string, random, ssl, logging, pyorient, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, sqlite3, magic, cgi, sys, multiprocessing, pyinotify, urllib, apsw, base64, jpype
+import lockfile, string, random, ssl, logging, pyorient, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, sqlite3, magic, cgi, sys, multiprocessing, pyinotify, urllib, apsw, base64, jpype
 from collections import *
 from datetime import datetime
 from aiohttp import web, WSCloseCode, WSMsgType, MultiDict
@@ -88,7 +88,6 @@ class Cache:
         s.sqlite = sqlite3.connect(file,check_same_thread=False)
         s.sqlite.row_factory = dict_factory
         s.execute("pragma page_size=65536")
-        s.execute("pragma synchroneous=OFF")
         s.execute("pragma journal_mode=OFF")
     def create_function(s,*a):
         s.sqlite.create_function(*a)
@@ -1066,7 +1065,7 @@ class KairosWorker:
                     del mapproducers[collection]['unchanged'][pid]
                     mapproducers[collection]['updated'][pid] = producer
             pnode = s.igetnodes(nodesdb=nodesdb, id=producer['id'], getsource=True, getcache=True)[0]
-            pdone = s.ibuildcollectioncache(pnode, collections=collections, systemdb=systemdb, nodesdb=nodesdb)
+            pdone = s.ibuildcollectioncachewithlock(pnode, collections=collections, systemdb=systemdb, nodesdb=nodesdb)
             pcache = s.igetcache(pnode['id'], nodesdb=nodesdb)
             ptype = pnode['datasource']['type']
             for collection in collections:
@@ -1295,7 +1294,7 @@ class KairosWorker:
         if ntype in ['C', 'L']:
             for producer in node['datasource']['producers']:
                 pnode = s.igetnodes(nodesdb=nodesdb, id=producer['id'], getsource=True, getcache=True)[0]
-                s.ibuildcollectioncache(pnode, collections=collections, systemdb=systemdb, nodesdb=nodesdb)
+                s.ibuildcollectioncachewithlock(pnode, collections=collections, systemdb=systemdb, nodesdb=nodesdb)
             for collection in collections: todo[collection] = False
         if ntype in ['A', 'B', 'D']:
             for collection in collections:
@@ -1304,6 +1303,19 @@ class KairosWorker:
         if ntype in ['B']: (todo, analyzers) = s.icheckcolcachetypeB(node, cache=cache, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
         if ntype in ['D']: todo = s.icheckcolcachetypeD(node, cache=cache, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
         return (todo, mapproducers, analyzers)
+    
+    @trace_call
+    def ibuildcollectioncachewithlock(s, node, collections=None, nodesdb=None, systemdb=None):
+        nid = node['id']
+        lock = lockfile.LockFile('/tmp/' + nid)
+        lock.acquire()
+        try:
+            todo = s.ibuildcollectioncache(node, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
+            lock.release()
+            return todo
+        except:
+            lock.release()
+            raise
 
     @trace_call
     def ibuildcollectioncache(s, node, collections=None, nodesdb=None, systemdb=None):
@@ -1333,6 +1345,19 @@ class KairosWorker:
             s.odbget(database=nodesdb)
             s.odbrun("update caches set collections = '" + json.dumps(cache.collections) + "' where @rid = " + cache.rid)
         return todo
+
+    @trace_call
+    def ibuildquerycachewithlock(s, node, query=None, nodesdb=None, systemdb=None):
+        nid = node['id']
+        lock = lockfile.LockFile('/tmp/' + nid)
+        lock.acquire()
+        try:
+            todo = s.ibuildquerycache(node, query=query, nodesdb=nodesdb, systemdb=systemdb)
+            lock.release()
+            return todo
+        except:
+            lock.release()
+            raise      
     
     @trace_call
     def ibuildquerycache(s, node, query=None, nodesdb=None, systemdb=None):
@@ -2046,7 +2071,7 @@ class KairosWorker:
         for v in variables: kairos[v] = variables[v]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
         query = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + query + "' and type='query'")[0]
-        s.ibuildcollectioncache(node, collections=[query['collection']], systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncachewithlock(node, collections=[query['collection']], systemdb=systemdb, nodesdb=nodesdb)
         message = s.ibuildquerycache(node, query=query, systemdb=systemdb, nodesdb=nodesdb)
         if not message: result = s.iqueryexecute(node, query=query, nodesdb=nodesdb, limit=limit)
         if message:
@@ -2063,7 +2088,7 @@ class KairosWorker:
         collection = params['collection'][0]
         id = params['id'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        s.ibuildcollectioncache(node, collections={collection}, systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncachewithlock(node, collections={collection}, systemdb=systemdb, nodesdb=nodesdb)
         return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
@@ -2074,7 +2099,7 @@ class KairosWorker:
         systemdb = params['systemdb'][0]
         id = params['id'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncachewithlock(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
         return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
@@ -2218,7 +2243,7 @@ class KairosWorker:
         cut = 10000
         hcache = Cache(node['datasource']['cache']['dbname'])
         for collection in node['datasource']['collections']:
-            done = s.ibuildcollectioncache(node, collections={collection}, systemdb=systemdb, nodesdb=nodesdb)
+            done = s.ibuildcollectioncachewithlock(node, collections={collection}, systemdb=systemdb, nodesdb=nodesdb)
             d = dict(collection=collection, desc=dict(), data=[])
             desc = hcache.desc(table=collection)
             request = 'select '
