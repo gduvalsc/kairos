@@ -1085,7 +1085,7 @@ var dispchart = function (explorertreeid, node, chart, layoutpiece) {
                 });
             });
         });
-        parallel(chartqueries, function (q) {
+        falseparallel(chartqueries, function (q) {
             log.debug('Preparing chart');
             var uniquecid;
             var container;
