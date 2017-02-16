@@ -22,6 +22,21 @@ from urllib.parse import parse_qs
 global kairos
 kairos=dict()
 
+def ficon (node):
+    icon_file = "fa fa-folder-o btnblack"
+    icon_opened = "fa fa-folder-open-o btnblack"
+    icon_closed = "fa fa-folder-o btnblack"
+    if node['icon'] == 'T':
+        icon_file = "fa fa-trash-o btnblack"
+        icon_opened = "fa fa-trash-o btnblack"
+        icon_closed = "fa fa-trah-o btnblack"
+    if node['icon'] == 'B':
+        icon_file = "fa fa-folder-o btnblue"
+        icon_opened = "fa fa-folder-open-o btnblue"
+        icon_closed = "fa fa-folder-o btnblue"
+
+    return (icon_file, icon_opened, icon_closed)
+
 def trace_call(func):
     def wrapper(*args, **kwargs):
         logging.debug('>>> Entering %s ...' % func.__name__)
@@ -511,6 +526,8 @@ class KairosWorker:
         app.router.add_get('/linkfathernode', s.linkfathernode)
         app.router.add_get('/applyaggregator', s.applyaggregator)
         app.router.add_get('/applyliveobject', s.applyliveobject)
+        app.router.add_get('/uploadnode', s.uploadnode)
+        app.router.add_get('/uploadobject', s.uploadobject)
         app.router.add_post('/changepassword', s.changepassword)
         app.router.add_post('/uploadobject', s.uploadobject)
         app.router.add_post('/checkuserpassword', s.checkuserpassword)
@@ -1479,11 +1496,26 @@ class KairosWorker:
     @trace_call
     def listdatabases(s, request):
         s.odbget(root=True)
+        params = parse_qs(request.query_string)
+        user = params['user'][0]
+        adminrights = True if params['admin'][0] == "true" else False
         data = []
         for k in s.odb.db_list().oRecordData['databases'].keys():
             s.odbget(database=k)
-            logging.debug("Getting size of " + k + " database...")
-            data.append(dict(name=k, size=s.odb.db_size() * 1.0 / 1024))
+            if adminrights:
+                logging.debug("Getting size of " + k + " database...")
+                data.append(dict(name=k, size=s.odb.db_size() * 1.0 / 1024))
+            else:
+                if k == 'kairos_user_' + user:
+                    logging.debug("Getting size of " + k + " database...")
+                    data.append(dict(name=k, size=s.odb.db_size() * 1.0 / 1024))
+                if 'kairos_group_' in k:
+                    s.odbget(database=k)
+                    tabx = s.odbquery("select name from ouser where name <> '" + s.name + "'")
+                    users = [rx.oRecordData['name'] for rx in tabx]
+                    if user in users:
+                        logging.debug("Getting size of " + k + " database...")
+                        data.append(dict(name=k, size=s.odb.db_size() * 1.0 / 1024))
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
@@ -1588,8 +1620,12 @@ class KairosWorker:
     @trace_call
     async def uploadobject(s, request):
         params = parse_qs(request.query_string)
+        if 'mode' in params:
+            mode = params['mode'][0]
+            if mode == 'conf':
+                return web.json_response(dict(success=True, maxFileSize=2147483648))
         multipart = await request.post()
-        upload = multipart['upload']
+        upload = multipart['file']
         nodesdb = multipart['nodesdb'] if 'nodesdb' in multipart else params['nodesdb'][0]
         x = s.odbget(database=nodesdb)
         x = s.odbreload()
@@ -1612,7 +1648,7 @@ class KairosWorker:
         s.odbrun("delete vertex objects where id='" + id + "' and type = '" + type + "'")
         rid = s.odb.record_create(clusterid, {'@objects': dict(id=id, type=type, filename=filename, content=content.decode())})._rid
         s.odbrun("update objects set created=sysdate() where @rid=" + rid)
-        return web.json_response(dict(success=True, status='server'))
+        return web.json_response(dict(success=True, state=True, name=filename))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -1837,15 +1873,19 @@ class KairosWorker:
     def gettree(s, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
-        continued = True if 'continue' in params and params['continue'][0] == 'true' else False
-        if continued:
-            parent = params['parent'][0]
-            result = dict(parent=parent, data=[])
-            for node in s.igetnodes(nodesdb=nodesdb, parent=parent, countchildren=True):
-                result['data'].append(dict(id=node['id'], value=node['name'], icon=node['icon'], webix_kids=node['kids']))
-        else:
+        parent = params['id'][0]
+        root = True if parent == '0' else False
+        if root:
             root = s.igetnodes(nodesdb=nodesdb, root=True)[0]
-            result = dict(parent=None, data=[dict(id=root['id'], value='/', icon=root['icon'], webix_kids=1)])
+            (icon_file, icon_opened, icon_closed) = ficon(root)
+            result = [dict(kids=True, id=root['id'].replace('#',''), text='/', icons=dict(file=icon_file, folder_opened=icon_opened, folder_closed=icon_closed))]
+        else:
+            children = []
+            for node in s.igetnodes(nodesdb=nodesdb, parent=parent, countchildren=True):
+                (icon_file, icon_opened, icon_closed) = ficon(node)
+                kids = True if node['kids'] > 0 else False
+                children.append(dict(kids=kids, id=node['id'].replace('#',''), text=node['name'], icons=dict(file=icon_file, folder_opened=icon_opened, folder_closed=icon_closed)))
+            result = [dict(id=parent, items=children)]
         return web.json_response(result)
 
     @intercept_logging_and_internal_error
