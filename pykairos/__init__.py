@@ -23,17 +23,17 @@ global kairos
 kairos=dict()
 
 def ficon (node):
-    icon_file = "fa fa-folder-o btnblack"
-    icon_opened = "fa fa-folder-open-o btnblack"
-    icon_closed = "fa fa-folder-o btnblack"
+    icon_file = "fa fa-folder btnblack"
+    icon_opened = "fa fa-folder-open btnblack"
+    icon_closed = "fa fa-folder btnblack"
     if node['icon'] == 'T':
-        icon_file = "fa fa-trash-o btnblack"
+        icon_file = "fa fa-trash btnblack"
         icon_opened = "fa fa-trash-o btnblack"
-        icon_closed = "fa fa-trah-o btnblack"
+        icon_closed = "fa fa-trash btnblack"
     if node['icon'] == 'B':
-        icon_file = "fa fa-folder-o btnblue"
-        icon_opened = "fa fa-folder-open-o btnblue"
-        icon_closed = "fa fa-folder-o btnblue"
+        icon_file = "fa fa-folder btnblue"
+        icon_opened = "fa fa-folder-open btnblue"
+        icon_closed = "fa fa-folder btnblue"
 
     return (icon_file, icon_opened, icon_closed)
 
@@ -1654,30 +1654,33 @@ class KairosWorker:
     @trace_call
     async def uploadnode(s, request):
         params = parse_qs(request.query_string)
+        if 'mode' in params:
+            mode = params['mode'][0]
+            if mode == 'conf':
+                return web.json_response(dict(success=True, maxFileSize=2147483648))
         multipart = await request.post()
-        upload = multipart['upload']
+        upload = multipart['file']
         nodesdb = multipart['nodesdb'] if 'nodesdb' in multipart else params['nodesdb'][0]
         systemdb = multipart['systemdb'] if 'systemdb' in multipart else params['systemdb'][0]
         id = multipart['id'] if 'id' in multipart else params['id'][0] if 'id' in params else None
         filename = urllib.parse.unquote(upload.filename)
-        if id == None:
-            (base, ext) = os.path.splitext(filename)
-            while ext != '': (base, ext) = os.path.splitext(base)
-            nodes = base.split('_')
-            node = s.igetnodes(nodesdb=nodesdb, root=True)[0]
-            for d in nodes:
-                lnode = s.igetnodes(nodesdb=nodesdb, parent=node['id'], name=d)
-                if len(lnode) == 0:
-                    child = s.icreatenode(nodesdb, id=node['id'])
-                    s.odbget(database=nodesdb)
-                    s.odbrun("update nodes set name ='" + d + "' where @rid = " + child )
-                    node = s.igetnodes(nodesdb=nodesdb, id=child)[0]
-                else:
-                    node = lnode[0]
-            id = node['id']
+        node = s.igetnodes(nodesdb=nodesdb, root=True)[0] if id == None else s.igetnodes(nodesdb=nodesdb, id=id)[0]
+        (base, ext) = os.path.splitext(filename)
+        while ext != '': (base, ext) = os.path.splitext(base)
+        nodes = base.split('_')
+        for d in nodes:
+            lnode = s.igetnodes(nodesdb=nodesdb, parent=node['id'], name=d)
+            if len(lnode) == 0:
+                child = s.icreatenode(nodesdb, id=node['id'])
+                s.odbget(database=nodesdb)
+                s.odbrun("update nodes set name ='" + d + "' where @rid = " + child )
+                node = s.igetnodes(nodesdb=nodesdb, id=child)[0]
+            else:
+                node = lnode[0]
+        id = node['id']
         s.ideletesource(id, nodesdb=nodesdb)
         s.icreatesource(id, nodesdb=nodesdb, systemdb=systemdb, stream=upload.file, filename=filename)
-        return web.json_response(dict(success=True, status='server'))
+        return web.json_response(dict(success=True, state=True, name=filename))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -1881,11 +1884,12 @@ class KairosWorker:
             result = [dict(kids=True, id=root['id'].replace('#',''), text='/', icons=dict(file=icon_file, folder_opened=icon_opened, folder_closed=icon_closed))]
         else:
             children = []
+            getkey = lambda x: x['text']
             for node in s.igetnodes(nodesdb=nodesdb, parent=parent, countchildren=True):
                 (icon_file, icon_opened, icon_closed) = ficon(node)
                 kids = True if node['kids'] > 0 else False
                 children.append(dict(kids=kids, id=node['id'].replace('#',''), text=node['name'], icons=dict(file=icon_file, folder_opened=icon_opened, folder_closed=icon_closed)))
-            result = [dict(id=parent, items=children)]
+            result = [dict(id=parent, items=sorted(children, key=getkey))]
         return web.json_response(result)
 
     @intercept_logging_and_internal_error

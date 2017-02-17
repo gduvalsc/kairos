@@ -83,17 +83,6 @@ dhtmlxEvent(window,"load",function(){
         cont = null;
     };
 
-    dhtmlXTreeView.prototype.getItem = function(id) {
-        return this.items[id];
-    };
-
-    dhtmlXTreeView.prototype.forEachItem = function(f) {
-        _.each(this.items, function (v, x) {
-            f(x);
-        });
-    };
-
-
     var makeURL = function (s, p) {
         var esc = encodeURIComponent;
         var query = Object.keys(p).map(k => esc(k) + '=' + esc(p[k])).join('&');
@@ -956,11 +945,33 @@ dhtmlxEvent(window,"load",function(){
 				{id: "delete_node", text: "Delete node"},
 				{id: "refresh_node", text: "Refresh node"},
 				{type: "separator"},
+				{id: "open_node", text: "Open node"},
+				{type: "separator"},
+				{id: "execute_query", text: "Execute query"},
+				{id: "run_chart", text: "Run chart"},
+				{id: "run_choice", text: "Run choice"},
+				{type: "separator"},
+				{id: "download", text: "Download"},
+				{id: "display_member", text: "Display member"},
+				{id: "unload", text: "Unload"},
+				{type: "separator"},
+				{id: "empty_trash", text: "Empty trash"},
 			]
         });
         contextmenu.setIconset("awesome");
         contextmenu.setItemImage("upload","fa fa-upload");
         contextmenu.setItemImage("create_node","fa fa-magic");
+        contextmenu.setItemImage("rename_node","fa fa-pencil");
+        contextmenu.setItemImage("delete_node","fa fa-trash");
+        contextmenu.setItemImage("refresh_node","fa fa-refresh");
+        contextmenu.setItemImage("open_node","fa fa-hand-o-right");
+        contextmenu.setItemImage("execute_query","fa fa-question");
+        contextmenu.setItemImage("run_chart","fa fa-line-chart");
+        contextmenu.setItemImage("run_choice","fa fa-sitemap");
+        contextmenu.setItemImage("download","fa fa-download");
+        contextmenu.setItemImage("display_member","fa fa-file-text");
+        contextmenu.setItemImage("unload","fa fa-cloud-download");
+        contextmenu.setItemImage("empty_trash","fa fa-trash-o");
         tree.attachEvent("onContextMenu", function(id, x, y, ev){
 			contextmenu.setItemText("itemText", "Node: " + tree.getItemText(id));
             contextmenu.showContextMenu(x, y);
@@ -972,6 +983,9 @@ dhtmlxEvent(window,"load",function(){
             onclick = contextmenu.attachEvent("onClick", function (fid) {
                 if (fid === "upload") {
                     log.debug("Upload on item:" + id + " (" + tree.getItemText(id) + ")");
+                    upload(makeURL("uploadnode", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: '#' + id}), function () {
+                        tree.loadStruct("gettree?nodesdb=" + desktop.settings.nodesdb + "&id=" + id);
+                    });
                 }
                 if (fid === "create_node") {
                     log.debug("Create node within item:" + id + " (" + tree.getItemText(id) + ")");
@@ -1008,7 +1022,30 @@ dhtmlxEvent(window,"load",function(){
                 }
                 if (fid === "refresh_node") {
                     log.debug("Refresh node:" + id + " (" + tree.getItemText(id) + ")");
+                    _.each(tree.getSubItems(id), function (e) {
+                        tree.deleteItem(e);
+                    })
                     tree.loadStruct("gettree?nodesdb=" + desktop.settings.nodesdb + "&id=" + id);
+                }
+                if (fid === "download") {
+                    log.debug("Download at node:" + id + " (" + tree.getItemText(id) + ")");
+                    window.location.href = '/downloadsource?id=' + encodeURIComponent('#' + id) + '&nodesdb=' + desktop.settings.nodesdb;
+                }
+                if (fid === "display_member") {
+                    log.debug("Display member at node:" + id + " (" + tree.getItemText(id) + ")");
+                }
+                if (fid === "unload") {
+                    log.debug("Unload at node:" + id + " (" + tree.getItemText(id) + ")");
+                    window.location.href = '/unload?id=' + encodeURIComponent('#' + id) + '&nodesdb=' + desktop.settings.nodesdb + '&systemdb=' + desktop.settings.systemdb;
+                }
+                if (fid === "empty_trash") {
+                    log.debug("Empty trash");
+                    waterfall([
+                        ajax_get_first_in_async_waterfall("emptytrash", {nodesdb: desktop.settings.nodesdb}),
+                        function () {
+                            //refresh trash (require to have trash node id)
+                        }
+                    ]);
                 }
             });
             return false;
