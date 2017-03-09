@@ -38,20 +38,20 @@ dhtmlxEvent(window,"load",function(){
 
     document.onclick = function (e) {
         e = e || window.event;
-        desktop.mousevent = e;
+        desktop.mouseevent = e;
         log.debug("onclick");
     }
 
     document.ondblclick = function (e) {
         e = e || window.event;
-        desktop.mousevent = e;
+        desktop.mouseevent = e;
         log.debug("ondblclick");
 
     }
 
     document.onmousedown = function (e) {
         e = e || window.event;
-        desktop.mousevent = e;
+        desktop.mouseevent = e;
         desktop.click = null;
         log.debug("onmousedown");
 
@@ -59,7 +59,7 @@ dhtmlxEvent(window,"load",function(){
 
     document.onmouseup = function (e) {
         e = e || window.event;
-        desktop.mousevent = e;
+        desktop.mouseevent = e;
         desktop.click = e;
         log.debug("onmouseup");
     }
@@ -1034,13 +1034,13 @@ dhtmlxEvent(window,"load",function(){
             var collections = {type: "fieldset", label: "Collections", list: collectionsproperties};
 
             var nodeproperties = [general];
-            if (_.contains(["A", "N"], type)) {
+            if (_.contains(["A", "L", "N"], type)) {
                 nodeproperties.push(aggregator);
             }
             if (_.contains(["D", "N"], type)) {
                 nodeproperties.push(livenode);
             }
-            if (_.contains(["A", "C"], type)) {
+            if (_.contains(["A", "C", "L"], type)) {
                 nodeproperties.push(producers);
             }
             if (_.contains(["A", "B"], type)) {
@@ -1145,7 +1145,7 @@ dhtmlxEvent(window,"load",function(){
             }), function(l) {
                 listliveobjects.push({text: l.id, value: l.id, selected: node.datasource.type === "N" ? l.id === undefined ? true : false : l.id === node.datasource.liveobject ? true : false});
             });
-            var h = node.datasource.type === "A" ? 1120 : node.datasource.type === "B" ? 610 : node.datasource.type === "C" ? 540 : node.datasource.type === "N" ? 450 : node.datasource.type === "T" ? 175 : undefined;
+            var h = node.datasource.type === "A" ? 1120 : node.datasource.type === "B" ? 610 : node.datasource.type === "C" ? 540 : node.datasource.type === "D" ? 260 : node.datasource.type === "N" ? 450 : node.datasource.type === "T" ? 175 : undefined;
             var wn = create_window("manage_node", desktop.settings.nodesdb + ':' + tree.getPath(id), undefined, h);
             var wf = genform(wn, listaggregators, listliveobjects);
             wn.attachEvent("onResizeFinish", function () {
@@ -1237,7 +1237,7 @@ dhtmlxEvent(window,"load",function(){
         });
         tree.attachEvent("onBeforeDrop", function (id, pid) {
             var ret = true;
-            if (desktop.mousevent.ctrlKey === false && desktop.mousevent.altKey === false && pid !== startpid) {
+            if (desktop.mouseevent.ctrlKey === false && desktop.mouseevent.altKey === false && desktop.mouseevent.metaKey === false && pid !== startpid) {
                 if (tree.getUserData(pid, "type") !== "T") {
                     _.each(tree.getSubItems(pid), function (e) {
                         if (tree.getItemText(id) === tree.getItemText(e)) {
@@ -1247,7 +1247,7 @@ dhtmlxEvent(window,"load",function(){
                     });
                 }
             }
-            if (desktop.mousevent.altKey) {
+            if (desktop.mouseevent.altKey) {
                 if (_.contains(["C", "L", "N", "T"], tree.getUserData(id, "type"))) {
                     ret = false;
                 }
@@ -1257,7 +1257,7 @@ dhtmlxEvent(window,"load",function(){
                 xid = tree.getParentId(id);
                 yid = tree.getParentId(pid);
             }
-            if (desktop.mousevent.ctrlKey) {
+            if (desktop.mouseevent.ctrlKey) {
                 if (_.contains(["C", "L", "N", "T"], tree.getUserData(id, "type"))) {
                     ret = false;
                 }
@@ -1267,17 +1267,27 @@ dhtmlxEvent(window,"load",function(){
                 xid = tree.getParentId(id);
                 yid = tree.getParentId(pid);
             }
+            if (desktop.mouseevent.metaKey) {
+                if (_.contains(["A", "B", "C", "D", "L", "T"], tree.getUserData(id, "type"))) {
+                    ret = false;
+                }
+                if (_.contains(["A", "B", "C", "D", "T"], tree.getUserData(pid, "type"))) {
+                    ret = false;
+                }
+                xid = tree.getParentId(id);
+                yid = tree.getParentId(pid);
+            }
             return ret;
         });
         tree.attachEvent("onDrop", function (id, pid) {
-            if (desktop.mousevent.ctrlKey === false && desktop.mousevent.altKey === false && pid !== startpid) {
+            if (desktop.mouseevent.ctrlKey === false && desktop.mouseevent.altKey === false && desktop.mouseevent.metaKey === false && pid !== startpid) {
                 waterfall([
                     ajax_get_first_in_async_waterfall("movenode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid}),
                     function () {
                     }
                 ]);
             }
-            if (desktop.mousevent.altKey) {
+            if (desktop.mouseevent.altKey) {
                 waterfall([
                     ajax_get_first_in_async_waterfall("aggregateaddnode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid, path: tree.getPath(id)}),
                     function () {
@@ -1293,7 +1303,7 @@ dhtmlxEvent(window,"load",function(){
                     }
                 ]);
             }
-            if (desktop.mousevent.ctrlKey) {
+            if (desktop.mouseevent.ctrlKey) {
                 waterfall([
                     ajax_get_first_in_async_waterfall("compareaddnode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid, path: tree.getPath(id)}),
                     function () {
@@ -1309,7 +1319,22 @@ dhtmlxEvent(window,"load",function(){
                     }
                 ]);
             }
-
+            if (desktop.mouseevent.metaKey) {
+                waterfall([
+                    ajax_get_first_in_async_waterfall("linkfathernode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid, path: tree.getPath(id)}),
+                    function () {
+                        waterfall([
+                            ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: '#' + pid}),
+                            function (x) {
+                                curnode = x;
+                                setTimeout(function () {tree.refreshItem(yid)}, 0);
+                                setTimeout(function () {tree.refreshItem(xid)}, 0);
+                                menu.clearAll();
+                            }
+                        ]);
+                    }
+                ]);
+            }
         });
         tree.attachEvent("onXLE", function () {
             if (rootid !== null && trashid === null) {

@@ -23,33 +23,33 @@ global kairos
 kairos=dict()
 
 def ficon (node):
-    icon_file = "fa fa-folder btnorange"
-    icon_opened = "fa fa-folder-open btnorange"
-    icon_closed = "fa fa-folder btnorange"
+    icon_file = "fa fa-folder btnn"
+    icon_opened = "fa fa-folder-open btnn"
+    icon_closed = "fa fa-folder btnn"
     if node['icon'] == 'T':
-        icon_file = "fa fa-trash btnorange"
-        icon_opened = "fa fa-trash-o btnorange"
-        icon_closed = "fa fa-trash btnorange"
+        icon_file = "fa fa-trash btnt"
+        icon_opened = "fa fa-trash-o btnt"
+        icon_closed = "fa fa-trash btnt"
     if node['icon'] == 'B':
-        icon_file = "fa fa-folder btnblue"
-        icon_opened = "fa fa-folder-open btnblue"
-        icon_closed = "fa fa-folder btnblue"
+        icon_file = "fa fa-folder btnb"
+        icon_opened = "fa fa-folder-open btnb"
+        icon_closed = "fa fa-folder btnb"
     if node['icon'] == 'A':
-        icon_file = "fa fa-folder btnred"
-        icon_opened = "fa fa-folder-open btnred"
-        icon_closed = "fa fa-folder btnred"
+        icon_file = "fa fa-folder btna"
+        icon_opened = "fa fa-folder-open btna"
+        icon_closed = "fa fa-folder btna"
     if node['icon'] == 'C':
-        icon_file = "fa fa-folder btngreen"
-        icon_opened = "fa fa-folder-open btngreen"
-        icon_closed = "fa fa-folder btngreen"
+        icon_file = "fa fa-folder btnc"
+        icon_opened = "fa fa-folder-open btnc"
+        icon_closed = "fa fa-folder btnc"
     if node['icon'] == 'L':
-        icon_file = "fa fa-folder btngray"
-        icon_opened = "fa fa-folder-open btngray"
-        icon_closed = "fa fa-folder btngray"
+        icon_file = "fa fa-folder btnl"
+        icon_opened = "fa fa-folder-open btnl"
+        icon_closed = "fa fa-folder btnl"
     if node['icon'] == 'D':
-        icon_file = "fa fa-database btnblack"
-        icon_opened = "fa fa-database btnblack"
-        icon_closed = "fa fa-database btnblack"
+        icon_file = "fa fa-database btnd"
+        icon_opened = "fa fa-database btnd"
+        icon_closed = "fa fa-database btnd"
     return (icon_file, icon_opened, icon_closed)
 
 def trace_call(func):
