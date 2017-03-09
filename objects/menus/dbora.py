@@ -93,8 +93,6 @@ class UserObject(dict):
                     "itemswidth": 300,
                     "label": "SQL requests",
                     "items": [
-                        { "type": "menuitem", "label": "SQL overview", "action": "displayout", "layout": "DBORASQL" },
-                        { "type": "separator"},
                         { "type": "menuitem", "label": "Top SQL by Elapsed time", "action": "dispchart", "chart": "DBORASQE" },
                         { "type": "menuitem", "label": "Top SQL by CPU time", "action": "dispchart", "chart": "DBORASQC" },
                         { "type": "menuitem", "label": "Top SQL by Gets", "action": "dispchart", "chart": "DBORASQG" },

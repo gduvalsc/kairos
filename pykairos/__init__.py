@@ -23,18 +23,33 @@ global kairos
 kairos=dict()
 
 def ficon (node):
-    icon_file = "fa fa-folder btnblack"
-    icon_opened = "fa fa-folder-open btnblack"
-    icon_closed = "fa fa-folder btnblack"
+    icon_file = "fa fa-folder btnorange"
+    icon_opened = "fa fa-folder-open btnorange"
+    icon_closed = "fa fa-folder btnorange"
     if node['icon'] == 'T':
-        icon_file = "fa fa-trash btnblack"
-        icon_opened = "fa fa-trash-o btnblack"
-        icon_closed = "fa fa-trash btnblack"
+        icon_file = "fa fa-trash btnorange"
+        icon_opened = "fa fa-trash-o btnorange"
+        icon_closed = "fa fa-trash btnorange"
     if node['icon'] == 'B':
         icon_file = "fa fa-folder btnblue"
         icon_opened = "fa fa-folder-open btnblue"
         icon_closed = "fa fa-folder btnblue"
-
+    if node['icon'] == 'A':
+        icon_file = "fa fa-folder btnred"
+        icon_opened = "fa fa-folder-open btnred"
+        icon_closed = "fa fa-folder btnred"
+    if node['icon'] == 'C':
+        icon_file = "fa fa-folder btngreen"
+        icon_opened = "fa fa-folder-open btngreen"
+        icon_closed = "fa fa-folder btngreen"
+    if node['icon'] == 'L':
+        icon_file = "fa fa-folder btngray"
+        icon_opened = "fa fa-folder-open btngray"
+        icon_closed = "fa fa-folder btngray"
+    if node['icon'] == 'D':
+        icon_file = "fa fa-database btnblack"
+        icon_opened = "fa fa-database btnblack"
+        icon_closed = "fa fa-database btnblack"
     return (icon_file, icon_opened, icon_closed)
 
 def trace_call(func):
@@ -1817,7 +1832,7 @@ class KairosWorker:
         tabx = s.odbquery("select filename, content from objects where id='" + id + "' and type='" + type + "'")
         for rx in tabx: item = rx.oRecordData
         stream = binascii.a2b_base64(item['content'])
-        return web.Response(headers=MultiDict({'Content-Disposition': 'Attachment;filename=' + item['filename']}), body=stream)
+        return web.Response(headers=MultiDict({'Content-Disposition': 'Attachment;filename="' + item['filename'] + '"'}), body=stream)
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -1829,7 +1844,7 @@ class KairosWorker:
         location = node['datasource']['location']
         filename = s.igetpath(nodesdb=nodesdb, id=id)[1:].replace('/','_')+'.zip'
         stream = open(location, 'rb').read()
-        return web.Response(headers=MultiDict({'Content-Disposition': 'Attachment;filename=' + filename}), body=stream)
+        return web.Response(headers=MultiDict({'Content-Disposition': 'Attachment;filename="' + filename + '"'}), body=stream)
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -1878,17 +1893,18 @@ class KairosWorker:
         nodesdb = params['nodesdb'][0]
         parent = params['id'][0]
         root = True if parent == '0' else False
+        ftype = lambda x: x['icon']
         if root:
             root = s.igetnodes(nodesdb=nodesdb, root=True)[0]
             (icon_file, icon_opened, icon_closed) = ficon(root)
-            result = [dict(kids=True, id=root['id'].replace('#',''), text='/', icons=dict(file=icon_file, folder_opened=icon_opened, folder_closed=icon_closed))]
+            result = [dict(kids=True, id=root['id'].replace('#',''), text='/', userdata=dict(type=ftype(root)), icons=dict(file=icon_file, folder_opened=icon_opened, folder_closed=icon_closed))]
         else:
             children = []
             getkey = lambda x: x['text']
             for node in s.igetnodes(nodesdb=nodesdb, parent=parent, countchildren=True):
                 (icon_file, icon_opened, icon_closed) = ficon(node)
                 kids = True if node['kids'] > 0 else False
-                children.append(dict(kids=kids, id=node['id'].replace('#',''), text=node['name'], icons=dict(file=icon_file, folder_opened=icon_opened, folder_closed=icon_closed)))
+                children.append(dict(kids=kids, id=node['id'].replace('#',''), text=node['name'], userdata=dict(type=ftype(node)), icons=dict(file=icon_file, folder_opened=icon_opened, folder_closed=icon_closed)))
             result = [dict(id=parent, items=sorted(children, key=getkey))]
         return web.json_response(result)
 
@@ -2253,15 +2269,18 @@ class KairosWorker:
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
         id = params['id'][0]
+        logging.info("Unloading node: " + id + " ...")
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
         path = s.igetpath(nodesdb=nodesdb, id=id)
         archive = path.replace('/', '_')[1:] + '-unload.zip'
         fname = '/var/tmp/' + archive
         zip = Arcfile(fname, 'w:zip')
         cut = 10000
+        done = s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
+        node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]        
         hcache = Cache(node['datasource']['cache']['dbname'])
         for collection in node['datasource']['collections']:
-            done = s.ibuildcollectioncache(node, collections={collection}, systemdb=systemdb, nodesdb=nodesdb)
+            logging.info("Unloading collection: " + collection + " ...")
             d = dict(collection=collection, desc=dict(), data=[])
             desc = hcache.desc(table=collection)
             request = 'select '
@@ -2280,14 +2299,18 @@ class KairosWorker:
                         if k != 'kairos_nodeid': r[k] = x[k]
                     d['data'].append(r)
                     if nbrec == cut:
+                        logging.info("Writing file: " + collection + str(recordset) + " ...")
                         zip.write(collection + str(recordset), json.dumps(d, sort_keys=True, indent=4))
                         recordset += 1
                         d['data']=[]
                         nbrec = 0
-            if nbrec > 0: zip.write(collection + str(recordset), json.dumps(d, sort_keys=True, indent=4))
+            if nbrec > 0: 
+                logging.info("Writing file: " + collection + str(recordset) + " ...")
+                zip.write(collection + str(recordset), json.dumps(d, sort_keys=True, indent=4))
         hcache.disconnect()
         zip.close()
-        return web.Response(headers=MultiDict({'Content-Disposition': 'Attachment;filename=' + archive}), body=open(fname, 'rb').read())
+        logging.info("Unloading node: " + id + ", file is ready to download !")
+        return web.Response(headers=MultiDict({'Content-Disposition': 'Attachment;filename="' + archive + '"'}), body=open(fname, 'rb').read())
     
     @intercept_logging_and_internal_error
     @trace_call

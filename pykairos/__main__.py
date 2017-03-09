@@ -63,6 +63,7 @@ if args.launcher:
     gunicorn.extend(['worker'])
     notifier = ['python3']
     notifier.extend(['-m', 'pykairos', '--notifier'])
+    os.system('rm -fr /var/log/gunicorn.pid')
     catchrun(gunicorn, notifier)
 if args.bootstrap:
     print('O', end='', flush=True)

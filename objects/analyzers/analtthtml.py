@@ -1,3 +1,4 @@
+import hashlib
 class UserObject(dict):
     def __init__(s):
         object = {
@@ -122,7 +123,7 @@ class UserObject(dict):
                 for y in a.collected[x]:
                     sqlid = y['SQL ID']
                     request = y['SQL Text']
-                    convertid[sqlid] = hashlib.md5(request).hexdigest()
+                    convertid[sqlid] = hashlib.md5(request.encode()).hexdigest()
                     hashid = convertid[sqlid]
                     if a.scope == 'TTSQLTEXT': a.emit('TTSQLTEXT', d, dict(sqlid=sqlid, hashid=hashid, request=request))
             if 'Configuration Parameters' in x:
@@ -160,7 +161,7 @@ class UserObject(dict):
         a.collector[a.cpt]=a.lxmltext(l)
 
     def atdget(s, a, l, g, m):
-        if a.collector.has_key(a.cpt): a.row[a.collector[a.cpt]]=a.lxmltext(l)
+        if a.cpt in a.collector: a.row[a.collector[a.cpt]]=a.lxmltext(l)
 
     def atr(s, a, l, g, m):
         a.reinit = True
