@@ -4,14 +4,11 @@ class UserObject(dict):
             "type": "menu",
             "id": "NMON",
             "tablecondition": "NMONAAA",
-            "icon": "desktop",
+            "icon": "fa fa-desktop",
             "label": "NMON",
-            "menuwidth": 80,
-            "itemswidth": 200,
             "items" : [
                 {
                     "type": "submenu",
-                    "itemswidth": 320,
                     "label": "CPU/LPAR",
                     "items": [
                         { "type": "menuitem", "label": "LPAR CPU overview", "action": "dispchart", "chart": "NMONCPUOV" },
@@ -24,7 +21,6 @@ class UserObject(dict):
                 },
                 {
                     "type": "submenu",
-                    "itemswidth": 200,
                     "label": "Memory",
                     "items": [
                         { "type": "menuitem", "label": "Memory overview", "action": "dispchart", "chart": "NMONMEMOV" },
@@ -33,7 +29,6 @@ class UserObject(dict):
                 },
                 {
                     "type": "submenu",
-                    "itemswidth": 250,
                     "label": "Disks",
                     "items": [
                         { "type": "menuitem", "label": "Disks overview", "action": "dispchart", "chart": "NMONDISKOV" },
@@ -47,7 +42,6 @@ class UserObject(dict):
                 },
                 {
                     "type": "submenu",
-                    "itemswidth": 200,
                     "label": "IO adapters",
                     "items": [
                         { "type": "menuitem", "label": "Read activity", "action": "dispchart", "chart": "NMONIOADAPTRA" },
@@ -57,7 +51,6 @@ class UserObject(dict):
                 },
                 {
                     "type": "submenu",
-                    "itemswidth": 200,
                     "label": "Network adapters",
                     "items": [
                         { "type": "menuitem", "label": "Read activity", "action": "dispchart", "chart": "NMONNETRA" },
@@ -66,7 +59,6 @@ class UserObject(dict):
                 },
                 {
                     "type": "submenu",
-                    "itemswidth": 200,
                     "label": "Asynchronous IOs",
                     "items": [
                         { "type": "menuitem", "label": "Asynchronous IO activity", "action": "dispchart", "chart": "NMONPROCAIO" },
@@ -74,7 +66,6 @@ class UserObject(dict):
                 },
                 {
                     "type": "submenu",
-                    "itemswidth": 200,
                     "label": "JFS Filespace",
                     "items": [
                         { "type": "menuitem", "label": "Filespace usage", "action": "dispchart", "chart": "NMONJFSFILE" },
@@ -82,7 +73,6 @@ class UserObject(dict):
                 },
                 {
                     "type": "submenu",
-                    "itemswidth": 200,
                     "label": "Paging",
                     "items": [
                         { "type": "menuitem", "label": "Paging activity", "action": "dispchart", "chart": "NMONPAGE" },
@@ -90,7 +80,6 @@ class UserObject(dict):
                 },
                 {
                     "type": "submenu",
-                    "itemswidth": 200,
                     "label": "System",
                     "items": [
                         { "type": "menuitem", "label": "All statistics", "action": "dispchart", "chart": "NMONSYS" },
@@ -98,7 +87,6 @@ class UserObject(dict):
                 },
                 {
                     "type": "submenu",
-                    "itemswidth": 200,
                     "label": "Top",
                     "items": [
                         { "type": "menuitem", "label": "Top CPU processes", "action": "dispchart", "chart": "NMONTOPCPU" },

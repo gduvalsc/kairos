@@ -33,27 +33,22 @@ dhtmlxEvent(window,"load",function(){
     document.onkeydown = function (e) {
         e = e || window.event;
         desktop.keydown = e;
-        log.debug("onkeydown");
     };
 
     document.onclick = function (e) {
         e = e || window.event;
         desktop.mouseevent = e;
-        log.debug("onclick");
     }
 
     document.ondblclick = function (e) {
         e = e || window.event;
         desktop.mouseevent = e;
-        log.debug("ondblclick");
-
     }
 
     document.onmousedown = function (e) {
         e = e || window.event;
         desktop.mouseevent = e;
         desktop.click = null;
-        log.debug("onmousedown");
 
     }
 
@@ -61,7 +56,6 @@ dhtmlxEvent(window,"load",function(){
         e = e || window.event;
         desktop.mouseevent = e;
         desktop.click = e;
-        log.debug("onmouseup");
     }
 
     dhtmlXLayoutCell.prototype.setBI = function(url){
@@ -511,7 +505,7 @@ dhtmlxEvent(window,"load",function(){
                     {type: "select", label: "Logging", options: listlogging, name: "logging"},
                     {type: "select", label: "Log lines to display", options: listloglines, name: "loglines"},
                     {type: "select", label: "Request labels limit", options: listtop, name: "top"},
-                    {type: "select", label: "Keycode", options: listkeycode, name: "keycode"}
+                    //{type: "select", label: "Keycode", options: listkeycode, name: "keycode"}
                 ]},
                 {type: "button", value: "Update settings", name: "updatesettings", width: 450}
             ];
@@ -519,7 +513,8 @@ dhtmlxEvent(window,"load",function(){
             settingsform.cross_and_load(settingsdata);
             settingsform.attachEvent("onButtonClick", function(){
                 waterfall([
-                    ajax_get_first_in_async_waterfall("updatesettings", {user: desktop.user, systemdb: settingsform.getItemValue("systemdb"), nodesdb: settingsform.getItemValue("nodesdb"), loglines: settingsform.getItemValue("loglines"), template: settingsform.getItemValue("template"), colors: settingsform.getItemValue("color"), wallpaper: settingsform.getItemValue("wallpaper"), top: settingsform.getItemValue("top"), keycode: settingsform.getItemValue("keycode"), plotorientation: settingsform.getItemValue("plotorientation"), logging: settingsform.getItemValue("logging")}),
+                    //ajax_get_first_in_async_waterfall("updatesettings", {user: desktop.user, systemdb: settingsform.getItemValue("systemdb"), nodesdb: settingsform.getItemValue("nodesdb"), loglines: settingsform.getItemValue("loglines"), template: settingsform.getItemValue("template"), colors: settingsform.getItemValue("color"), wallpaper: settingsform.getItemValue("wallpaper"), top: settingsform.getItemValue("top"), keycode: settingsform.getItemValue("keycode"), plotorientation: settingsform.getItemValue("plotorientation"), logging: settingsform.getItemValue("logging")}),
+                    ajax_get_first_in_async_waterfall("updatesettings", {user: desktop.user, systemdb: settingsform.getItemValue("systemdb"), nodesdb: settingsform.getItemValue("nodesdb"), loglines: settingsform.getItemValue("loglines"), template: settingsform.getItemValue("template"), colors: settingsform.getItemValue("color"), wallpaper: settingsform.getItemValue("wallpaper"), top: settingsform.getItemValue("top"), keycode: 0, plotorientation: settingsform.getItemValue("plotorientation"), logging: settingsform.getItemValue("logging")}),
                     function (x) {
                         waterfall([
                             ajax_get_first_in_async_waterfall("getsettings", {user: desktop.user}),
@@ -1217,7 +1212,9 @@ dhtmlxEvent(window,"load",function(){
         var xid = null;
         var yid = null;
         var potentialmenus = null;
-        var menu = wexp.attachMenu({});
+        var menu = wexp.attachMenu({
+            iconset: "awesome"
+        });
         var tree = wexp.attachTreeView({
             dnd: true,
             multiselect: true,
@@ -1388,7 +1385,6 @@ dhtmlxEvent(window,"load",function(){
         contextmenu.setItemImage("unload","fa fa-cloud-download", "fa fa-cloud-download");
         contextmenu.setItemImage("empty_trash","fa fa-trash-o", "fa fa-trash-o");
         menu.attachEvent("onClick", function(id) {
-            console.log(menu.actions[id]);
             if (menu.actions[id].action === "dispchart") {
                 dispchart(curnode, menu.actions[id].chart);
             }
@@ -1440,6 +1436,7 @@ dhtmlxEvent(window,"load",function(){
                                 if (_.contains(_.keys(node.datasource.collections), m.tablecondition)) {
                                     if (menu.getItemType(m.id) === null) {
                                         menu.addNewSibling(null, m.id, m.label);
+                                        menu.setItemImage(m.id, m.icon, m.icon);
                                         gensubmenus(menu, m.items, m.id);
                                     }
                                 }
@@ -1586,7 +1583,6 @@ dhtmlxEvent(window,"load",function(){
         }
         wchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto"></div>');
         var prepare_and_draw = function(x, q) {
-            console.log(chart, uniquecid, layoutpiece, wchart);
             log.debug('Preparing chart:' + chart);
             var g = new KairosCharter.Chart({width: wchart.cell.clientWidth - 3, height: wchart.cell.clientHeight - 3}, desktop.settings.logging);
             wchart.kairosg = g;

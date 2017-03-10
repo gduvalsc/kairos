@@ -4,14 +4,11 @@ class UserObject(dict):
             "type": "menu",
             "id": "BO",
             "tablecondition": "BO",
-            "icon": "line-chart",
+            "icon": "fa fa-line-chart",
             "label": "Business Objects",
-            "menuwidth": 150,
-            "itemswidth": 200,
             "items" : [
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Reports",
                     "items": [
                         { "type": "menuitem", "label": "Top reports", "action": "dispchart", "chart": "BOTOPREP" },
@@ -23,7 +20,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Requests",
                     "items": [
                         { "type": "menuitem", "label": "Top requests", "action": "dispchart", "chart": "BOTOPREQ" },
@@ -32,7 +28,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Users",
                     "items": [
                         { "type": "menuitem", "label": "Top users", "action": "dispchart", "chart": "BOTOPUSR" },

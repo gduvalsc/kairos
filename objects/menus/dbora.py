@@ -4,14 +4,11 @@ class UserObject(dict):
             "type": "menu",
             "id": "DBORA",
             "tablecondition": "DBORAMISC",
-            "icon": "database",
+            "icon": "fa fa-database",
             "label": "Oracle Database",
-            "menuwidth": 150,
-            "itemswidth": 200,
             "items" : [
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Summary",
                     "items": [
                         { "type": "menuitem", "label": "DB CPU & Wait", "action": "dispchart", "chart": "DBORASUM", "keyfunc": "G" },
@@ -26,7 +23,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Wait events",
                     "items": [
                         { "type": "menuitem", "label": "Top wait events", "action": "dispchart", "chart": "DBORAWEV", "keyfunc": "W" },
@@ -41,7 +37,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Statistics",
                     "items": [
                         { "type": "menuitem", "label": "Logons", "action": "dispchart", "chart": "DBORALOGONS" },
@@ -68,7 +63,6 @@ class UserObject(dict):
                 },
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Redo activity",
                     "items": [
                         { "type": "menuitem", "label": "General redo activity", "action": "dispchart", "chart": "DBORARDO" },
@@ -79,7 +73,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Advisors",
                     "items": [
                         { "type": "menuitem", "label": "Default buffer pool", "action": "dispchart", "chart": "DBORABPAD" },
@@ -90,7 +83,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "SQL requests",
                     "items": [
                         { "type": "menuitem", "label": "Top SQL by Elapsed time", "action": "dispchart", "chart": "DBORASQE" },
@@ -107,7 +99,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Tablespaces & Files",
                     "items": [
                         { "type": "menuitem", "label": "Tablespace reads", "action": "dispchart", "chart": "DBORATBSR" },
@@ -128,7 +119,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 330,
                     "label": "Segments",
                     "items": [
                         { "type": "menuitem", "label": "Top segments by logical reads", "action": "dispchart", "chart": "DBORASGLR" },
@@ -153,7 +143,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 320,
                     "label": "Services",
                     "items": [
                         { "type": "menuitem", "label": "Services - DB Time", "action": "dispchart", "chart": "DBORASVDBT" },
@@ -172,7 +161,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 200,
                     "label": "SGA usage",
                     "items": [
                         { "type": "menuitem", "label": "SGA usage", "action": "dispchart", "chart": "DBORASGA" },
@@ -186,7 +174,6 @@ class UserObject(dict):
                 { "type": "menuitem", "label": "PGA usage", "action": "dispchart", "chart": "DBORAPGA" },
                 {
                     "type": "submenu",
-                    "itemswidth": 200,
                     "label": "Library cache",
                     "items": [
                         { "type": "menuitem", "label": "Reloads", "action": "dispchart", "chart": "DBORALIBR" },
@@ -198,11 +185,9 @@ class UserObject(dict):
                     "type": "submenu",
                     "tablecondition": "ORAHQS",
                     "label": "History",
-                    "itemswidth": 250,
                     "items" : [
                         {
                             "type": "submenu",
-                            "itemswidth": 270,
                             "label": "SQL History",
                             "items": [
                                 { "type": "menuitem", "label": "Top SQL by Elapsed time", "action": "dispchart", "chart": "DBORAHSQLE" },
@@ -237,7 +222,6 @@ class UserObject(dict):
                         },
                         {
                             "type": "submenu",
-                            "itemswidth": 270,
                             "label": "Plan Hash Value History",
                             "items": [
                                 { "type": "menuitem", "label": "Top PHV by Elapsed time", "action": "dispchart", "chart": "DBORAHPHVE" },
@@ -272,7 +256,6 @@ class UserObject(dict):
                         },
                         {
                             "type": "submenu",
-                            "itemswidth": 270,
                             "label": "Force Matching Signature History",
                             "items": [
                                 { "type": "menuitem", "label": "Top FMS by Elapsed time", "action": "dispchart", "chart": "DBORAHFMSE" },
@@ -312,11 +295,9 @@ class UserObject(dict):
                     "type": "submenu",
                     "tablecondition": "ORAHAS",
                     "label": "ASH",
-                    "itemswidth": 200,
                     "items" : [
                         {
                             "type": "submenu",
-                            "itemswidth": 270,
                             "label": "DB Time overview",
                             "items": [
                                 { "type": "menuitem", "label": "DB Time", "action": "dispchart", "chart": "DBORAASHDBTIME" },
@@ -327,14 +308,13 @@ class UserObject(dict):
                         { "type": "separator"},
                         {
                             "type": "submenu",
-                            "itemswidth": 250,
                             "label": "Wait events",
                             "items": [
                                 { "type": "menuitem", "label": " Top foreground wait classes", "action": "dispchart", "chart": "DBORAASHWEC" },
                                 { "type": "menuitem", "label": " Top foreground wait events", "action": "dispchart", "chart": "DBORAASHWEV" },
                                 { "type": "menuitem", "label": " Top background wait events", "action": "dispchart", "chart": "DBORAASHWEB" },
                                 { "type": "separator"},
-                                { "type": "submenu", "itemswidth": 250, "label": " Choose event ...",
+                                { "type": "submenu", "label": " Choose event ...",
                                     "items": [
                                         { "type": "menuitem", "label": " Top sessions", "action": "dispchoice", "choice": "DBORAASHWEVSES" },
                                         { "type": "menuitem", "label": " Top SQL requests", "action": "dispchoice", "choice": "DBORAASHWEVSQL" },
@@ -346,7 +326,6 @@ class UserObject(dict):
                         { "type": "separator"},
                         {
                             "type": "submenu",
-                            "itemswidth": 300,
                             "label": "Sessions",
                             "items": [
                                 { "type": "menuitem", "label": " Top foreground sessions", "action": "dispchart", "chart": "DBORAASHSES" },
@@ -356,7 +335,7 @@ class UserObject(dict):
                                 { "type": "menuitem", "label": " PGA allocated - Top sessions", "action": "dispchart", "chart": "DBORAASHPGA" },
                                 { "type": "menuitem", "label": " Temp space allocated - Top sessions", "action": "dispchart", "chart": "DBORAASHTMP" },
                                 { "type": "separator"},
-                                { "type": "submenu", "itemswidth": 250, "label": " Choose session ...",
+                                { "type": "submenu", "label": " Choose session ...",
                                     "items": [
                                         { "type": "menuitem", "label": " Top wait events", "action": "dispchoice", "choice": "DBORAASHSESWEV" },
                                         { "type": "menuitem", "label": " Top SQL requests", "action": "dispchoice", "choice": "DBORAASHSESSQL" },
@@ -370,7 +349,6 @@ class UserObject(dict):
                         { "type": "separator"},
                         {
                             "type": "submenu",
-                            "itemswidth": 300,
                             "label": "SQL requests",
                             "items": [
                                 { "type": "menuitem", "label": " Top SQL requests", "action": "dispchart", "chart": "DBORAASHSQL" },
@@ -380,7 +358,7 @@ class UserObject(dict):
                                 { "type": "menuitem", "label": " PGA allocated - Top SQL requests", "action": "dispchart", "chart": "DBORAASHPGA2" },
                                 { "type": "menuitem", "label": " Temp space allocated - Top SQL requests", "action": "dispchart", "chart": "DBORAASHTMP2" },
                                 { "type": "separator"},
-                                { "type": "submenu", "itemswidth": 250, "label": " Choose SQL request ...",
+                                { "type": "submenu", "label": " Choose SQL request ...",
                                     "items": [
                                         { "type": "menuitem", "label": " Top wait events", "action": "dispchoice", "choice": "DBORAASHSQLWEV" },
                                         { "type": "menuitem", "label": " Top sessions", "action": "dispchoice", "choice": "DBORAASHSQLSES" },
@@ -396,12 +374,11 @@ class UserObject(dict):
                         { "type": "separator"},
                         {
                             "type": "submenu",
-                            "itemswidth": 300,
                             "label": "Modules",
                             "items": [
                                 { "type": "menuitem", "label": " Top modules", "action": "dispchart", "chart": "DBORAASHMOD" },
                                 { "type": "separator"},
-                                { "type": "submenu", "itemswidth": 250, "label": " Choose module ...",
+                                { "type": "submenu", "label": " Choose module ...",
                                     "items": [
                                         { "type": "menuitem", "label": " Top wait events", "action": "dispchoice", "choice": "DBORAASHMODWEV" },
                                         { "type": "menuitem", "label": " Top sessions", "action": "dispchoice", "choice": "DBORAASHMODSES" },
@@ -413,12 +390,11 @@ class UserObject(dict):
                         { "type": "separator"},
                         {
                             "type": "submenu",
-                            "itemswidth": 300,
                             "label": "Programs",
                             "items": [
                                 { "type": "menuitem", "label": " Top programs", "action": "dispchart", "chart": "DBORAASHPRG" },
                                 { "type": "separator"},
-                                { "type": "submenu", "itemswidth": 250, "label": " Choose program ...",
+                                { "type": "submenu", "label": " Choose program ...",
                                     "items": [
                                         { "type": "menuitem", "label": " Top wait events", "action": "dispchoice", "choice": "DBORAASHPRGWEV" },
                                         { "type": "menuitem", "label": " Top sessions", "action": "dispchoice", "choice": "DBORAASHPRGSES" },
@@ -430,7 +406,6 @@ class UserObject(dict):
                         { "type": "separator"},
                         {
                             "type": "submenu",
-                            "itemswidth": 300,
                             "label": "Machines",
                             "items": [
                                 { "type": "menuitem", "label": " Top machines", "action": "dispchart", "chart": "DBORAASHMAC" },

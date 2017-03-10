@@ -4,7 +4,7 @@ class UserObject(dict):
             "type": "menu",
             "id": "DASH",
             "tablecondition": "ORAHAS",
-            "icon": "database",
+            "icon": "fa fa-database",
             "label": "ASH",
             "items" : [
                 {
