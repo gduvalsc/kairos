@@ -376,6 +376,8 @@ dhtmlxEvent(window,"load",function(){
         var height = h === undefined ? desktop.layout.cells("a").getHeight() / 3 * 2 : h;
         var top = h === undefined ? desktop.layout.cells("a").getHeight() / 6 : (desktop.layout.cells("a").getHeight() - h) / 2;
         var left = w === undefined ? desktop.layout.cells("a").getWidth() / 6 : (desktop.layout.cells("a").getWidth() - w) / 2;
+        height = _.min([height, desktop.layout.cells("a").getHeight()]);
+        top = height === desktop.layout.cells("a").getHeight() ? 0 : top;
         var win = desktop.windows.createWindow(uid, left, top, width, height);
         win.setText(title);
         desktop.toolbar.addListOption("windows", uid, -1, "button", title);
@@ -543,6 +545,7 @@ dhtmlxEvent(window,"load",function(){
             currow = id;
             mot.enableItem("download_object");
             mot.enableItem("delete_object");
+            mot.enableItem("edit_object");
         });
         var upload_object = function () {
             upload(makeURL("uploadobject", {nodesdb: desktop.settings.nodesdb}), refresh);
@@ -558,8 +561,39 @@ dhtmlxEvent(window,"load",function(){
                     mog.deleteRow(currow);
                     mot.disableItem("download_object");
                     mot.disableItem("delete_object");
+                    mot.disableItem("edit_object");
                 }
             ]);
+        };
+        var edit_object = function () {
+            var objid = mog.cellById(currow, 1).getValue();
+            var objtype = mog.cellById(currow, 2).getValue();
+            var objdatabase = mog.cellById(currow,4).getValue();
+            var gendataform = function (w) {
+                var width = w.cell.clientWidth;
+                var height = w.cell.clientHeight;
+                var oid = _.uniqueId('edit');
+                var data = [
+                    {type: "container", name: oid, inputWidth: width - 30, inputHeight: height - 50},
+                    {type: "button", value: "Save", name: "save", width: width - 30}
+                ];
+                return data;
+            };
+            var genform = function (w) {
+                var wf = w.attachForm();
+                wf.cross_and_load(gendataform(w));
+            }
+            var weo = create_window("edit_object", "Edit object - " + objtype + " : " + objid);
+            var wf = genform(weo);
+            weo.attachEvent("onResizeFinish", function () {
+                wf = genform(weo);
+            });
+            weo.attachEvent("onMaximize", function () {
+                wf = genform(weo);
+            });
+            weo.attachEvent("onMinimize", function () {
+                wf = genform(weo);
+            });
         };
 
         var toolbardata = [
@@ -568,6 +602,8 @@ dhtmlxEvent(window,"load",function(){
             {type: "button", id: "download_object", text: "Download object", title: "Download object", enabled: false},
             {type: "separator"},
             {type: "button", id: "delete_object", text: "Delete object", title: "Delete object", enabled: false},
+            {type: "separator"},
+            {type: "button", id: "edit_object", text: "Edit object", title: "Edit object", enabled: false},
         ];
         mot.loadStruct(toolbardata);
         mot.attachEvent("onClick", function(id){
@@ -579,6 +615,9 @@ dhtmlxEvent(window,"load",function(){
             }
             if (id === "delete_object") {
                 delete_object();
+            }
+            if (id === "edit_object") {
+                edit_object();
             }
         });
 
@@ -767,7 +806,7 @@ dhtmlxEvent(window,"load",function(){
     };
 
     var manage_grants = function () {
-        var wmg = create_window("manage_grants", "Manage grants");
+        var wmg = create_window("manage_grants", "Manage grants", 540, 200);
         var mgg = wmg.attachGrid();
         mgg.setHeader("Gid,user,role");
         mgg.setColSorting("str,str,str");
@@ -1217,7 +1256,7 @@ dhtmlxEvent(window,"load",function(){
         });
         var tree = wexp.attachTreeView({
             dnd: true,
-            multiselect: true,
+            multiselect: false,
             context_menu: true,
             json: "gettree?nodesdb=" + desktop.settings.nodesdb + "&id={id}"
         });
@@ -1778,8 +1817,10 @@ dhtmlxEvent(window,"load",function(){
                 ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, query: x.choice.query, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)}),
                 function (y) {
                     var options = [];
-                    _.each(y, function(v) {
-                        options.push({text: v.label, value: v.label, selected: false});
+                    _.each(_.sortBy(getallchoices(y, node.datasource.type), function(c) {
+                        return c;
+                    }), function(v) {
+                        options.push({text: v, value: v, selected: false});
                     })
                     getchoice(options, callback);
                 }
