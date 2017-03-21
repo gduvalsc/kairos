@@ -400,7 +400,7 @@ dhtmlxEvent(window,"load",function(){
         });
         var logindata = [
             {type: "settings", position: "label-left", labelWidth: 200, inputWidth: 200},
-            {type: "fieldset", label: "Welcome", inputWidth: 420, list:[
+            {type: "fieldset", label: "Welcome", inputWidth: 460, list:[
                 {type: "select", label: "Login", options: listusers, name: "user"},
                 {type: "password", label: "Password", value: "", name: "password"},
                 {type: "button", value: "Login", name: "login", width: 400}
@@ -497,7 +497,7 @@ dhtmlxEvent(window,"load",function(){
 
             var settingsdata = [
                 {type: "settings", position: "label-left", labelWidth: 200, inputWidth: 200},
-                {type: "fieldset", label: "Settings", inputWidth: 450, list:[
+                {type: "fieldset", label: "Settings", inputWidth: 460, list:[
                     {type: "select", label: "System database", options: listsystemdb, name: "systemdb"},
                     {type: "select", label: "Nodes database", options: listnodesdb, name: "nodesdb"},
                     {type: "select", label: "Charts template", options: listtemplates, name: "template"},
@@ -509,7 +509,7 @@ dhtmlxEvent(window,"load",function(){
                     {type: "select", label: "Request labels limit", options: listtop, name: "top"},
                     //{type: "select", label: "Keycode", options: listkeycode, name: "keycode"}
                 ]},
-                {type: "button", value: "Update settings", name: "updatesettings", width: 450}
+                {type: "button", value: "Update settings", name: "updatesettings", width: 460}
             ];
             var settingsform = wsettings.attachForm();
             settingsform.cross_and_load(settingsdata);
@@ -569,31 +569,48 @@ dhtmlxEvent(window,"load",function(){
             var objid = mog.cellById(currow, 1).getValue();
             var objtype = mog.cellById(currow, 2).getValue();
             var objdatabase = mog.cellById(currow,4).getValue();
-            var gendataform = function (w) {
-                var width = w.cell.clientWidth;
-                var height = w.cell.clientHeight;
-                var oid = _.uniqueId('edit');
-                var data = [
-                    {type: "container", name: oid, inputWidth: width - 30, inputHeight: height - 50},
-                    {type: "button", value: "Save", name: "save", width: width - 30}
-                ];
-                return data;
-            };
-            var genform = function (w) {
-                var wf = w.attachForm();
-                wf.cross_and_load(gendataform(w));
-            }
             var weo = create_window("edit_object", "Edit object - " + objtype + " : " + objid);
-            var wf = genform(weo);
+            var wet = weo.attachToolbar({});
+            var toolbardata = [
+                {type: "button", id: "save", text: "Save", title: "Save"},
+            ];
+            wet.loadStruct(toolbardata);
+            wet.attachEvent("onClick", function(id){
+                if (id === "save") {
+                    save_object();
+                }
+            });
+            var oid = _.uniqueId('edit');
+            weo.attachHTMLString('<pre id="' + oid + '" style="margin:0;position:relative;top:0,bottom:0;right:0;left:0;"></pre>');
+            var editor = ace.edit(oid);
+            editor.getSession().setMode("ace/mode/python");
+            editor.$blockScrolling = Infinity;
+            document.getElementById(oid).style.height = weo.cell.childNodes[1].clientHeight;
             weo.attachEvent("onResizeFinish", function () {
-                wf = genform(weo);
+                document.getElementById(oid).style.height = weo.cell.childNodes[1].clientHeight;
+                editor.resize();
             });
             weo.attachEvent("onMaximize", function () {
-                wf = genform(weo);
+                document.getElementById(oid).style.height = weo.cell.childNodes[1].clientHeight;
+                editor.resize();
             });
             weo.attachEvent("onMinimize", function () {
-                wf = genform(weo);
+                document.getElementById(oid).style.height = weo.cell.childNodes[1].clientHeight;
+                editor.resize();
             });
+            var save_object = function () {
+                waterfall([
+                    ajax_post_first_in_async_waterfall("setobject", {database: desktop.settings.nodesdb, source: editor.getValue()}),
+                    function (x) {
+                    }
+                ]);
+            };
+            waterfall([
+                ajax_get_first_in_async_waterfall("getobject", {database: objdatabase, id: objid, type: objtype}),
+                function (x) {
+                    editor.setValue(x); 
+                }
+            ]);
         };
 
         var toolbardata = [
@@ -659,10 +676,10 @@ dhtmlxEvent(window,"load",function(){
             var wcr = create_window("crrole", "Create role", 540, 160);
             var data = [
                 {type: "settings", position: "label-left", labelWidth: 100, inputWidth: 300},
-                {type: "fieldset", label: "Create role", inputWidth: 450, list:[
+                {type: "fieldset", label: "Create role", inputWidth: 460, list:[
                     {type: "input", label: "Role", name: "role"},
                 ]},
-                {type: "button", value: "Create", name: "createrole", width: 450}
+                {type: "button", value: "Create", name: "createrole", width: 460}
             ];
             var crf = wcr.attachForm();
             crf.cross_and_load(data);
@@ -741,10 +758,10 @@ dhtmlxEvent(window,"load",function(){
             var wcu = create_window("cruser", "Create user", 540, 160);
             var data = [
                 {type: "settings", position: "label-left", labelWidth: 100, inputWidth: 300},
-                {type: "fieldset", label: "Create user", inputWidth: 450, list:[
+                {type: "fieldset", label: "Create user", inputWidth: 460, list:[
                     {type: "input", label: "User", name: "user"},
                 ]},
-                {type: "button", value: "Create", name: "createuser", width: 450}
+                {type: "button", value: "Create", name: "createuser", width: 460}
             ];
             var crf = wcu.attachForm();
             crf.cross_and_load(data);
@@ -820,14 +837,14 @@ dhtmlxEvent(window,"load",function(){
             mgt.enableItem("revoke_role");
         });
         var grant_role = function () {
-            var wcg = create_window("crgrant", "Grant role", 540, 160);
+            var wcg = create_window("crgrant", "Grant role", 540, 200);
             var data = [
                 {type: "settings", position: "label-left", labelWidth: 100, inputWidth: 300},
-                {type: "fieldset", label: "Grant role to user", inputWidth: 450, list:[
+                {type: "fieldset", label: "Grant role to user", inputWidth: 460, list:[
                     {type: "input", label: "User", name: "user"},
                     {type: "input", label: "Role", name: "role"},
                 ]},
-                {type: "button", value: "Grant", name: "grant", width: 450}
+                {type: "button", value: "Grant", name: "grant", width: 460}
             ];
             var crf = wcg.attachForm();
             crf.cross_and_load(data);
@@ -887,15 +904,15 @@ dhtmlxEvent(window,"load",function(){
     };
 
     var manage_password = function () {
-        var wpassword = create_window("manage_password", "Manage password", 500, 220);
+        var wpassword = create_window("manage_password", "Manage password", 500, 230);
         var passworddata = [
             {type: "settings", position: "label-left", labelWidth: 140, inputWidth: 260},
-            {type: "fieldset", label: "Manage password", inputWidth: 450, list:[
+            {type: "fieldset", label: "Manage password", inputWidth: 460, list:[
                 {type: "password", label: "Actual password", value: "", name: "actual"},
                 {type: "password", label: "New password", value: "", name: "new"},
                 {type: "password", label: "Repeat new password", value: "", name: "repeat"},
             ]},
-            {type: "button", value: "Set new password", name: "setpassword", width: 450}
+            {type: "button", value: "Set new password", name: "setpassword", width: 460}
         ];
         var passwordform = wpassword.attachForm();
         passwordform.cross_and_load(passworddata);
@@ -1209,10 +1226,10 @@ dhtmlxEvent(window,"load",function(){
         var wr = create_window("rename", "Rename ...", 500, 145);
         var data = [
             {type: "settings", label: "", position: "label-left", labelWidth: 200, inputWidth: 200},
-            {type: "fieldset", inputWidth: 450, list:[
+            {type: "fieldset", inputWidth: 460, list:[
                 {type: "input", label: "Rename to ...",  name: "new", value: oldname},
             ]},
-            {type: "button", value: "Rename", name: "rename", width: 450}
+            {type: "button", value: "Rename", name: "rename", width: 460}
         ];
         var wf = wr.attachForm();
         wf.cross_and_load(data);
@@ -1227,10 +1244,10 @@ dhtmlxEvent(window,"load",function(){
         var wgc = create_window("get_choice", "Choose ...", 500, 145);
         var data = [
             {type: "settings", label: "", position: "label-left", labelWidth: 150, inputWidth: 250},
-            {type: "fieldset", inputWidth: 450, list:[
+            {type: "fieldset", inputWidth: 460, list:[
                 {type: "select", label: "Choose", options: listchoices, name: "choice"},
             ]},
-            {type: "button", value: "Choose", name: "choose", width: 450}
+            {type: "button", value: "Choose", name: "choose", width: 460}
         ];
         var wf = wgc.attachForm();
         wf.cross_and_load(data);

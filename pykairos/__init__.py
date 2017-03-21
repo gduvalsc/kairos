@@ -497,6 +497,7 @@ class KairosWorker:
         app.router.add_get('/getqueries', s.getqueries)
         app.router.add_get('/getcharts', s.getcharts)
         app.router.add_get('/getchoices', s.getchoices)
+        app.router.add_get('/getobject', s.getobject)
         app.router.add_get('/executequery', s.executequery)
         app.router.add_get('/getmemberlist', s.getmemberlist)
         app.router.add_get('/getmember', s.getmember)
@@ -545,6 +546,7 @@ class KairosWorker:
         app.router.add_get('/uploadobject', s.uploadobject)
         app.router.add_post('/changepassword', s.changepassword)
         app.router.add_post('/uploadobject', s.uploadobject)
+        app.router.add_post('/setobject', s.setobject)
         app.router.add_post('/checkuserpassword', s.checkuserpassword)
         app.router.add_post('/uploadnode', s.uploadnode)
         app.router.add_static('/resources/', path='/kairos/resources', name='resources')
@@ -1489,6 +1491,16 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
+    async def setobject(s, request):
+        multipart = await request.post()
+        params = parse_qs(request.query_string)
+        database = multipart['database'] if 'database' in multipart else params['database'][0]
+        source = multipart['source'] if 'source' in multipart else params['source'][0]
+        logging.info(source);
+        return web.json_response(dict(success=True))
+
+    @intercept_logging_and_internal_error
+    @trace_call
     def getsettings(s, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
@@ -1611,6 +1623,20 @@ class KairosWorker:
         nodesdb = params['nodesdb'][0]
         data = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="")
         return web.json_response(dict(success=True, data=data))
+
+    @intercept_logging_and_internal_error
+    @trace_call
+    def getobject(s, request):
+        params = parse_qs(request.query_string)
+        database = params['database'][0]
+        objtype = params['type'][0]
+        objid = params['id'][0]
+        s.odbget(database=database)
+        tabx = s.odbquery("select content from objects where id='" + objid + "' and type = '" + objtype + "'", -1)
+        for rx in tabx:
+            item = rx.oRecordData
+            source = binascii.a2b_base64(item['content'])
+        return web.json_response(dict(success=True, data=source.decode()))
 
     @intercept_logging_and_internal_error
     @trace_call
