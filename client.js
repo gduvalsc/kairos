@@ -103,11 +103,59 @@ dhtmlxEvent(window,"load",function(){
         var parent = me.getParentId(id);
         return parent === undefined ? me.getItemText(id) === "/" ? "" : me.getItemText(id) : me.getPath(parent) + '/' + me.getItemText(id);
     };
-
+    
     var makeURL = function (s, p) {
         var esc = encodeURIComponent;
         var query = Object.keys(p).map(k => esc(k) + '=' + esc(p[k])).join('&');
         return query === '' ? s : s + '?' + query;
+    };
+
+    var microAjax = function (options) {
+        // Perform a simple async AJAX request.
+        // @param {Object} options.<[method=GET], url, data,
+        //          [success=function], [warning=function], [error=function]>
+        //              method: GET or POST.
+        //              url: The URL to contact.
+        //              data: the content to send to the page.
+        //              success: Code to run on request success.
+        //              warning: Code to run on request warning.
+        //              error: Code to run on request error.
+        if (!options.method) {
+            options.method = "GET";
+        }
+        var noop = function () {};
+        if (!options.success) {
+            options.success = noop;
+        }
+        if (!options.warning) {
+            options.warning = noop;
+        }
+        if (!options.error) {
+            options.error = noop;
+        }
+        var request = new XMLHttpRequest();
+        request.onload = function() {
+            if (request.readyState === 4 && request.status === 200) {
+                options.success(request.responseText);
+            } else {
+                options.warning(request);
+            }
+        };
+        request.onerror = options.error;
+        if (options.method === 'GET') {
+            request.open(options.method, makeURL(options.url, options.data), true);
+            request.send(undefined);
+        } else {
+            request.open(options.method, options.url, true);
+            var boundary = "-------------------Separator";
+            request.setRequestHeader("Content-Type","multipart/form-data; boundary=" + boundary);
+            var stream = ''
+            _.each(options.data, function(v, k) {
+                stream += '--' + boundary + '\n' + 'Content-Disposition: form-data; name="' + k + '"\n\n' + v + '\n';
+            });
+            stream += '--' + boundary + '--';
+            request.send(stream);
+        }
     };
 
     var genajax = function (method, type) {
@@ -150,7 +198,7 @@ dhtmlxEvent(window,"load",function(){
                     }
                     return next(null, result.data);
                 };
-                microAjax({url: makeURL(s, p), method: method, success: fdone, warning: fwarn, error: ferror})
+                microAjax({url: s, data: p, method: method, success: fdone, warning: fwarn, error: ferror})
             };
             var g = function(_, next) {
                 f(next);
@@ -584,6 +632,7 @@ dhtmlxEvent(window,"load",function(){
             weo.attachHTMLString('<pre id="' + oid + '" style="margin:0;position:relative;top:0,bottom:0;right:0;left:0;"></pre>');
             var editor = ace.edit(oid);
             editor.getSession().setMode("ace/mode/python");
+            editor.setKeyboardHandler("ace/keyboard/vim");
             editor.$blockScrolling = Infinity;
             document.getElementById(oid).style.height = weo.cell.childNodes[1].clientHeight;
             weo.attachEvent("onResizeFinish", function () {
@@ -602,6 +651,8 @@ dhtmlxEvent(window,"load",function(){
                 waterfall([
                     ajax_post_first_in_async_waterfall("setobject", {database: desktop.settings.nodesdb, source: editor.getValue()}),
                     function (x) {
+                        alertify.success('<div style="font-size:150%;">' + x.msg + "</div>");
+                        refresh();
                     }
                 ]);
             };
@@ -1419,6 +1470,8 @@ dhtmlxEvent(window,"load",function(){
 				{id: "run_chart", text: "Run chart"},
 				{id: "run_choice", text: "Run choice"},
 				{type: "separator"},
+				//{id: "create_chart", text: "Create chart"},
+				//{type: "separator"},
 				{id: "download", text: "Download"},
 				{id: "display_member", text: "Display member"},
 				{id: "unload", text: "Unload"},
@@ -1436,6 +1489,7 @@ dhtmlxEvent(window,"load",function(){
         contextmenu.setItemImage("execute_query","fa fa-question", "fa fa-question");
         contextmenu.setItemImage("run_chart","fa fa-line-chart", "fa fa-line-chart");
         contextmenu.setItemImage("run_choice","fa fa-sitemap", "fa fa-sitemap");
+        //contextmenu.setItemImage("create_chart","fa fa-line-chart", "fa fa-line-chart");
         contextmenu.setItemImage("download","fa fa-download", "fa fa-download");
         contextmenu.setItemImage("display_member","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("unload","fa fa-cloud-download", "fa fa-cloud-download");
@@ -1571,6 +1625,10 @@ dhtmlxEvent(window,"load",function(){
                     log.debug("Running choice on node: " + id + " (" + tree.getItemText(id) + ")");
                     run_choice(curnode);
                 }
+                if (fid === "create_chart") {
+                    log.debug("Creating and testing chart on node: " + id + " (" + tree.getItemText(id) + ")");
+                    create_chart(curnode);
+                }
                 if (fid === "download") {
                     log.debug("Download at node: " + id + " (" + tree.getItemText(id) + ")");
                     window.location.href = '/downloadsource?id=' + encodeURIComponent('#' + id) + '&nodesdb=' + desktop.settings.nodesdb;
@@ -1625,6 +1683,24 @@ dhtmlxEvent(window,"load",function(){
                 potentialmenus = menus;
             }
         ]);
+    };
+
+    var create_chart = function (node) {
+        var uniquecid = _.uniqueId('cchart');
+        var cchart = create_window("cchart", "Create chart...");
+        cchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto"></div>');
+        var container = document.getElementById(uniquecid);
+        var graph = new mxGraph(container);
+		mxEvent.disableContextMenu(container);
+        //var xxx = new mxRubberband(graph);
+        var parent = graph.getDefaultParent();
+	    graph.getModel().beginUpdate();
+		var v1 = graph.insertVertex(parent, null, 'Hello,', 20, 20, 80, 30);
+		var v2 = graph.insertVertex(parent, null, 'World!', 200, 150, 80, 30);
+		var e1 = graph.insertEdge(parent, null, '', v1, v2);
+		graph.getModel().endUpdate();
+        console.log(graph);
+        console.log(graph.getModel());
     };
 
     var dispchart = function (node, chart, layoutpiece, wlayout) {

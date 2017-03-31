@@ -346,10 +346,6 @@ class Analyzer:
                 if x != '':
                     r = x
                     break
-            # try:
-            #     r = e.find('a').text
-            #     if type(r) != type(''): r = ''
-            # except: pass
         return r
     def lxmltext2(s, e):
         return e.text_content().replace('\n','').replace('\r','').lstrip().rstrip()
@@ -652,7 +648,9 @@ class KairosWorker:
             rid = str(rx.oRecordData['rid'])
             if rid != nid: 
                 dbname = rx.oRecordData['name']
-                if os.path.exists(dbname): os.unlink(dbname)
+                if os.path.exists(dbname): 
+                    try: os.unlink(dbname)
+                    except: pass
                 s.odbrun("delete vertex " + rid)
         
     @trace_call
@@ -665,7 +663,8 @@ class KairosWorker:
                 taby = s.odbquery("select location from sources where @rid = " + rid)
                 for ry in taby: 
                     location = ry.oRecordData['location']
-                    os.unlink(location)
+                    try: os.unlink(location)
+                    except: pass
                 s.odbrun("delete vertex " + rid)
         
     @trace_call
@@ -1496,8 +1495,29 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         database = multipart['database'] if 'database' in multipart else params['database'][0]
         source = multipart['source'] if 'source' in multipart else params['source'][0]
-        logging.info(source);
-        return web.json_response(dict(success=True))
+        x = s.odbget(database=database)
+        x = s.odbreload()
+        clusterid = [y.id for y in x if y.name==b'objects'][0]
+        try:
+            p = compile(source, 'stream', 'exec')
+            kairos = dict()
+            exec(p, locals())
+            obj = locals()['UserObject']()
+            type = obj['type']
+            id = obj['id']
+            filename = id.lower() + '.py'
+            content = binascii.b2a_base64(source.encode())
+            s.odbget(database=database)
+            s.odbrun("delete vertex objects where id='" + id + "' and type = '" + type + "'")
+            rid = s.odb.record_create(clusterid, {'@objects': dict(id=id, type=type, filename=filename, content=content.decode())})._rid
+            s.odbrun("update objects set created=sysdate() where @rid=" + rid)
+            return web.json_response(dict(success=True, data=dict(msg='Object: ' + id + ' of type: ' + type + ' has been successfully saved!')))
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            return web.json_response(dict(success=False, message=message))
+
 
     @intercept_logging_and_internal_error
     @trace_call
