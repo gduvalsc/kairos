@@ -18,7 +18,7 @@
 
 dhtmlxEvent(window,"load",function(){
 
-    var VERSION = "3.1";
+    var VERSION = "3.2";
     var ajaxcpt = 0;
     var desktop = {};
     desktop.variables = {};
