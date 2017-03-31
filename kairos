@@ -100,7 +100,7 @@ elif args.service in ['uploadobject', 'uploadnode']:
     data = aiohttp.FormData()
     data.add_field('nodesdb', args.nodesdb)
     data.add_field('systemdb', 'kairos_system_system')
-    data.add_field('upload', open(args.file, 'rb'), filename=os.path.basename(args.file), content_type=magic.from_file(args.file, mime=True))
+    data.add_field('file', open(args.file, 'rb'), filename=os.path.basename(args.file), content_type=magic.from_file(args.file, mime=True))
 elif args.service in ['deleteobject']:
     if not args.id:
         wlog("*** --id option must be specified!")

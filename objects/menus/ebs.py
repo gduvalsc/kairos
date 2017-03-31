@@ -4,10 +4,8 @@ class UserObject(dict):
             "type": "menu",
             "id": "EBS",
             "tablecondition": "EBS12CM",
-            "icon": "suitcase",
+            "icon": "fa fa-suitcase",
             "label": "E-Business Suite",
-            "menuwidth": 150,
-            "itemswidth": 250,
             "items" : [
                 { "type": "menuitem", "label": "Running & Waiting programs", "action": "dispchart", "chart": "EBSALLPRG" },
                 { "type": "menuitem", "label": "Top running executions", "action": "dispchart", "chart": "EBSTOPEXER" },
@@ -15,7 +13,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Programs",
                     "items": [
                         { "type": "menuitem", "label": "Top running programs", "action": "dispchart", "chart": "EBSTOPPRGR" },
@@ -25,7 +22,6 @@ class UserObject(dict):
                         { "type": "separator"},
                         {
                             "type": "submenu",
-                            "itemswidth": 400,
                             "label": "Choose program ...",
                             "items": [
                                 { "type": "menuitem", "label": "Top running executions", "action": "dispchoice", "choice": "EBSPRGEXER" },
@@ -43,7 +39,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Nodes",
                     "items": [
                         { "type": "menuitem", "label": "Running distribution", "action": "dispchart", "chart": "EBSTOPNODR" },
@@ -51,7 +46,6 @@ class UserObject(dict):
                         { "type": "separator"},
                         {
                             "type": "submenu",
-                            "itemswidth": 300,
                             "label": "Choose node ...",
                             "items": [
                                 { "type": "menuitem", "label": "Top running executions", "action": "dispchoice", "choice": "EBSNODEXER" },
@@ -69,7 +63,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Queues",
                     "items": [
                         { "type": "menuitem", "label": "Running distribution", "action": "dispchart", "chart": "EBSTOPQUER" },
@@ -77,7 +70,6 @@ class UserObject(dict):
                         { "type": "separator"},
                         {
                             "type": "submenu",
-                            "itemswidth": 300,
                             "label": "Choose queue ...",
                             "items": [
                                 { "type": "menuitem", "label": "Top running executions", "action": "dispchoice", "choice": "EBSQUEEXER" },

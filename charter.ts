@@ -633,7 +633,6 @@ module KairosCharter {
                 attach = "body";
             }
             let ratio = window.devicePixelRatio;
-            console.log(ratio);
             ratio = 1;
             let id = key === undefined ? 'canvas' + _.uniqId('') : 'canvas' + key;
             d3.select(attach)

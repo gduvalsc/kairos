@@ -4,14 +4,11 @@ class UserObject(dict):
             "type": "menu",
             "id": "DBORARAC",
             "tablecondition": "DBORARACMISC",
-            "icon": "database",
+            "icon": "fa fa-database",
             "label": "RAC Database",
-            "menuwidth": 150,
-            "itemswidth": 350,
             "items" : [
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Summary",
                     "items": [
                         { "type": "menuitem", "label": "Global CPU & Waits", "action": "dispchart", "chart": "DBORARACSUM"},
@@ -24,7 +21,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 350,
                     "label": "Wait events",
                     "items": [
                         { "type": "menuitem", "label": "Foreground wait events / event", "action": "dispchart", "chart": "DBORARACDBWAITE"},
@@ -39,7 +35,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 350,
                     "label": "Interconnect - exchanges between instances",
                     "items": [
                         { "type": "menuitem", "label": "Current blocks - CR blocks", "action": "dispchart", "chart": "DBORARACGCALL"},
@@ -60,7 +55,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 350,
                     "label": "Global cache efficiency percentages",
                     "items": [
                         { "type": "menuitem", "label": "Local access", "action": "dispchart", "chart": "DBORARACGCEPL"},

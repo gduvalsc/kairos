@@ -4,14 +4,11 @@ class UserObject(dict):
             "type": "menu",
             "id": "TT",
             "tablecondition": "TTMISC",
-            "icon": "database",
+            "icon": "fa fa-database",
             "label": "Oracle Timesten",
-            "menuwidth": 150,
-            "itemswidth": 200,
             "items" : [
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "SQL Statistics",
                     "items": [
                         { "type": "menuitem", "label": "Top SQL by executions", "action": "dispchart", "chart": "TTSQLTOPX" },
@@ -26,7 +23,6 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
-                    "itemswidth": 300,
                     "label": "Statistics",
                     "items": [
                         { "type": "menuitem", "label": "Stmt statistics", "action": "dispchart", "chart": "TTSTMTSTATS" },
