@@ -392,6 +392,147 @@ dhtmlxEvent(window,"load",function(){
         return result;
     };
 
+    var mxg_createPopupMenu = function (graph, menu, cell, evt) {
+	    var model = graph.getModel();
+	    if (cell != null) {
+		    if (model.isVertex(cell)) {
+                if (cell.attributes.type === 'CHART') {
+			        menu.addItem('Add Yaxis', 'resources/mxgraph/images/plus.png', function() {
+				        mxg_addChild(graph, cell, 'YAXIS');
+			        });
+                    menu.addItem('Edit Id', 'resources/mxgraph/images/edit.png', function() {
+                        graph.attributes.current = cell;
+                        graph.attributes.edited = 'id';
+                        cell.value = cell.attributes.id;
+			            graph.startEditingAtCell(cell);
+		            });
+                    menu.addItem('Edit Title', 'resources/mxgraph/images/edit.png', function() {
+                        graph.attributes.current = cell;
+                        graph.attributes.edited = 'title';
+                        cell.value = cell.attributes.title;
+			            graph.startEditingAtCell(cell);
+		            });
+                }
+                if (cell.attributes.type === 'YAXIS') {
+			        menu.addItem('Add Renderer', 'resources/mxgraph/images/plus.png', function() {
+				        mxg_addChild(graph, cell, 'RENDERER');
+			        });
+                }
+                if (cell.attributes.type === 'RENDERER') {
+			        menu.addItem('Add Query', 'resources/mxgraph/images/plus.png', function() {
+				        mxg_addChild(graph, cell, 'QUERY');
+			        });
+                }
+                if (cell.attributes.type === 'QUERY') {
+			        menu.addItem('Add Query piece', 'resources/mxgraph/images/plus.png', function() {
+				        mxg_addChild(graph, cell, 'QUERY PIECE');
+			        });
+                }
+		    }
+		    if (cell.id != 'Chart' && model.isVertex(cell)) {
+			    menu.addItem('Delete', 'resources/mxgraph/images/delete.png', function() {
+				    mxg_deleteSubtree(graph, cell);
+			    });
+		    }
+		    menu.addSeparator();
+	    }
+	    menu.addItem('Fit', 'resources/mxgraph/images/fit.png', function() {
+		    graph.fit();
+	    });
+	    menu.addItem('Actual', 'resources/mxgraph/images/actual.png', function() {
+		    graph.zoomActual();
+	    });
+    	menu.addSeparator();
+    	menu.addItem('Print', 'resources/mxgraph/images/printpreview.png', function() {
+		    var preview = new mxPrintPreview(graph, 1);
+		    preview.open();
+	    });
+	    menu.addItem('Poster Print', 'resources/mxgraph/images/printpreview.png', function()	{
+		    var pageCount = mxUtils.prompt('Enter maximum page count', '1');
+    		if (pageCount != null) {
+			    var scale = mxUtils.getScaleForPageCount(pageCount, graph);
+			    var preview = new mxPrintPreview(graph, scale);
+			    preview.open();
+		    }
+	    });
+    };
+
+    var mxg_addOverlays = function (graph, cell, addPlusIcon, addDeleteIcon) {
+        var overlay;
+        if (addPlusIcon) {
+            var text = cell.attributes.type === 'CHART' ? 'Add Yaxis' : cell.attributes.type === 'YAXIS' ? 'Add Renderer' : cell.attributes.type === 'RENDERER' ? 'Add Query' : 'Add Query Piece';
+            overlay = new mxCellOverlay(new mxImage('resources/mxgraph/images/plus.png', 24, 24), text);
+            overlay.cursor = 'hand';
+            overlay.align = mxConstants.ALIGN_CENTER;
+            overlay.addListener(mxEvent.CLICK, mxUtils.bind(this, function(sender, evt) {
+                var type = cell.attributes.type === 'CHART' ? 'YAXIS' : cell.attributes.type === 'YAXIS' ? 'RENDERER' : cell.attributes.type === 'RENDERER' ? 'QUERY' : 'QUERY PIECE';
+                mxg_addChild(graph, cell, type);
+            }));
+            graph.addCellOverlay(cell, overlay);
+        }
+	    if (addDeleteIcon) {
+		    overlay = new mxCellOverlay(new mxImage('resources/mxgraph/images/delete.png', 24, 24), 'Delete');
+		    overlay.cursor = 'hand';
+		    overlay.offset = new mxPoint(-4, 8);
+		    overlay.align = mxConstants.ALIGN_RIGHT;
+		    overlay.verticalAlign = mxConstants.ALIGN_TOP;
+		    overlay.addListener(mxEvent.CLICK, mxUtils.bind(this, function(sender, evt) {
+			    mxg_deleteSubtree(graph, cell);
+		    }));
+		    graph.addCellOverlay(cell, overlay);
+	    }
+    };
+
+    var mxg_addChild = function (graph, cell, type) {
+    	var model = graph.getModel();
+	    var parent = graph.getDefaultParent();
+	    var vertex;
+	    model.beginUpdate();
+	    try {
+		    vertex = graph.insertVertex(parent, null, type);
+            vertex.attributes = {'type': type};
+            if (vertex.attributes.type === 'YAXIS') {
+                vertex.attributes.title = '<<title>>';
+                vertex.attributes.position = 'LEFT';
+            }
+            vertex.value = mxg_setValue(vertex);
+		    var geometry = model.getGeometry(vertex);
+		    var size = graph.getPreferredSizeForCell(vertex);
+		    geometry.width = size.width;
+		    geometry.height = size.height;
+		    var edge = graph.insertEdge(parent, null, '', cell, vertex);
+    		edge.geometry.x = 1;
+		    edge.geometry.y = 0;
+		    edge.geometry.offset = new mxPoint(0, -20);
+		    mxg_addOverlays(graph, vertex, vertex.attributes.type === 'QUERY PIECE' ? false : true, true);
+	    }
+	    finally {
+		    model.endUpdate();
+	    }
+	    return vertex;
+    };
+
+    var mxg_deleteSubtree = function (graph, cell) {
+	    var cells = [];
+	    graph.traverse(cell, true, function(vertex)
+	    {
+		    cells.push(vertex);
+		    return true;
+	    });
+	    graph.removeCells(cells);
+    };
+
+    var mxg_setValue = function (cell) {
+        var r = cell.attributes.type + '\n\n' + 
+                        cell.attributes.type === 'CHART' ? 'id: ' + cell.attributes.id + '\n' + 'title: ' + cell.attributes.title :
+                        cell.attributes.type === 'YAXIS' ? 'to be defined' :
+                        cell.attributes.type === 'RENDERER' ? 'to be defined' :
+                        cell.attributes.type === 'QUERY' ? 'to be defined' :
+                        cell.attributes.type === 'QUERY PIECE' ? 'to be defined' :
+                        '';
+        return r;
+    };
+
     var manage_log = function(url, id, title, file) {
         var ws = new WebSocket(url);
         var uniqueid;
@@ -1470,8 +1611,8 @@ dhtmlxEvent(window,"load",function(){
 				{id: "run_chart", text: "Run chart"},
 				{id: "run_choice", text: "Run choice"},
 				{type: "separator"},
-				//{id: "create_chart", text: "Create chart"},
-				//{type: "separator"},
+				{id: "create_chart", text: "Create chart"},
+				{type: "separator"},
 				{id: "download", text: "Download"},
 				{id: "display_member", text: "Display member"},
 				{id: "unload", text: "Unload"},
@@ -1489,7 +1630,7 @@ dhtmlxEvent(window,"load",function(){
         contextmenu.setItemImage("execute_query","fa fa-question", "fa fa-question");
         contextmenu.setItemImage("run_chart","fa fa-line-chart", "fa fa-line-chart");
         contextmenu.setItemImage("run_choice","fa fa-sitemap", "fa fa-sitemap");
-        //contextmenu.setItemImage("create_chart","fa fa-line-chart", "fa fa-line-chart");
+        contextmenu.setItemImage("create_chart","fa fa-line-chart", "fa fa-line-chart");
         contextmenu.setItemImage("download","fa fa-download", "fa fa-download");
         contextmenu.setItemImage("display_member","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("unload","fa fa-cloud-download", "fa fa-cloud-download");
@@ -1690,17 +1831,122 @@ dhtmlxEvent(window,"load",function(){
         var cchart = create_window("cchart", "Create chart...");
         cchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto"></div>');
         var container = document.getElementById(uniquecid);
-        var graph = new mxGraph(container);
 		mxEvent.disableContextMenu(container);
-        //var xxx = new mxRubberband(graph);
+        var graph = new mxGraph(container);
+        graph.attributes = {};
+        graph.setCellsMovable(false);
+        graph.setCellsResizable(false);
+        graph.setCellsEditable(false);
+        graph.setAutoSizeCells(true);
+        graph.setPanning(true);
+        graph.centerZoom = false;
+        graph.panningHandler.useLeftButtonForPanning = true;
+		graph.panningHandler.popupMenuHandler = false;
+		graph.setTooltips(!mxClient.IS_TOUCH);
+        graph.popupMenuHandler.factoryMethod = function(menu, cell, evt) {
+            return mxg_createPopupMenu(graph, menu, cell, evt);
+        };
+        var oldGetPreferredSizeForCell = graph.getPreferredSizeForCell;
+        graph.getPreferredSizeForCell = function(cell) {
+            var result = oldGetPreferredSizeForCell.apply(this, arguments);
+            if (result != null) {
+                var arr = cell.value.split('\n');
+                result.height = _.max([arr.length * 15, 40]);
+                result.width = 7 * _.max(_.map(arr, function (e) {
+                    return e.length;
+                }));
+                result.width = _.max([result.width, 160]);
+            }
+            return result;
+        };
+        graph.cellRenderer.getTextScale = function(state) {
+            return Math.min(1, state.view.scale);
+        };
+        graph.cellRenderer.getLabelValue = function(state) {
+            var result = state.cell.value;
+            if (state.view.graph.getModel().isVertex(state.cell)) {
+                if (state.view.scale > 1) {
+                    //result += '\nDetails 1';
+                }
+                if (state.view.scale > 1.3)	{
+                    //result += '\nDetails 2';
+                }
+            }
+            return result;
+        };
+        graph.addListener(mxEvent.EDITING_STOPPED, mxUtils.bind(this, function() {
+            var cell = graph.attributes.current;
+            cell.attributes[graph.attributes.edited] = cell.value;
+            cell.value = mxg_setValue(cell);
+            cell.value = cell.attributes.type + '\n\n' + 
+                        cell.value.type === 'CHART' ? 'id: ' + cell.attributes.id + '\n' + 'title: ' + cell.attributes.title :
+                        cell.value.type === 'YAXIS' ? 'to be defined' :
+                        cell.value.type === 'RENDERER' ? 'to be defined' :
+                        cell.value.type === 'QUERY' ? 'to be defined' :
+                        cell.value.type === 'QUERY PIECE' ? 'to be defined' :
+                        '';
+            graph.updateCellSize(cell);    
+        }));
+
+        var style = graph.getStylesheet().getDefaultVertexStyle();
+        style[mxConstants.STYLE_SHAPE] = 'label';
+        style[mxConstants.STYLE_VERTICAL_ALIGN] = mxConstants.ALIGN_MIDDLE;
+        style[mxConstants.STYLE_ALIGN] = mxConstants.ALIGN_LEFT;
+        //style[mxConstants.STYLE_SPACING_LEFT] = 54;
+        //style[mxConstants.STYLE_GRADIENTCOLOR] = '#7d85df';
+        style[mxConstants.STYLE_STROKECOLOR] = 'black';
+        style[mxConstants.STYLE_FILLCOLOR] = 'yellow';
+        style[mxConstants.STYLE_FONTCOLOR] = 'black';
+        style[mxConstants.STYLE_FONTFAMILY] = 'Verdana';
+        style[mxConstants.STYLE_FONTSIZE] = '12';
+        style[mxConstants.STYLE_FONTSTYLE] = '1';
+        style[mxConstants.STYLE_SHADOW] = '1';
+        style[mxConstants.STYLE_ROUNDED] = '1';
+        style[mxConstants.STYLE_GLASS] = '1';
+        //style[mxConstants.STYLE_IMAGE] = 'resources/mxgraph/images/axis.png';
+        //style[mxConstants.STYLE_IMAGE_WIDTH] = '48';
+        //style[mxConstants.STYLE_IMAGE_HEIGHT] = '48';
+        style[mxConstants.STYLE_SPACING] = 8;
+        style = graph.getStylesheet().getDefaultEdgeStyle();
+        style[mxConstants.STYLE_ROUNDED] = true;
+        style[mxConstants.STYLE_STROKEWIDTH] = 3;
+        style[mxConstants.STYLE_EXIT_X] = 0.5; // center
+        style[mxConstants.STYLE_EXIT_Y] = 1.0; // bottom
+        style[mxConstants.STYLE_EXIT_PERIMETER] = 0; // disabled
+        style[mxConstants.STYLE_ENTRY_X] = 0.5; // center
+        style[mxConstants.STYLE_ENTRY_Y] = 0; // top
+        style[mxConstants.STYLE_ENTRY_PERIMETER] = 0; // disabled
+        style[mxConstants.STYLE_EDGE] = mxEdgeStyle.TopToBottom;
+		var keyHandler = new mxKeyHandler(graph);
+        var layout = new mxCompactTreeLayout(graph, false);
+        layout.useBoundingBox = false;
+        layout.edgeRouting = false;
+        layout.levelDistance = 60;
+        layout.nodeDistance = 16;
+        layout.isVertexMovable = function (cell) {
+            return true;
+        };
+		var layoutMgr = new mxLayoutManager(graph);
+        layoutMgr.getLayout = function(cell) {
+            if (cell.getChildCount() > 0) {
+                return layout;
+            }
+        };
+
         var parent = graph.getDefaultParent();
-	    graph.getModel().beginUpdate();
-		var v1 = graph.insertVertex(parent, null, 'Hello,', 20, 20, 80, 30);
-		var v2 = graph.insertVertex(parent, null, 'World!', 200, 150, 80, 30);
-		var e1 = graph.insertEdge(parent, null, '', v1, v2);
-		graph.getModel().endUpdate();
-        console.log(graph);
-        console.log(graph.getModel());
+        graph.getModel().beginUpdate();
+        try {
+            var w = graph.container.offsetWidth;
+            var v1 = graph.insertVertex(parent, 'Chart', 'CHART', w/2 - 70, 20, 140, 120);
+            v1.attributes = {'type': 'CHART', 'id': '<<chart_id>>', 'title': '<<title>>', 'subtitle': '<<subtitle>>'};
+            console.log(mxg_setValue(v1));
+            v1.value = mxg_setValue(v1);
+            graph.updateCellSize(v1);
+            mxg_addOverlays(graph, v1, true, false);
+        }
+        finally {
+            graph.getModel().endUpdate();
+        }
     };
 
     var dispchart = function (node, chart, layoutpiece, wlayout) {
