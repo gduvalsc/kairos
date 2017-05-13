@@ -2131,10 +2131,10 @@ module KairosCharter {
                 };
                 yaxis.type = _.some(me.getBindsFromYaxis(yaxis), f(["WL", "WA", "WSA"])) ? 'polar' : yaxis.type;
                 yaxis.type = _.some(me.getBindsFromYaxis(yaxis), f(["P"])) ? 'no' : yaxis.type;
-                if (yaxis.minvalue !== undefined) {
+                if (yaxis.minvalue !== undefined && yaxis.minvalue !== null) {
                     options.min = yaxis.minvalue;
                 }
-                if (yaxis.maxvalue !== undefined) {
+                if (yaxis.maxvalue !== undefined && yaxis.maxvalue !== null) {
                     options.max = yaxis.maxvalue;
                 }
                 let nice = yaxis.bounddataset.getVMinVMax(options);

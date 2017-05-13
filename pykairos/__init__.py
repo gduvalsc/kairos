@@ -52,6 +52,13 @@ def ficon (node):
         icon_closed = "fa fa-database btnd"
     return (icon_file, icon_opened, icon_closed)
 
+def replaceeval(obj):
+    logging.debug('replaceeval:' + str(obj))
+    logging.debug('type: ' + str(help(type)))
+    for e in obj:
+        logging.debug('key: ' + e + ', type: ' + str(type(obj[e])))
+    return obj
+        
 def trace_call(func):
     def wrapper(*args, **kwargs):
         logging.debug('>>> Entering %s ...' % func.__name__)
@@ -486,6 +493,7 @@ class KairosWorker:
         app.router.add_get('/gettree', s.gettree)
         app.router.add_get('/getnode', s.getnode)
         app.router.add_get('/getchart', s.getchart)
+        app.router.add_get('/getjsonobject', s.getjsonobject)
         app.router.add_get('/getchoice', s.getchoice)
         app.router.add_get('/getlayout', s.getlayout)
         app.router.add_get('/gettemplate', s.gettemplate)
@@ -524,6 +532,7 @@ class KairosWorker:
         app.router.add_get('/creategrant', s.creategrant)
         app.router.add_get('/deleterole', s.deleterole)
         app.router.add_get('/deleteuser', s.deleteuser)
+        app.router.add_get('/resetpassword', s.resetpassword)
         app.router.add_get('/deletegrant', s.deletegrant)
         app.router.add_get('/updatesettings', s.updatesettings)
         app.router.add_get('/get_kairos_log', s.websocket_handler)
@@ -918,6 +927,17 @@ class KairosWorker:
         return dict(success=True, data=dict(msg=user + " user has been successfully removed!"))
 
     @trace_call
+    def iresetpassword(s, user=None):
+        s.odbget(root=True)
+        if user=='admin': return dict(success=False, message='admin password cannot be reset!')
+        dbuser = "kairos_user_" + user
+        logging.info("Updating " + user + " password...")
+        s.odbget(database=dbuser)
+        s.odbrun("update ouser set password = '" + user + "' where name = '" + user + "'")
+        logging.info(user + " password reset.")
+        return dict(success=True, data=dict(msg=user + " password has been successfully reset!"))
+
+    @trace_call
     def ideletegrant(s, role=None, user=None):
         dbgroup = "kairos_group_" + role
         s.odbget(database=dbgroup)
@@ -938,7 +958,7 @@ class KairosWorker:
         return data
 
     @trace_call
-    def igetobjects(s, systemdb=None, nodesdb=None, where=''):
+    def igetobjects(s, systemdb=None, nodesdb=None, where='', evalobject=True):
         data = []
         for db in [nodesdb, systemdb]:
             s.odbget(database=db)
@@ -951,10 +971,14 @@ class KairosWorker:
                 p = compile(source, filename, 'exec')
                 global kairos
                 locals()['kairos'] = kairos
+                true = True
+                false = False
+                null = None
                 exec(p, locals())
                 obj = locals()['UserObject']()
                 obj['origin'] = db
                 obj['created'] = created
+                if evalobject: obj = replaceeval(obj)
                 data.append(obj)
         return data
 
@@ -1383,12 +1407,12 @@ class KairosWorker:
         if ntype in ['A', 'B', 'D']:
             todo = True if qid not in cache.queries else False
             todo = True if "nocache" in query and query["nocache"] else todo
-            for part in cache.collections[query['collection']]:
-                todo = True if qid in cache.queries and cache.queries[qid] < cache.collections[query['collection']][part] else todo
+            for collection in query['collections']:
+                for part in cache.collections[collection]:
+                    todo = True if qid in cache.queries and cache.queries[qid] < cache.collections[collection][part] else todo
             if todo:
                 hcache = Cache(cache.name)
-                collection = query['collection']
-                table = qid + '_' + query['collection']
+                table = qid
                 logging.info("Node: " + nid + ", Type: " + ntype + ", removing old query cache: '" + qid + "' ...")
                 hcache.execute("drop table if exists " + table)
                 logging.info("Node: " + nid + ", Type: " + ntype + ", building new query cache: '" + qid + "' ...")
@@ -1427,7 +1451,7 @@ class KairosWorker:
                 else: result.append(s.iqueryexecute(pnode, query=query, nodesdb=nodesdb, limit=limit))
         else:
             hcache = Cache(cache.name)
-            table = qid + '_' + query['collection']
+            table = qid
             if 'filterable' in query and query['filterable']:
                 for x in hcache.execute("select * from " + table + " where label in (select label from (select label, sum(value) weight from " + table + " group by label order by weight desc limit " + str(limit) + "))"):
                     result.append(x)
@@ -1499,6 +1523,9 @@ class KairosWorker:
         x = s.odbreload()
         clusterid = [y.id for y in x if y.name==b'objects'][0]
         try:
+            true = True
+            false = False
+            null = None
             p = compile(source, 'stream', 'exec')
             kairos = dict()
             exec(p, locals())
@@ -1823,6 +1850,14 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
+    def resetpassword(s, request):
+        params = parse_qs(request.query_string)
+        user = params['user'][0]
+        response = s.iresetpassword(user=user)
+        return web.json_response(response)
+
+    @intercept_logging_and_internal_error
+    @trace_call
     def deletegrant(s, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
@@ -2063,6 +2098,16 @@ class KairosWorker:
         for v in variables: kairos[v] = variables[v]
         chart = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + chart + "' and type='chart'")[0]
         return web.json_response(dict(success=True, data=chart))
+
+    @intercept_logging_and_internal_error
+    @trace_call
+    def getjsonobject(s, request):
+        params = parse_qs(request.query_string)
+        database = params['database'][0]
+        id = params['id'][0]
+        type = params['type'][0]
+        obj = s.igetobjects(nodesdb=database, systemdb=database, where="where id='" + id + "' and type='" + type + "'", evalobject=False)[0]
+        return web.json_response(dict(success=True, data=obj))
     
     @intercept_logging_and_internal_error
     @trace_call
@@ -2151,7 +2196,7 @@ class KairosWorker:
         for v in variables: kairos[v] = variables[v]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
         query = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + query + "' and type='query'")[0]
-        s.ibuildcollectioncache(node, collections=[query['collection']], systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncache(node, collections=query['collections'], systemdb=systemdb, nodesdb=nodesdb)
         message = s.ibuildquerycache(node, query=query, systemdb=systemdb, nodesdb=nodesdb)
         if not message: result = s.iqueryexecute(node, query=query, nodesdb=nodesdb, limit=limit)
         if message:
