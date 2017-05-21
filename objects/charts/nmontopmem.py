@@ -1,38 +1,41 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "NMONTOPMEM",
-            "icon": "bar-chart",
             "title": "Top processes consuming memory",
             "subtitle": "",
             "reftime": "NMONREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Size",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "NMONTOPMEM",
+                                    "query": "NMONTOPMEM$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
-                           ]
+                                }
+                            ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "NMONTOPMEMA",
+                                    "query": "NMONTOPMEM$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
-                           ]
+                                }
+                            ]
                         }
                     ]
                 }

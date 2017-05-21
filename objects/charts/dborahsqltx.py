@@ -1,62 +1,64 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAHSQLTX' not in kairos: kairos['DBORAHSQLTX'] = ''
         object = {
-            "type": "chart",
             "id": "DBORAHSQLTX",
-            "icon": "bar-chart",
-            "title": "SQL request: " + kairos["DBORAHSQLTX"] + " - Statistics per execution",
+            "title": "SQL request: %(DBORAHSQLTX)s - Statistics per exec",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Elapsed (sec) per execution",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "DBORAHSQLTXWA",
+                                    "query": "DBORAHSQLTX$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHSQLTXWC",
+                                    "query": "DBORAHSQLTX$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHSQLTXWI",
+                                    "query": "DBORAHSQLTX$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHSQLTXWR",
+                                    "query": "DBORAHSQLTX$$4",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHSQLTXC",
+                                    "query": "DBORAHSQLTX$$5",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHSQLTXE",
+                                    "query": "DBORAHSQLTX$$6",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]

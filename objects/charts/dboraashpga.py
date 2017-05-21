@@ -1,37 +1,40 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORAASHPGA",
-            "icon": "bar-chart",
             "title": "PGA allocated - Top sessions",
             "subtitle": "",
             "reftime": "DBORAASHREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
-                    "title": " Size allocated in bytes",
-                    "scaling": "linear",
+                    "title": "Size allocated in bytes",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "DBORAASHPGA",
+                                    "query": "DBORAASHPGA$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAASHSUMPGA",
+                                    "query": "DBORAASHPGA$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]

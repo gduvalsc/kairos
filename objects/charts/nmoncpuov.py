@@ -1,28 +1,30 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "NMONCPUOV",
-            "icon": "bar-chart",
             "title": "LPAR CPU overview",
             "subtitle": "",
             "reftime": "NMONREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Number of CPUs",
-                    "scaling": "linear",
-                    "minvalue": 0,
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "NMONCPUOV",
+                                    "query": "NMONCPUOV$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 }
-                           ]
+                            ]
                         }
                     ]
                 }

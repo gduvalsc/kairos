@@ -1,60 +1,60 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORASV' not in kairos: kairos['DBORASV'] = ''
         object = {
-            "type": "chart",
             "id": "DBORACHOOSESV",
-            "icon": "bar-chart",
-            "title": "Display service: " + kairos["DBORASV"] + " - Average wait",
+            "title": "Display service: %(DBORASV)s - Average wait",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "# of seconds per second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "DBORACHOOSESVUIO",
+                                    "query": "DBORACHOOSESV$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORACHOOSESVADM",
+                                    "query": "DBORACHOOSESV$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORACHOOSESVCON",
+                                    "query": "DBORACHOOSESV$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORACHOOSESVNET",
+                                    "query": "DBORACHOOSESV$$4",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORACHOOSESVW",
+                                    "query": "DBORACHOOSESV$$5",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

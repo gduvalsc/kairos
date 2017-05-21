@@ -1,38 +1,41 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "NMONIOADAPTWA",
-            "icon": "bar-chart",
-            "title": "IO adapters - Write activity",
+            "title": "IO Adapters - Write activity",
             "subtitle": "",
             "reftime": "NMONREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Volume (MB/s)",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "NMONIOADAPTWA",
+                                    "query": "NMONIOADAPTWA$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
-                           ]
+                                }
+                            ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "NMONIOADAPTWAA",
+                                    "query": "NMONIOADAPTWA$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
-                           ]
+                                }
+                            ]
                         }
                     ]
                 }

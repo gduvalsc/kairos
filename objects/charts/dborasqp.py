@@ -1,51 +1,54 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORASQP",
-            "icon": "bar-chart",
             "title": "Top SQL - Parsing",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "# of parses per second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SC",
                             "datasets": [
                                 {
-                                    "query": "DBORASQP",
+                                    "query": "DBORASQP$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value",
                                     "info": {
-                                        "variable": "DBORAREQ",
-                                        "query": "DBORAREQ"
+                                        "variable": "DBORAHELP",
+                                        "query": "DBORAHELP"
                                     }
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORASQPC",
+                                    "query": "DBORASQP$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORASQP2",
+                                    "query": "DBORASQP$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

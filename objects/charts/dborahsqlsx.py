@@ -1,97 +1,108 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAHSQLSX' not in kairos: kairos['DBORAHSQLSX'] = ''
         object = {
-            "type": "chart",
             "id": "DBORAHSQLSX",
-            "icon": "bar-chart",
-            "title": "SQL request: " + kairos["DBORAHSQLSX"] + " - Statistics per execution",
+            "title": "SQL request: %(DBORAHSQLSX)s - Statistics per execution",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Elapsed (sec) per execution",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHSQLSXE",
+                                    "query": "DBORAHSQLSX$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
                 },
                 {
-                    "title": "Buffer gets & disk reads per execution",
-                    "scaling": "linear",
-                    "position": "right",
+                    "title": "Buffer gets & disk reads per second",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHSQLSXG",
+                                    "query": "DBORAHSQLSX$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHSQLSXR",
+                                    "query": "DBORAHSQLSX$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
                 },
                 {
-                    "title": "Rows processed per execution",
-                    "scaling": "linear",
-                    "position": "right",
+                    "title": "Executions and fetches per second",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHSQLSXN",
+                                    "query": "DBORAHSQLSX$$4",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
+                                {
+                                    "query": "DBORAHSQLSX$$5",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
                             ]
                         }
                     ]
                 },
                 {
-                    "title": "Executions & fetches per execution",
-                    "scaling": "linear",
-                    "position": "right",
+                    "title": "Rows processed per second",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHSQLSXX",
+                                    "query": "DBORAHSQLSX$$6",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
-                                {
-                                    "query": "DBORAHSQLSXF",
-                                    "timestamp": "timestamp",
-                                    "label": "label",
-                                    "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

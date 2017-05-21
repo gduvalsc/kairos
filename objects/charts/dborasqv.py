@@ -1,45 +1,48 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORASQV",
-            "icon": "bar-chart",
             "title": "Top SQL - Version count",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "# of versions",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SC",
                             "datasets": [
                                 {
-                                    "query": "DBORASQV",
+                                    "query": "DBORASQV$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value",
                                     "info": {
-                                        "variable": "DBORAREQ",
-                                        "query": "DBORAREQ"
+                                        "variable": "DBORAHELP",
+                                        "query": "DBORAHELP"
                                     }
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORASQVC",
+                                    "query": "DBORASQV$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

@@ -1,27 +1,29 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAASHSQLPGA' not in kairos: kairos['DBORAASHSQLPGA'] = ''
         object = {
-            "type": "chart",
             "id": "DBORAASHSQLPGA",
-            "icon": "bar-chart",
-            "title": "PGA allocated for SQL request: " + kairos["DBORAASHSQLPGA"],
+            "title": "PGA allocated for SQL request: %(DBORAASHSQLPGA)s",
             "subtitle": "",
             "reftime": "DBORAASHREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Size allocated in bytes",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAASHSQLPGA",
+                                    "query": "DBORAASHSQLPGA$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]

@@ -1,28 +1,31 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORAASHBDBTIME",
-            "icon": "bar-chart",
             "title": "DB Time for background sessions",
             "subtitle": "",
             "reftime": "DBORAASHREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Number of active sessions",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "DBORAASHSUMBGSESSIONSONCPU",
+                                    "query": "DBORAASHBDBTIME$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAASHSUMBGSESSIONSWAITING",
+                                    "query": "DBORAASHBDBTIME$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"

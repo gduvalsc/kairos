@@ -1,83 +1,96 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORAHITR",
-            "icon": "bar-chart",
-            "title": " Cache activity - Recycle pool - Hit ratio",
+            "title": "Cache activity - Recycle pool - Hit ratio",
             "subtitle": "",
+            "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Number of buffer gets / reads per second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
                     "minvalue": 0,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "DBORAHITRG",
+                                    "query": "DBORAHITR$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHITRR",
+                                    "query": "DBORAHITR$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
-                           ]
+                                }
+                            ]
                         }
                     ]
                 },
                 {
                     "title": "Hit ratio (%)",
-                    "scaling": "linear",
-                    "position": "right",
-                    "properties": { "line": { "stroke": "red" }, "text": { "fill": "red" } },
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "line": {
+                            "stroke": "red"
+                        },
+                        "text": {
+                            "fill": "red"
+                        }
+                    },
+                    "minvalue": null,
                     "maxvalue": 101,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHITRH",
+                                    "query": "DBORAHITR$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 }
-                           ]
+                            ]
                         }
                     ]
                 },
                 {
                     "title": "Waits per second",
-                    "scaling": "linear",
-                    "position": "right",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHITRW",
+                                    "query": "DBORAHITR$$4",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHITRF",
+                                    "query": "DBORAHITR$$5",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHITRB",
+                                    "query": "DBORAHITR$$6",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 }
-                           ]
+                            ]
                         }
                     ]
                 }

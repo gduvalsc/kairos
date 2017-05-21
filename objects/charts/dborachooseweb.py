@@ -1,52 +1,66 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAWEB' not in kairos: kairos['DBORAWEB'] = ''
         object = {
-            "type": "chart",
             "id": "DBORACHOOSEWEB",
-            "icon": "bar-chart",
-            "title": "Display background event: " + kairos["DBORAWEB"],
+            "title": "Display background event: %(DBORAWEB)s",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Average time per operation (ms)",
-                    "scaling": "linear",
-                    "properties": { "line": { "stroke": "red" }, "text": { "fill": "red" } },
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "line": {
+                            "stroke": "red"
+                        },
+                        "text": {
+                            "fill": "red"
+                        }
+                    },
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORACHOOSEWEBAVG",
+                                    "query": "DBORACHOOSEWEB$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value"
-                                },
+                                    "value": "value",
+                                    "onclick": {}
+                                }
                             ]
                         }
                     ]
                 },
                 {
                     "title": "Number of operations - Timeouts per sec",
-                    "scaling": "linear",
-                    "position": "right",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORACHOOSEWEBNUM",
+                                    "query": "DBORACHOOSEWEB$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value"
+                                    "value": "value",
+                                    "onclick": {}
                                 },
                                 {
-                                    "query": "DBORACHOOSEWEBTOUT",
+                                    "query": "DBORACHOOSEWEB$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value"
-                                },
+                                    "value": "value",
+                                    "onclick": {}
+                                }
                             ]
                         }
                     ]

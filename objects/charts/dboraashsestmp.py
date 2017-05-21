@@ -1,27 +1,29 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAASHSESTMP' not in kairos: kairos['DBORAASHSESTMP'] = ''
         object = {
-            "type": "chart",
             "id": "DBORAASHSESTMP",
-            "icon": "bar-chart",
-            "title": "Temp space allocated for session: " + kairos["DBORAASHSESTMP"],
+            "title": "Temp space allocated for session: %(DBORAASHSESTMP)s",
             "subtitle": "",
             "reftime": "DBORAASHREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Size allocated in bytes",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAASHSESTMP",
+                                    "query": "DBORAASHSESTMP$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]

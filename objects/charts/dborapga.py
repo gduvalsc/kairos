@@ -1,79 +1,88 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORAPGA",
-            "icon": "bar-chart",
-            "title": "PGA usage",
+            "title": "PGA Usage",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Memory / Workarea (manuel + auto) allocated (Megabytes)",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
                     "minvalue": 0,
                     "renderers": [
                         {
                             "type": "SC",
                             "datasets": [
                                 {
-                                    "query": "DBORAPGAWMAA",
+                                    "query": "DBORAPGA$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAPGAMOA",
+                                    "query": "DBORAPGA$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAPGAMA",
+                                    "query": "DBORAPGA$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAPGAAT",
+                                    "query": "DBORAPGA$$4",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
                 },
                 {
                     "title": "One pass or Multi pass execs during snap",
-                    "scaling": "linear",
-                    "position": "right",
-                    "properties": { "line": { "stroke": "red" }, "text": { "fill": "red" } },
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "line": {
+                            "stroke": "red"
+                        },
+                        "text": {
+                            "fill": "red"
+                        }
+                    },
+                    "minvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAPGAX1",
+                                    "query": "DBORAPGA$$5",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAPGAX2",
+                                    "query": "DBORAPGA$$6",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

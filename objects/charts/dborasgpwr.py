@@ -1,41 +1,42 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORASGPWR",
-            "icon": "bar-chart",
-            "title": "Top segments by Physical write requests",
+            "title": "Top segments by physical write requests",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "# of requests per second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
                     "renderers": [
                         {
                             "type": "SC",
                             "datasets": [
                                 {
-                                    "query": "DBORASGPWR",
+                                    "query": "DBORASGPWR$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORASGPWR1",
+                                    "query": "DBORASGPWR$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

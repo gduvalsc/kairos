@@ -1,51 +1,54 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORASQR",
-            "icon": "bar-chart",
             "title": "Top SQL - Physical reads",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "# of reads per second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SC",
                             "datasets": [
                                 {
-                                    "query": "DBORASQR",
+                                    "query": "DBORASQR$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value",
                                     "info": {
-                                        "variable": "DBORAREQ",
-                                        "query": "DBORAREQ"
+                                        "variable": "DBORAHELP",
+                                        "query": "DBORAHELP"
                                     }
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORASQRC",
+                                    "query": "DBORASQR$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAPHYREADS",
+                                    "query": "DBORASQR$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

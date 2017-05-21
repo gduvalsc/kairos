@@ -1,0 +1,14 @@
+class UserObject(dict):
+    def __init__(s):
+        object = {
+            "type": "query",
+            "id": "DBORASGRLW$$1",
+            "collections": [
+                "DBORASGRLW"
+            ],
+            "userfunctions": [],
+            "request": "select timestamp, label label, sum(value) value from (select timestamp, owner||' '||objtype||' '||object||' '||subobject label, waits value from DBORASGRLW) group by timestamp, label order by timestamp",
+            "nocache": false,
+            "filterable": true
+        }
+        super(UserObject, s).__init__(**object)

@@ -1,38 +1,41 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "NMONNETRA",
-            "icon": "bar-chart",
             "title": "Network - Read activity",
             "subtitle": "",
             "reftime": "NMONREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Volume (MB/s)",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "NMONNETRA",
+                                    "query": "NMONNETRA$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
-                           ]
+                                }
+                            ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "NMONNETRAA",
+                                    "query": "NMONNETRA$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
-                           ]
+                                }
+                            ]
                         }
                     ]
                 }

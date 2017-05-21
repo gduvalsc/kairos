@@ -1,39 +1,41 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "NMONLCPUIDLE",
-            "icon": "bar-chart",
-            "title": "Logical CPU idle",
+            "title": "Idle logical CPU",
             "subtitle": "",
             "reftime": "NMONREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Idle logical processors",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
                     "minvalue": 0,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "NMONLCPUIDLE",
+                                    "query": "NMONLCPUIDLE$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 }
-                           ]
+                            ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "NMONLCPUIDLEALL",
+                                    "query": "NMONLCPUIDLE$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 }
-                           ]
+                            ]
                         }
                     ]
                 }

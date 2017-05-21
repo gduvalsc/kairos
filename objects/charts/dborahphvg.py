@@ -1,41 +1,48 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORAHPHVG",
-            "icon": "bar-chart",
             "title": "Top PHV - Buffer gets",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "# of buffer gets per second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SC",
                             "datasets": [
                                 {
-                                    "query": "DBORAHPHVG",
+                                    "query": "DBORAHPHVG$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value"
-                                },
+                                    "value": "value",
+                                    "info": {
+                                        "variable": "DBORAHELPP",
+                                        "query": "DBORAHHELPP"
+                                    }
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHPHVGC",
+                                    "query": "DBORAHPHVG$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

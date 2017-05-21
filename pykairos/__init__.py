@@ -52,11 +52,23 @@ def ficon (node):
         icon_closed = "fa fa-database btnd"
     return (icon_file, icon_opened, icon_closed)
 
-def replaceeval(obj):
-    logging.debug('replaceeval:' + str(obj))
-    logging.debug('type: ' + str(help(type)))
-    for e in obj:
-        logging.debug('key: ' + e + ', type: ' + str(type(obj[e])))
+def replaceeval(obj, recursive=False):
+    if not recursive:
+        for e in obj:
+            obj[e] = replaceeval(obj[e], recursive=True)
+    if type(obj) == type('a'):
+        logging.debug('STRING: ' + str(obj))
+        try: obj = obj % kairos
+        except: pass
+    elif type(obj) == type([]):
+        i=0
+        for e in obj:
+            obj[i] = replaceeval(e, recursive=True)
+            i+=1
+    elif type(obj) == type({}):
+        for e in obj:
+            obj[e] = replaceeval(obj[e], recursive=True)
+    else: pass
     return obj
         
 def trace_call(func):
@@ -1523,22 +1535,22 @@ class KairosWorker:
         x = s.odbreload()
         clusterid = [y.id for y in x if y.name==b'objects'][0]
         try:
+            p = compile(source, 'stream', 'exec')
+            kairos = dict()
             true = True
             false = False
             null = None
-            p = compile(source, 'stream', 'exec')
-            kairos = dict()
             exec(p, locals())
             obj = locals()['UserObject']()
-            type = obj['type']
+            typeobj = obj['type']
             id = obj['id']
             filename = id.lower() + '.py'
             content = binascii.b2a_base64(source.encode())
             s.odbget(database=database)
-            s.odbrun("delete vertex objects where id='" + id + "' and type = '" + type + "'")
-            rid = s.odb.record_create(clusterid, {'@objects': dict(id=id, type=type, filename=filename, content=content.decode())})._rid
+            s.odbrun("delete vertex objects where id='" + id + "' and type = '" + typeobj + "'")
+            rid = s.odb.record_create(clusterid, {'@objects': dict(id=id, type=typeobj, filename=filename, content=content.decode())})._rid
             s.odbrun("update objects set created=sysdate() where @rid=" + rid)
-            return web.json_response(dict(success=True, data=dict(msg='Object: ' + id + ' of type: ' + type + ' has been successfully saved!')))
+            return web.json_response(dict(success=True, data=dict(msg='Object: ' + id + ' of type: ' + typeobj + ' has been successfully saved!')))
         except:
             tb = sys.exc_info()
             message = str(tb[1])
@@ -1722,19 +1734,22 @@ class KairosWorker:
         content = upload.file.read()
         uploadtype = upload.content_type
         if uploadtype == 'image/jpeg':
-            type = 'wallpaper'
+            typeobj = 'wallpaper'
             id = filename.replace('.jpg', '')
         else:
             p = compile(content, filename, 'exec')
             kairos = dict()
+            true = True
+            false = False
+            null = None
             exec(p, locals())
             obj = locals()['UserObject']()
-            type = obj['type']
+            typeobj = obj['type']
             id = obj['id']
         content = binascii.b2a_base64(content)
         s.odbget(database=nodesdb)
-        s.odbrun("delete vertex objects where id='" + id + "' and type = '" + type + "'")
-        rid = s.odb.record_create(clusterid, {'@objects': dict(id=id, type=type, filename=filename, content=content.decode())})._rid
+        s.odbrun("delete vertex objects where id='" + id + "' and type = '" + typeobj + "'")
+        rid = s.odb.record_create(clusterid, {'@objects': dict(id=id, type=typeobj, filename=filename, content=content.decode())})._rid
         s.odbrun("update objects set created=sysdate() where @rid=" + rid)
         return web.json_response(dict(success=True, state=True, name=filename))
 
@@ -1908,9 +1923,9 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         database = params['database'][0]
         id = params['id'][0]
-        type = params['type'][0]
+        typeobj = params['type'][0]
         s.odbget(database=database)
-        tabx = s.odbquery("select filename, content from objects where id='" + id + "' and type='" + type + "'")
+        tabx = s.odbquery("select filename, content from objects where id='" + id + "' and type='" + typeobj + "'")
         for rx in tabx: item = rx.oRecordData
         stream = binascii.a2b_base64(item['content'])
         return web.Response(headers=MultiDict({'Content-Disposition': 'Attachment;filename="' + item['filename'] + '"'}), body=stream)

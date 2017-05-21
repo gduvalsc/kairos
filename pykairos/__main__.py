@@ -34,7 +34,7 @@ def catchrun(*c):
         p.wait()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action='version', version='KAIROS V3.1')
+parser.add_argument('--version', action='version', version='KAIROS V3.2')
 parser.add_argument('--launcher', action='store_true', dest='launcher', help='The launcher is requested to start')
 parser.add_argument('--notifier', action='store_true', dest='notifier', help='A notifier is requested to start')
 parser.add_argument('--bootstrap', action='store_true', dest='bootstrap', help='Bootstraping the system')
@@ -49,6 +49,7 @@ if args.launcher:
     logging.info('Process name: ' + setproctitle.getproctitle())
     logging.info('Process id: ' + str(os.getpid()))
     workers = multiprocessing.cpu_count() + 1
+    workers = 1
     gunicorn = ['gunicorn']
     gunicorn.extend(['-b', '0.0.0.0:443'])
     gunicorn.extend(['-k', 'aiohttp.worker.GunicornWebWorker'])
@@ -105,7 +106,12 @@ if args.bootstrap:
         obj = subprocess.run(['kairos', '-s', 'listobjects', '-a', 'kairos', '-p', 'root', '--nodesdb', 'kairos_system_system', '--systemdb', 'kairos_system_system'], stdout=subprocess.PIPE)
         lines = obj.stdout.decode().split('\n')
         logging.info("System database has " + str(int((len(lines) - 1) / 2)) + " objects.")
-        assert len(objects) == int((len(lines) - 1) / 2)
+        try:
+            assert len(objects) == int((len(lines) - 1) / 2)
+        except:
+             subprocess.run(['cat', '/var/log/kairos/kairos.log'])
+             subprocess.run(['cat', '/var/log/kairos/webserver.log'])
+             raise
         subprocess.run(['rm', '-fr', '/tmp/objects'])
         subprocess.run(['mkdir', '/orientdb/exports'])
         subprocess.run(['orientdb', "connect remote:localhost/kairos_system_system kairos root; export database /orientdb/exports/system"])

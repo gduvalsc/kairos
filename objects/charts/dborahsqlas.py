@@ -1,132 +1,143 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAHSQLAS' not in kairos: kairos['DBORAHSQLAS'] = ''
         object = {
-            "type": "chart",
             "id": "DBORAHSQLAS",
-            "icon": "bar-chart",
-            "title": "SQL request: " + kairos["DBORAHSQLAS"] + " - Statistics per second",
+            "title": "SQL request: %(DBORAHSQLAS)s - Statistics per second",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Elapsed (sec) per second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "DBORAHSQLASWA",
+                                    "query": "DBORAHSQLAS$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHSQLASWC",
+                                    "query": "DBORAHSQLAS$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHSQLASWI",
+                                    "query": "DBORAHSQLAS$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHSQLASWR",
+                                    "query": "DBORAHSQLAS$$4",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHSQLASC",
+                                    "query": "DBORAHSQLAS$$5",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHSQLASE",
+                                    "query": "DBORAHSQLAS$$6",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
                 },
                 {
                     "title": "Buffer gets & disk reads per second",
-                    "scaling": "linear",
-                    "position": "right",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHSQLASG",
+                                    "query": "DBORAHSQLAS$$7",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHSQLASR",
+                                    "query": "DBORAHSQLAS$$8",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "title": "Executions and fetches per second",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
+                    "renderers": [
+                        {
+                            "type": "L",
+                            "datasets": [
+                                {
+                                    "query": "DBORAHSQLAS$$9",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
+                                {
+                                    "query": "DBORAHSQLAS$$10",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
                             ]
                         }
                     ]
                 },
                 {
                     "title": "Rows processed per second",
-                    "scaling": "linear",
-                    "position": "right",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHSQLASN",
+                                    "query": "DBORAHSQLAS$$11",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
-                },
-                {
-                    "title": "Executions & fetches per second",
-                    "scaling": "linear",
-                    "position": "right",
-                    "renderers": [
-                        {
-                            "type": "L",
-                            "datasets": [
-                                {
-                                    "query": "DBORAHSQLASX",
-                                    "timestamp": "timestamp",
-                                    "label": "label",
-                                    "value": "value"
-                                },
-                                {
-                                    "query": "DBORAHSQLASF",
-                                    "timestamp": "timestamp",
-                                    "label": "label",
-                                    "value": "value"
-                                },
-                            ]
-                        }
-                    ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

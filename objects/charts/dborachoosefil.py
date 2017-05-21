@@ -1,64 +1,82 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAFIL' not in kairos: kairos['DBORAFIL'] = ''
         object = {
-            "type": "chart",
             "id": "DBORACHOOSEFIL",
-            "icon": "bar-chart",
-            "title": "Display average time for database file: " + kairos["DBORAFIL"],
+            "title": "Display average time for file: %(DBORAFIL)s",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Average time per operation (ms)",
-                    "scaling": "linear",
-                    "properties": { "line": { "stroke": "red" }, "text": { "fill": "red" } },
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "text": {
+                            "fill": "red"
+                        },
+                        "line": {
+                            "stroke": "red"
+                        }
+                    },
+                    "minvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORACHOOSEFILAVG",
+                                    "query": "DBORACHOOSEFIL$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
                 },
                 {
-                    "title": "Number of reads per seconds",
-                    "scaling": "linear",
-                    "position": "right",
+                    "title": "# of reads per second",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "text": {
+                            "fill": "red"
+                        },
+                        "line": {
+                            "stroke": "red"
+                        }
+                    },
+                    "minvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORACHOOSEFILNUM",
+                                    "query": "DBORACHOOSEFIL$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
                 },
                 {
-                    "title": "Number of blocks per read",
-                    "scaling": "linear",
-                    "position": "right",
+                    "title": "# of blocks reads per read",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORACHOOSEFILBLKR",
+                                    "query": "DBORACHOOSEFIL$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]

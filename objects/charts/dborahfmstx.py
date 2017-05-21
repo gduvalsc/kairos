@@ -1,62 +1,64 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAHFMSTX' not in kairos: kairos['DBORAHFMSTX'] = ''
         object = {
-            "type": "chart",
             "id": "DBORAHFMSTX",
-            "icon": "bar-chart",
-            "title": "FMS: " + kairos["DBORAHFMSTX"] + " - Statistics per execution",
+            "title": "FMS: %(DBORAHFMSTX)s - Statistics per exec",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Elapsed (sec) per execution",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "DBORAHFMSTXWA",
+                                    "query": "DBORAHFMSTX$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHFMSTXWC",
+                                    "query": "DBORAHFMSTX$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHFMSTXWI",
+                                    "query": "DBORAHFMSTX$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHFMSTXWR",
+                                    "query": "DBORAHFMSTX$$4",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHFMSTXC",
+                                    "query": "DBORAHFMSTX$$5",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHFMSTXE",
+                                    "query": "DBORAHFMSTX$$6",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]

@@ -1,42 +1,45 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORARDOT",
-            "icon": "bar-chart",
             "title": "Log file sync vs Redo write time vs Log file parallel write per operation",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Time (ms)",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORARDOTS",
+                                    "query": "DBORARDOT$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORARDOTL",
+                                    "query": "DBORARDOT$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value"
+                                    "value": "value",
+                                    "onclick": {}
                                 },
                                 {
-                                    "query": "DBORARDOTP",
+                                    "query": "DBORARDOT$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value"
-                                },
+                                    "value": "value",
+                                    "onclick": {}
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

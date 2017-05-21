@@ -1,132 +1,143 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAHPHVAX' not in kairos: kairos['DBORAHPHVAX'] = ''
         object = {
-            "type": "chart",
             "id": "DBORAHPHVAX",
-            "icon": "bar-chart",
-            "title": "PHV: " + kairos["DBORAHPHVAX"] + " - Statistics per execution",
+            "title": "PHV: %(DBORAHPHVAX)s - Statistics per exec",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Elapsed (sec) per execution",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "DBORAHPHVAXWA",
+                                    "query": "DBORAHPHVAX$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHPHVAXWC",
+                                    "query": "DBORAHPHVAX$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHPHVAXWI",
+                                    "query": "DBORAHPHVAX$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHPHVAXWR",
+                                    "query": "DBORAHPHVAX$$4",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHPHVAXC",
+                                    "query": "DBORAHPHVAX$$5",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHPHVAXE",
+                                    "query": "DBORAHPHVAX$$6",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
                 },
                 {
-                    "title": "Buffer gets & disk reads per execution",
-                    "scaling": "linear",
-                    "position": "right",
+                    "title": "Buffer gets & disk reads per second",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHPHVAXG",
+                                    "query": "DBORAHPHVAX$$7",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHPHVAXR",
+                                    "query": "DBORAHPHVAX$$8",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
                 },
                 {
-                    "title": "Rows processed per execution",
-                    "scaling": "linear",
-                    "position": "right",
+                    "title": "Executions and fetches per second",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHPHVAXN",
+                                    "query": "DBORAHPHVAX$$9",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
+                                {
+                                    "query": "DBORAHPHVAX$$10",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
                             ]
                         }
                     ]
                 },
                 {
-                    "title": "Executions & fetches per execution",
-                    "scaling": "linear",
-                    "position": "right",
+                    "title": "Rows processed per second",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHPHVAXX",
+                                    "query": "DBORAHPHVAX$$11",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
-                                {
-                                    "query": "DBORAHPHVAXF",
-                                    "timestamp": "timestamp",
-                                    "label": "label",
-                                    "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

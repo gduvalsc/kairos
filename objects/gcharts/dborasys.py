@@ -5,7 +5,7 @@ class UserObject(dict):
             "title": "System statistics",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
-            "type": "chartj",
+            "type": "gchart",
             "yaxis": [
                 {
                     "title": "# of seconds each second",

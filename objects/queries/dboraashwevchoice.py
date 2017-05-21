@@ -3,7 +3,7 @@ class UserObject(dict):
         object = {
             "type": "query",
             "id": "DBORAASHWEVCHOICE",
-            "collection": "ORAHAS",
+            "collections": ["ORAHAS"],
             "request": "select distinct event label from ORAHAS where session_state = 'WAITING' order by label"
         }
         super(UserObject, s).__init__(**object)

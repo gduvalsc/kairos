@@ -1,31 +1,32 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORABPAD",
-            "icon": "bar-chart",
             "title": "Default buffer pool advisory",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Estimated pysical reads factor",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
                     "minvalue": 0,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORABPAD",
+                                    "query": "DBORABPAD$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value",
-                                },
+                                    "value": "value"
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

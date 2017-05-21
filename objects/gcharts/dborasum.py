@@ -5,7 +5,7 @@ class UserObject(dict):
             "title": "DB CPU & Wait - Gets - Reads - Redo",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
-            "type": "chartj",
+            "type": "gchart",
             "yaxis": [
                 {
                     "title": "# of seconds each second",

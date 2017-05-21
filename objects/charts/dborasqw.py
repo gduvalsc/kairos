@@ -1,45 +1,48 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORASQW",
-            "icon": "bar-chart",
             "title": "Top SQL - Cluster wait time",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
-                    "title": "# of seconds per second",
-                    "scaling": "linear",
+                    "title": "# of seconds per seconds",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SC",
                             "datasets": [
                                 {
-                                    "query": "DBORASQW",
+                                    "query": "DBORASQW$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value",
                                     "info": {
-                                        "variable": "DBORAREQ",
-                                        "query": "DBORAREQ"
+                                        "variable": "DBORAHELP",
+                                        "query": "DBORAHELP"
                                     }
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORASQWC",
+                                    "query": "DBORASQW$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

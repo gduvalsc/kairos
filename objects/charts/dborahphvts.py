@@ -1,62 +1,64 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAHPHVTS' not in kairos: kairos['DBORAHPHVTS'] = ''
         object = {
-            "type": "chart",
             "id": "DBORAHPHVTS",
-            "icon": "bar-chart",
-            "title": "PHV: " + kairos["DBORAHPHVTS"] + " - Statistics per second",
+            "title": "PHV: %(DBORAHPHVTS)s - Statistics per second",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Elapsed (sec) per second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "DBORAHPHVTSWA",
+                                    "query": "DBORAHPHVTS$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHPHVTSWC",
+                                    "query": "DBORAHPHVTS$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHPHVTSWI",
+                                    "query": "DBORAHPHVTS$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHPHVTSWR",
+                                    "query": "DBORAHPHVTS$$4",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHPHVTSC",
+                                    "query": "DBORAHPHVTS$$5",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHPHVTSE",
+                                    "query": "DBORAHPHVTS$$6",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]

@@ -3,7 +3,7 @@ class UserObject(dict):
         object = {
             "type": "query",
             "id": "NMONREFTIME",
-            "collection": "NMONCPU",
+            "collections": ["NMONCPU"],
             "request": "select distinct timestamp from NMONCPU"
         }
         super(UserObject, s).__init__(**object)

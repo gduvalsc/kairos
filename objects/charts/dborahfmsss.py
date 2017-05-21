@@ -1,97 +1,108 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAHFMSSS' not in kairos: kairos['DBORAHFMSSS'] = ''
         object = {
-            "type": "chart",
             "id": "DBORAHFMSSS",
-            "icon": "bar-chart",
-            "title": "FMS: " + kairos["DBORAHFMSSS"] + " - Statistics per second",
+            "title": "FMS: %(DBORAHFMSSS)s - Statistics per second",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Elapsed (sec) per second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHFMSSSE",
+                                    "query": "DBORAHFMSSS$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
                 },
                 {
                     "title": "Buffer gets & disk reads per second",
-                    "scaling": "linear",
-                    "position": "right",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHFMSSSG",
+                                    "query": "DBORAHFMSSS$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORAHFMSSSR",
+                                    "query": "DBORAHFMSSS$$3",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "title": "Executions and fetches per second",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
+                    "renderers": [
+                        {
+                            "type": "L",
+                            "datasets": [
+                                {
+                                    "query": "DBORAHFMSSS$$4",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
+                                {
+                                    "query": "DBORAHFMSSS$$5",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
                             ]
                         }
                     ]
                 },
                 {
                     "title": "Rows processed per second",
-                    "scaling": "linear",
-                    "position": "right",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAHFMSSSN",
+                                    "query": "DBORAHFMSSS$$6",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
-                },
-                {
-                    "title": "Executions & fetches per second",
-                    "scaling": "linear",
-                    "position": "right",
-                    "renderers": [
-                        {
-                            "type": "L",
-                            "datasets": [
-                                {
-                                    "query": "DBORAHFMSSSX",
-                                    "timestamp": "timestamp",
-                                    "label": "label",
-                                    "value": "value"
-                                },
-                                {
-                                    "query": "DBORAHFMSSSF",
-                                    "timestamp": "timestamp",
-                                    "label": "label",
-                                    "value": "value"
-                                },
-                            ]
-                        }
-                    ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

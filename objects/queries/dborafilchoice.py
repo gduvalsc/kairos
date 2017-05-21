@@ -3,7 +3,7 @@ class UserObject(dict):
         object = {
             "type": "query",
             "id": "DBORAFILCHOICE",
-            "collection": "DBORAFIL",
+            "collections": ["DBORAFIL"],
             "request": "select distinct file label from DBORAFIL order by label"
         }
         super(UserObject, s).__init__(**object)

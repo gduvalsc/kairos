@@ -1,34 +1,37 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORASUMWCP",
-            "icon": "bar-chart",
             "title": "DB CPU & Wait classes",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
+                    "title": "# of seconds each second",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
                     "renderers": [
                         {
                             "type": "P",
                             "datasets": [
                                 {
-                                    "query": "DBORAWAITCLASSES",
+                                    "query": "DBORASUMWCP$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORADBCPU",
+                                    "query": "DBORASUMWCP$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

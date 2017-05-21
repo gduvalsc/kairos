@@ -5,7 +5,7 @@ class UserObject(dict):
             "title": "DB Time Model",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
-            "type": "chartj",
+            "type": "gchart",
             "yaxis": [
                 {
                     "title": "# of seconds each second",
@@ -22,7 +22,9 @@ class UserObject(dict):
                                     "collections": [
                                         "DBORATMS"
                                     ],
-                                    "userfunctions": [],
+                                    "userfunctions": [
+                                        "match"
+                                    ],
                                     "filterable": false,
                                     "nocache": false,
                                     "pieces": [
@@ -45,9 +47,7 @@ class UserObject(dict):
                                     "collections": [
                                         "DBORATMS"
                                     ],
-                                    "userfunctions": [
-                                        "match"
-                                    ],
+                                    "userfunctions": [],
                                     "filterable": false,
                                     "nocache": false,
                                     "pieces": [

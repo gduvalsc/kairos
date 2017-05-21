@@ -505,6 +505,12 @@ dhtmlxEvent(window,"load",function(){
                         cell.value = cell.attributes.userfunctions;
 			            graph.startEditingAtCell(cell);
 		            });
+                    menu.addItem('Edit Info', 'resources/mxgraph/images/edit.png', function() {
+                        graph.attributes.current = cell;
+                        graph.attributes.edited = 'info';
+                        cell.value = cell.attributes.info;
+			            graph.startEditingAtCell(cell);
+		            });
                     menu.addItem('Edit Onclick', 'resources/mxgraph/images/edit.png', function() {
                         graph.attributes.current = cell;
                         graph.attributes.edited = 'onclick';
@@ -645,6 +651,7 @@ dhtmlxEvent(window,"load",function(){
                 vertex.attributes.projection = '"label"';
                 vertex.attributes.collections = '[]';
                 vertex.attributes.userfunctions = '[]';
+                vertex.attributes.info = '{}';
                 vertex.attributes.onclick = '{}';
                 vertex.attributes.filterable = 'true';
                 vertex.attributes.nocache = 'false';
@@ -718,7 +725,7 @@ dhtmlxEvent(window,"load",function(){
         var r = cell.attributes.specimen + '\n\n' + (cell.attributes.specimen === 'CHART' ? 'id: ' + cell.attributes.id + '\n' + 'title: ' + cell.attributes.title + '\n' + 'subtitle: ' + cell.attributes.subtitle + '\n' + 'reftime: ' + cell.attributes.reftime :
                         cell.attributes.specimen === 'YAXIS' ? 'title: ' + cell.attributes.title + '\n' + 'scaling: ' + cell.attributes.scaling + '\n' + 'position: ' + cell.attributes.position + '\n' + 'properties: ' + cell.attributes.properties + '\n' + 'minvalue: ' + cell.attributes.minvalue + '\n' + 'maxvalue: ' + cell.attributes.maxvalue  :
                         cell.attributes.specimen === 'RENDERER' ? 'type: ' + cell.attributes.type :
-                        cell.attributes.specimen === 'DATASET' ? 'groupby: ' + cell.attributes.groupby + '\n' + 'projection: ' + cell.attributes.projection + '\n' + 'collections: ' + cell.attributes.collections + '\n' + 'userfunctions: ' + cell.attributes.userfunctions+ '\n' + 'onclick: ' + cell.attributes.onclick + '\n' + 'filterable: ' + cell.attributes.filterable+ '\n' + 'nocache: ' + cell.attributes.nocache :
+                        cell.attributes.specimen === 'DATASET' ? 'groupby: ' + cell.attributes.groupby + '\n' + 'projection: ' + cell.attributes.projection + '\n' + 'collections: ' + cell.attributes.collections + '\n' + 'userfunctions: ' + cell.attributes.userfunctions+ '\n' + 'info: ' + cell.attributes.info + '\n' + 'onclick: ' + cell.attributes.onclick + '\n' + 'filterable: ' + cell.attributes.filterable+ '\n' + 'nocache: ' + cell.attributes.nocache :
                         cell.attributes.specimen === 'PIECE' ? 'table: ' + cell.attributes.table + '\n' + 'projection: ' + cell.attributes.projection + '\n' + 'restriction: ' + cell.attributes.restriction + '\n' + 'value: ' + cell.attributes.value :
                         '');
         return r;
@@ -733,8 +740,8 @@ dhtmlxEvent(window,"load",function(){
                     jsonobject[k] = JSON.parse(v);
                 }
             });
-            jsonobject.type = root.attributes.specimen === 'CHART' ? 'chartj' : 'UNKNOWN';
-            if (jsonobject.type === 'chartj') {
+            jsonobject.type = root.attributes.specimen === 'CHART' ? 'gchart' : 'UNKNOWN';
+            if (jsonobject.type === 'gchart') {
                 jsonobject.yaxis = [];
                 _.each(root.edges, function (ye) {
                     if (ye.target.attributes.specimen === 'YAXIS') {
@@ -887,7 +894,7 @@ dhtmlxEvent(window,"load",function(){
             var defy = 20;
             var defw = 400;
             var defh = 120;
-            if (jsonobject.type === 'chartj') {
+            if (jsonobject.type === 'gchart') {
                 root = graph.insertVertex(parent, 'root', 'CHART', defx, defy, defw, defh, 'fillColor=#E38080');
                 root.attributes = {'specimen': 'CHART', 'id': JSON.stringify(jsonobject.id), 'title': JSON.stringify(jsonobject.title), 'subtitle': JSON.stringify(jsonobject.subtitle), 'reftime': JSON.stringify(jsonobject.reftime)};
                 root.value = mxg_setValue(root);
@@ -923,7 +930,7 @@ dhtmlxEvent(window,"load",function(){
                         mxg_addOverlays(graph, renderer, true, true, true);
                         _.each(r.datasets, function(d) {
                             var dataset = graph.insertVertex(parent, null, 'DATASET', null, null, null, null, 'fillColor=#6F92E4');
-                            dataset.attributes = {'specimen': 'DATASET', 'groupby': JSON.stringify(d.groupby), 'projection': JSON.stringify(d.projection), 'collections': JSON.stringify(d.collections), 'userfunctions': JSON.stringify(d.userfunctions), 'onclick': JSON.stringify(d.onclick), 'filterable': JSON.stringify(d.filterable), 'nocache': JSON.stringify(d.nocache)};
+                            dataset.attributes = {'specimen': 'DATASET', 'groupby': JSON.stringify(d.groupby), 'projection': JSON.stringify(d.projection), 'collections': JSON.stringify(d.collections), 'userfunctions': JSON.stringify(d.userfunctions), 'info': JSON.stringify(d.info), 'onclick': JSON.stringify(d.onclick), 'filterable': JSON.stringify(d.filterable), 'nocache': JSON.stringify(d.nocache)};
                             dataset.value = mxg_setValue(dataset);
                             graph.updateCellSize(dataset);
                             var geometry = graph.getModel().getGeometry(dataset);
@@ -1163,7 +1170,7 @@ dhtmlxEvent(window,"load",function(){
             mot.enableItem("download_object");
             mot.enableItem("delete_object");
             mot.enableItem("edit_object");
-            if (_.contains(['chartj', 'datasetj'], mog.cellById(currow, 2).getValue())) {
+            if (_.contains(['gchart', 'gdataset'], mog.cellById(currow, 2).getValue())) {
                 mot.enableItem("graphical_edit_object");
             } else {
                 mot.disableItem("graphical_edit_object");
@@ -1263,11 +1270,9 @@ dhtmlxEvent(window,"load",function(){
             var container = document.getElementById(uniquecid);
             var save_object = function () {
                 var jsongraph = mxg_getjson(context.graph);
-                console.log(jsongraph);
                 var source = '\nobject = ' + JSON.stringify(jsongraph, undefined, 4) + '\nsuper(UserObject, s).__init__(**object)';
                 source = '\ndef __init__(s):' + source.replace(/\n/g, '\n    ');
                 source = 'class UserObject(dict):' + source.replace(/\n/g, '\n    ');
-                console.log(source);
                 waterfall([
                     ajax_post_first_in_async_waterfall("setobject", {database: desktop.settings.nodesdb, source: source}),
                     function (x) {
@@ -1287,14 +1292,14 @@ dhtmlxEvent(window,"load",function(){
                         _.each(r.datasets, function (d, id) {
                             i += 1;
                             queries[i] = d;
-                            clonegraph.yaxis[iy].renderers[ir].datasets[id] = {query: chartid + "$$" + i, timestamp: "timestamp", label: "label", value: "value", onclick: d.onclick};
+                            clonegraph.yaxis[iy].renderers[ir].datasets[id] = {query: chartid + "$$" + i, timestamp: "timestamp", label: "label", value: "value", info: d.info === null ? undefined : d.info, onclick: d.onclick === null ? undefined : d.onclick};
                         });
                     });
                 });
                 _.each(queries, function(q, i) {
                     var pieces = [];
                     _.each(q.pieces, function(p) {
-                        var where = p.restriction === undefined ? "" : " where " + p.restriction;
+                        var where = p.restriction === undefined || p.restriction === null || p.restriction === "" ? "" : " where " + p.restriction;
                         pieces.push("select timestamp, " + p.projection + " label, " + p.value + " value from " + p.table + where);
                     });
                     var query = {type: "query", id: chartid + '$$' + i, collections: q.collections, userfunctions: q.userfunctions, request: "select timestamp, " + q.projection + " label, " + q.groupby + "(value) value from (" + pieces.join(" union all ") + ") group by timestamp, label order by timestamp", nocache: q.nocache === undefined ? false : q.nocache, filterable: q.filterable === undefined ? true : q.filterable};
@@ -2432,6 +2437,7 @@ dhtmlxEvent(window,"load",function(){
                 var il = -1;
                 var ir = -1;
                 _.each(x.chart.yaxis, function (y) {
+                    y.position = y.position === undefined ? 'left' : y.position;
                     ir = y.position.toLowerCase() === 'right' ? ir + 1 : ir;
                     il = y.position.toLowerCase() !== 'right' ? il + 1 : il;
                     var yaxisid = desktop.settings.plotorientation === 'vertical' ? "yaxis" + i : "yaxis0";

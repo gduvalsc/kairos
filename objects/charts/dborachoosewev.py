@@ -1,52 +1,66 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAWEV' not in kairos: kairos['DBORAWEV'] = ''
         object = {
-            "type": "chart",
             "id": "DBORACHOOSEWEV",
-            "icon": "bar-chart",
-            "title": "Display foreground event: " + kairos["DBORAWEV"],
+            "title": "Display foreground event: %(DBORAWEV)s",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Average time per operation (ms)",
-                    "scaling": "linear",
-                    "properties": { "line": { "stroke": "red" }, "text": { "fill": "red" } },
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "line": {
+                            "stroke": "red"
+                        },
+                        "text": {
+                            "fill": "red"
+                        }
+                    },
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORACHOOSEWEVAVG",
+                                    "query": "DBORACHOOSEWEV$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value"
-                                },
+                                    "value": "value",
+                                    "onclick": {}
+                                }
                             ]
                         }
                     ]
                 },
                 {
                     "title": "Number of operations - Timeouts per sec",
-                    "scaling": "linear",
-                    "position": "right",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORACHOOSEWEVNUM",
+                                    "query": "DBORACHOOSEWEV$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value"
+                                    "value": "value",
+                                    "onclick": {}
                                 },
                                 {
-                                    "query": "DBORACHOOSEWEVTOUT",
+                                    "query": "DBORACHOOSEWEV$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value"
-                                },
+                                    "value": "value",
+                                    "onclick": {}
+                                }
                             ]
                         }
                     ]

@@ -1,36 +1,37 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORAWEV",
-            "icon": "bar-chart",
             "title": "Top wait events",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "# of seconds each second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
                     "minvalue": 0,
                     "renderers": [
                         {
                             "type": "SC",
                             "datasets": [
                                 {
-                                    "query": "DBORAWEV",
+                                    "query": "DBORAWEV$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value",
                                     "onclick": {
+                                        "variable": "DBORAWEV",
                                         "action": "dispchart",
-                                        "chart": "DBORACHOOSEWEV",
-                                        "variable": "DBORAWEV"
+                                        "chart": "DBORACHOOSEWEV"
                                     }
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

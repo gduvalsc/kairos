@@ -5,6 +5,6 @@ class UserObject(dict):
             "id": "DBORAHPHVSS",
             "action": "dispchart",
             "chart": "DBORAHPHVSS",
-            "query": "DBORAHPHVSSCHOICE",
+            "query": "DBORAHPHVCHOICE",
         }
         super(UserObject, s).__init__(**object)

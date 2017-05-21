@@ -1,26 +1,28 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORAROWS",
-            "icon": "bar-chart",
             "title": "Read rows",
             "subtitle": "",
+            "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Average number of read rows per second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
                     "renderers": [
                         {
-                            "type": "SC",
+                            "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAROWS",
+                                    "query": "DBORAROWS$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 }
-                           ]
+                            ]
                         }
                     ]
                 }

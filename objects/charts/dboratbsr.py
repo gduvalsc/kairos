@@ -1,49 +1,64 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORATBSR",
-            "icon": "bar-chart",
             "title": "Tablespace reads",
             "subtitle": "",
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "# of I/O reads per second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
                     "renderers": [
                         {
                             "type": "SC",
                             "datasets": [
                                 {
-                                    "query": "DBORATBSR",
+                                    "query": "DBORATBSR$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value"
-                                },
+                                    "value": "value",
+                                    "onclick": {
+                                        "variable": "DBORATBS",
+                                        "action": "dispchart",
+                                        "chart": "DBORACHOOSETBS"
+                                    }
+                                }
                             ]
-                        },
+                        }
                     ]
                 },
                 {
                     "title": "# of blocks reads per second",
-                    "scaling": "linear",
-                    "position": "right",
-                    "properties": { "line": { "stroke": "red" }, "text": { "fill": "red" } },
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "text": {
+                            "fill": "red"
+                        },
+                        "line": {
+                            "stroke": "red"
+                        }
+                    },
+                    "minvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAPHYREADS",
+                                    "query": "DBORATBSR$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
-                        },
+                        }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

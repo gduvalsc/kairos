@@ -1,56 +1,60 @@
 class UserObject(dict):
     def __init__(s):
-        if 'NMONDISK' not in kairos: kairos['NMONDISK'] = ''
         object = {
-            "type": "chart",
             "id": "NMONDISK",
-            "icon": "bar-chart",
-            "title": "Activity for disk: " + kairos["NMONDISK"] ,
+            "title": "Activity for disk: %(NMONDISK)s",
             "subtitle": "",
             "reftime": "NMONREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Read / Write (MB/s)",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "NMONDISK1",
+                                    "query": "NMONDISK$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "NMONDISK2",
+                                    "query": "NMONDISK$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
                 },
                 {
                     "title": "Busy rate (%)",
-                    "scaling": "linear",
-                    "position": "right",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": 0,
                     "maxvalue": 110,
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "NMONDISK3",
+                                    "query": "NMONDISK$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

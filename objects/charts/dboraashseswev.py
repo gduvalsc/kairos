@@ -1,27 +1,29 @@
 class UserObject(dict):
     def __init__(s):
-        if 'DBORAASHSESWEV' not in kairos: kairos['DBORAASHSESWEV'] = ''
         object = {
-            "type": "chart",
             "id": "DBORAASHSESWEV",
-            "icon": "bar-chart",
-            "title": "Top wait events for session: " + kairos["DBORAASHSESWEV"],
+            "title": "Top wait events for session: %(DBORAASHSESWEV)s",
             "subtitle": "",
             "reftime": "DBORAASHREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "Number of active sessions",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": null,
+                    "maxvalue": null,
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "DBORAASHSESWEV",
+                                    "query": "DBORAASHSESWEV$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]

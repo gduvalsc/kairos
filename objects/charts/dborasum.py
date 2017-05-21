@@ -1,59 +1,73 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "type": "chart",
             "id": "DBORASUM",
-            "icon": "bar-chart",
-            "title": "DB CPU & Wait - Gets - Reads - Redo size",
+            "title": "DB CPU & Wait - Gets - Reads - Redo",
             "subtitle": "",
-            "collections": ['DBORAMISC', 'DBORATMS','DBORAWEC','DBORASTA'],
             "reftime": "DBORAREFTIME",
+            "type": "chart",
             "yaxis": [
                 {
                     "title": "# of seconds each second",
-                    "scaling": "linear",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "text": {
+                            "fill": "black"
+                        },
+                        "line": {
+                            "stroke": "black"
+                        }
+                    },
                     "renderers": [
                         {
                             "type": "SA",
                             "datasets": [
                                 {
-                                    "query": "DBORASUMWAITEVENTS",
+                                    "query": "DBORASUM$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
                                 },
                                 {
-                                    "query": "DBORADBCPU",
+                                    "query": "DBORASUM$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         },
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORADBTIME",
+                                    "query": "DBORASUM$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-                                },
+                                }
                             ]
                         }
                     ]
                 },
                 {
                     "title": "# of logical reads per second",
-                    "scaling": "linear",
-                    "position": "right",
-                    "properties": { "line": { "stroke": "darkgreen" }, "text": { "fill": "darkgreen" }},
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "text": {
+                            "fill": "darkgreen"
+                        },
+                        "line": {
+                            "stroke": "darkgreen"
+                        }
+                    },
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORALOGREADS",
+                                    "query": "DBORASUM$$4",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
@@ -64,15 +78,22 @@ class UserObject(dict):
                 },
                 {
                     "title": "# of physical reads per second",
-                    "scaling": "linear",
-                    "position": "right",
-                    "properties": { "line": { "stroke": "red" }, "text": { "fill": "red" } },
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "text": {
+                            "fill": "red"
+                        },
+                        "line": {
+                            "stroke": "red"
+                        }
+                    },
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAPHYREADS",
+                                    "query": "DBORASUM$$5",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
@@ -83,24 +104,30 @@ class UserObject(dict):
                 },
                 {
                     "title": "# of redo bytes per second",
-                    "scaling": "linear",
-                    "position": "right",
-                    "properties": { "line": { "stroke": "blue" }, "text": { "fill": "blue" } },
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "text": {
+                            "fill": "blue"
+                        },
+                        "line": {
+                            "stroke": "blue"
+                        }
+                    },
                     "renderers": [
                         {
                             "type": "L",
                             "datasets": [
                                 {
-                                    "query": "DBORAREDOBYTES",
+                                    "query": "DBORASUM$$6",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
-
                                 }
                             ]
                         }
                     ]
-                },
+                }
             ]
         }
         super(UserObject, s).__init__(**object)

@@ -3,7 +3,7 @@ class UserObject(dict):
         object = {
             "type": "query",
             "id": "DBORAASHSQLCHOICE",
-            "collection": "ORAHAS",
+            "collections": ["ORAHAS"],
             "request": "select distinct sql_id label from ORAHAS where sql_id != '' order by label"
         }
         super(UserObject, s).__init__(**object)

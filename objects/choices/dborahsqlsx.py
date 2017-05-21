@@ -5,6 +5,6 @@ class UserObject(dict):
             "id": "DBORAHSQLSX",
             "action": "dispchart",
             "chart": "DBORAHSQLSX",
-            "query": "DBORAHSQLSXCHOICE",
+            "query": "DBORAHSQLSCHOICE",
         }
         super(UserObject, s).__init__(**object)

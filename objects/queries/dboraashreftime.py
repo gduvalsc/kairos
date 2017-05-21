@@ -3,7 +3,7 @@ class UserObject(dict):
         object = {
             "type": "query",
             "id": "DBORAASHREFTIME",
-            "collection": "ORAHAS",
+            "collections": ["ORAHAS"],
             "request": "select distinct timestamp from ORAHAS"
         }
         super(UserObject, s).__init__(**object)
