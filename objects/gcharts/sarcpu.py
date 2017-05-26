@@ -1,0 +1,94 @@
+class UserObject(dict):
+    def __init__(s):
+        object = {
+            "id": "SARCPU",
+            "title": "CPU Usage - Run / Swap queue",
+            "subtitle": "",
+            "reftime": "SARREFTIME",
+            "type": "gchart",
+            "yaxis": [
+                {
+                    "title": "CPU usage (%)",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": 0,
+                    "maxvalue": 110,
+                    "renderers": [
+                        {
+                            "type": "SA",
+                            "datasets": [
+                                {
+                                    "groupby": "sum",
+                                    "projection": "label",
+                                    "collections": [
+                                        "SARU"
+                                    ],
+                                    "userfunctions": [],
+                                    "info": null,
+                                    "onclick": null,
+                                    "filterable": true,
+                                    "nocache": false,
+                                    "pieces": [
+                                        {
+                                            "table": "SARU",
+                                            "projection": "'sys'",
+                                            "restriction": "cpuid = 'all'",
+                                            "value": "sys"
+                                        },
+                                        {
+                                            "table": "SARU",
+                                            "projection": "'usr'",
+                                            "restriction": "cpuid = 'all'",
+                                            "value": "usr"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "title": "Run / Swap queue size",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "minvalue": 0,
+                    "maxvalue": null,
+                    "renderers": [
+                        {
+                            "type": "L",
+                            "datasets": [
+                                {
+                                    "groupby": "avg",
+                                    "projection": "label",
+                                    "collections": [
+                                        "SARQ"
+                                    ],
+                                    "userfunctions": [],
+                                    "info": null,
+                                    "onclick": null,
+                                    "filterable": true,
+                                    "nocache": false,
+                                    "pieces": [
+                                        {
+                                            "table": "SARQ",
+                                            "projection": "'Run queue'",
+                                            "restriction": "",
+                                            "value": "runqsz"
+                                        },
+                                        {
+                                            "table": "SARQ",
+                                            "projection": "'Swap queue'",
+                                            "restriction": "",
+                                            "value": "swpqsz"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        super(UserObject, s).__init__(**object)

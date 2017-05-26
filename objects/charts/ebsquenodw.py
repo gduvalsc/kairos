@@ -1,0 +1,79 @@
+class UserObject(dict):
+    def __init__(s):
+        object = {
+            "id": "EBSQUENODW",
+            "title": "E-Business Suite - Top waiting nodes for queue: %(EBSQUENODW)s",
+            "subtitle": "",
+            "reftime": "EBSREFTIME",
+            "type": "chart",
+            "yaxis": [
+                {
+                    "title": "Average number of concurrent sessions per unit of time",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "line": {
+                            "stroke": "red"
+                        },
+                        "text": {
+                            "fill": "red"
+                        }
+                    },
+                    "minvalue": null,
+                    "maxvalue": null,
+                    "renderers": [
+                        {
+                            "type": "SC",
+                            "datasets": [
+                                {
+                                    "query": "EBSQUENODW$$1",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "L",
+                            "datasets": [
+                                {
+                                    "query": "EBSQUENODW$$2",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "title": "Estimated wait time (in minutes)",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "line": {
+                            "stroke": "blue"
+                        },
+                        "text": {
+                            "fill": "blue"
+                        }
+                    },
+                    "minvalue": null,
+                    "maxvalue": null,
+                    "renderers": [
+                        {
+                            "type": "L",
+                            "datasets": [
+                                {
+                                    "query": "EBSQUENODW$$3",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        super(UserObject, s).__init__(**object)

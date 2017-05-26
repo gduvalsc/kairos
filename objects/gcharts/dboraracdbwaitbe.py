@@ -1,0 +1,73 @@
+class UserObject(dict):
+    def __init__(s):
+        object = {
+            "id": "DBORARACDBWAITBE",
+            "title": "Background wait events",
+            "subtitle": "",
+            "reftime": "DBORARACREFTIME",
+            "type": "gchart",
+            "yaxis": [
+                {
+                    "title": "# of seconds each second",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "line": {
+                            "stroke": "black"
+                        },
+                        "text": {
+                            "fill": "black"
+                        }
+                    },
+                    "renderers": [
+                        {
+                            "type": "SA",
+                            "datasets": [
+                                {
+                                    "groupby": "sum",
+                                    "projection": "label",
+                                    "collections": [
+                                        "DBORARACTTBE"
+                                    ],
+                                    "userfunctions": [],
+                                    "filterable": false,
+                                    "nocache": false,
+                                    "pieces": [
+                                        {
+                                            "table": "DBORARACTTBE",
+                                            "projection": "event",
+                                            "restriction": "inum = 0 and event != 'background cpu time'",
+                                            "value": "timewaited"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "L",
+                            "datasets": [
+                                {
+                                    "groupby": "sum",
+                                    "projection": "label",
+                                    "collections": [
+                                        "DBORARACTTBE"
+                                    ],
+                                    "userfunctions": [],
+                                    "filterable": false,
+                                    "nocache": false,
+                                    "pieces": [
+                                        {
+                                            "table": "DBORARACTTBE",
+                                            "projection": "'Wait events'",
+                                            "restriction": "inum = 0 and event != 'background cpu time'",
+                                            "value": "timewaited"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+        super(UserObject, s).__init__(**object)

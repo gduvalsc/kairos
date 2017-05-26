@@ -82,7 +82,7 @@ class UserObject(dict):
                         a.date = year + month + day + hour + min + sec + "000"
                     if when == 'Elapsed Time:':
                         a.dur = int(tof(what[:-4]))
-                        if a.scope == 'TTMISC': a.emit('TTMISC', dttmisc, dict(timestamp=a.date, avgelapsed=float(a.dur), elapsed=int(a.dur)))
+                        if 'TTMISC' in a.scope: a.emit('TTMISC', dttmisc, dict(timestamp=a.date, avgelapsed=float(a.dur), elapsed=int(a.dur)))
             if 'MetricsBegin ValueEnd Value' in x:
                 d = dict(timestamp='text', metric='text', averagedvalue='real', summedvalue='int')
                 for y in a.collected[x]:
@@ -125,7 +125,7 @@ class UserObject(dict):
                     request = y['SQL Text']
                     convertid[sqlid] = hashlib.md5(request.encode()).hexdigest()
                     hashid = convertid[sqlid]
-                    if a.scope == 'TTSQLTEXT': a.emit('TTSQLTEXT', d, dict(sqlid=sqlid, hashid=hashid, request=request))
+                    if 'TTSQLTEXT' in a.scope: a.emit('TTSQLTEXT', d, dict(sqlid=sqlid, hashid=hashid, request=request))
             if 'Configuration Parameters' in x:
                 d = dict(parameter='text', begvalue='text', endvalue='text')
                 for y in a.collected[x]:
@@ -145,13 +145,14 @@ class UserObject(dict):
     def atable(s, a, l, g, m):
         context = ''
         if a.reinit: a.setContext(context)
-        #if a.scope in ['TTMISC'] and 'zz9' in a.collected: a.setContext('BREAK')
-        #if a.scope in ['TTPARAM'] and 'Configuration Parameters' in a.collected and len(a.collected['Configuration Parameters']): a.setContext('BREAK')
-        #if a.scope in ['TTABSMETRICS'] and 'MetricsBegin ValueEnd Value' in a.collected and len(a.collected['MetricsBegin ValueEnd Value']): a.setContext('BREAK')
-        #if a.scope in ['TTMETRICS'] and 'MetricsPer SecondPer Transaction' in a.collected and len(a.collected['MetricsPer SecondPer Transaction']): a.setContext('BREAK')
-        #if a.scope in ['TTSQLTOPP'] and 'Preparations% TotalCmd IDCmd Text' in a.collected and len(a.collected['Preparations% TotalCmd IDCmd Text']): a.setContext('BREAK')
-        #if a.scope in ['TTSQLTOPX'] and 'Executions% TotalCmd IDCmd Text' in a.collected and len(a.collected['Executions% TotalCmd IDCmd Text']): a.setContext('BREAK')
-        #if a.scope in ['TTSQLTEXT'] and 'SQL IDSQL Text' in a.collected and len(a.collected['SQL IDSQL Text']): a.setContext('BREAK')
+        if len(a.scope) < 3:
+            if a.scope.issubset({'TTMISC'}) and 'zz9' in a.collected: a.setContext('BREAK')
+            if a.scope.issubset({'TTPARAM'}) and 'Configuration Parameters' in a.collected and len(a.collected['Configuration Parameters']): a.setContext('BREAK')
+            if a.scope.issubset({'TTABSMETRICS'}) and 'MetricsBegin ValueEnd Value' in a.collected and len(a.collected['MetricsBegin ValueEnd Value']): a.setContext('BREAK')
+            if a.scope.issubset({'TTMETRICS'}) and 'MetricsPer SecondPer Transaction' in a.collected and len(a.collected['MetricsPer SecondPer Transaction']): a.setContext('BREAK')
+            if a.scope.issubset({'TTSQLTOPP'}) and 'Preparations% TotalCmd IDCmd Text' in a.collected and len(a.collected['Preparations% TotalCmd IDCmd Text']): a.setContext('BREAK')
+            if a.scope.issubset({'TTSQLTOPX'}) and 'Executions% TotalCmd IDCmd Text' in a.collected and len(a.collected['Executions% TotalCmd IDCmd Text']): a.setContext('BREAK')
+            if a.scope.issubset({'TTSQLTEXT'}) and 'SQL IDSQL Text' in a.collected and len(a.collected['SQL IDSQL Text']): a.setContext('BREAK')
         if len(a.row): a.tab.append(a.row)
         a.row = {}
         a.collector = {}

@@ -85,7 +85,7 @@ class UserObject(dict):
                     a.version[inum] = y[6]
                     dbtime = tof(y[8]) * 60 / a.dur[inum]
                     avgactivesess = tof(y[10])
-                    if a.scope == 'DBORARACMISC': a.emit('DBORARACMISC', desc, dict(timestamp=a.date[inum],inum=str(inum),instance=instance,host=host,avgelapsed=a.dur[inum],elapsed=int(a.dur[inum]),avgdbtime=dbtime,avgactivesess=avgactivesess))
+                    if 'DBORARACMISC' in a.scope: a.emit('DBORARACMISC', desc, dict(timestamp=a.date[inum],inum=str(inum),instance=instance,host=host,avgelapsed=a.dur[inum],elapsed=int(a.dur[inum]),avgdbtime=dbtime,avgactivesess=avgactivesess))
 
             if x=='Report Summary':
                 desc = dict(timestamp='text',inum='text',dbcache='real',sharedpool='real',largepool='real',javapool='real',streampool='real',pgatarget='real',logbuffer='real')
@@ -300,7 +300,7 @@ class UserObject(dict):
                 for y in a.collected[x]:
                     sqlid = y[0]
                     request = toc(y[1])
-                    module = a.sqlid[sqlid] if a.sqlid.has_key(sqlid) else ''
+                    module = a.sqlid[sqlid] if sqlid in a.sqlid else ''
                     a.emit('DBORARACREQ', desc, dict(sqlid=sqlid,module=module,request=request))
 
             if x in ['SQL ordered by Elapsed Time (Global)','SQL ordered by CPU Time (Global)','SQL ordered by User I/O Time (Global)','SQL ordered by Gets (Global)','SQL ordered by Reads (Global)','SQL ordered by UnOptimized Read Requests (Global)','SQL ordered by Executions (Global)','SQL ordered by Cluster Wait Time (Global)']:
@@ -336,31 +336,32 @@ class UserObject(dict):
     def atable(s, a, l, g, m):
         context = ''
         if a.reinit: a.setContext(context)
-        if a.scope in ['DBORARACMISC'] and 'zz9' in a.collected and 'zz8' in a.collected: a.setContext('BREAK')
-        if a.scope in ['DBORARACCSIZE'] and 'Report Summary' in a.collected and len(a.collected['Report Summary']): a.setContext('BREAK')
-        if a.scope in ['DBORARACOSS'] and 'OS Statistics By Instance' in a.collected and len(a.collected['OS Statistics By Instance']): a.setContext('BREAK')
-        if a.scope in ['DBORARACTM'] and 'Time Model' in a.collected and len(a.collected['Time Model']): a.setContext('BREAK')
-        if a.scope in ['DBORARACFWC'] and 'Foreground Wait Classes' in a.collected and len(a.collected['Foreground Wait Classes']): a.setContext('BREAK')
-        if a.scope in ['DBORARACTTE'] and 'Top Timed Events' in a.collected and len(a.collected['Top Timed Events']): a.setContext('BREAK')
-        if a.scope in ['DBORARACTTFE'] and 'Top Timed Foreground Events' in a.collected and len(a.collected['Top Timed Foreground Events']): a.setContext('BREAK')
-        if a.scope in ['DBORARACTTBE'] and 'Top Timed Background Events' in a.collected and len(a.collected['Top Timed Background Events']): a.setContext('BREAK')
-        if a.scope in ['DBORARACGALPSS'] and 'System Statistics' in a.collected and len(a.collected['System Statistics']): a.setContext('BREAK')
-        if a.scope in ['DBORARACGALPGM'] and 'SysStat and Global Messaging  - RAC' in a.collected and len(a.collected['SysStat and Global Messaging  - RAC']): a.setContext('BREAK')
-        if a.scope in ['DBORARACGCEP'] and 'Global Cache Efficiency Percentages' in a.collected and len(a.collected['Global Cache Efficiency Percentages']): a.setContext('BREAK')
-        if a.scope in ['DBORARACGCTS'] and 'Global Cache Transfer Stats' in a.collected and len(a.collected['Global Cache Transfer Stats']): a.setContext('BREAK')
-        if a.scope in ['DBORARACSTA'] and 'Global Messaging Statistics (Global)' in a.collected and len(a.collected['Global Messaging Statistics (Global)']): a.setContext('BREAK')
-        if a.scope in ['DBORARACSTAA'] and 'System Statistics (Absolute Values)' in a.collected and len(a.collected['System Statistics (Absolute Values)']): a.setContext('BREAK')
-        if a.scope in ['DBORARACSEG'] and 'Segment Statistics (Global)' in a.collected and len(a.collected['Segment Statistics (Global)']): a.setContext('BREAK')
-        if a.scope in ['DBORARACPING'] and 'Ping Statistics' in a.collected and len(a.collected['Ping Statistics']): a.setContext('BREAK')
-        if a.scope in ['DBORARACREQ'] and 'Complete List of SQL Text' in a.collected and len(a.collected['Complete List of SQL Text']): a.setContext('BREAK')
-        if a.scope in ['DBORARACSQE'] and 'SQL ordered by Elapsed Time (Global)' in a.collected and len(a.collected['SQL ordered by Elapsed Time (Global)']): a.setContext('BREAK')
-        if a.scope in ['DBORARACSQC'] and 'SQL ordered by CPU Time (Global)' in a.collected and len(a.collected['SQL ordered by CPU Time (Global)']): a.setContext('BREAK')
-        if a.scope in ['DBORARACSQI'] and 'SQL ordered by User I/O Time (Global)' in a.collected and len(a.collected['SQL ordered by User I/O Time (Global)']): a.setContext('BREAK')
-        if a.scope in ['DBORARACSQG'] and 'SQL ordered by Gets (Global)' in a.collected and len(a.collected['SQL ordered by Gets (Global)']): a.setContext('BREAK')
-        if a.scope in ['DBORARACSQR'] and 'SQL ordered by Reads (Global)' in a.collected and len(a.collected['SQL ordered by Reads (Global)']): a.setContext('BREAK')
-        if a.scope in ['DBORARACSQU'] and 'SQL ordered by UnOptimized Read Requests (Global)' in a.collected and len(a.collected['SQL ordered by UnOptimized Read Requests (Global)']): a.setContext('BREAK')
-        if a.scope in ['DBORARACSQX'] and 'SQL ordered by Executions (Global)' in a.collected and len(a.collected['SQL ordered by Executions (Global)']): a.setContext('BREAK')
-        if a.scope in ['DBORARACSQW'] and 'SQL ordered by Cluster Wait Time (Global)' in a.collected and len(a.collected['SQL ordered by Cluster Wait Time (Global)']): a.setContext('BREAK')
+        if len(a.scope) < 3:
+            if a.scope.issubset({'DBORARACMISC'}) and 'zz9' in a.collected and 'zz8' in a.collected: a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACCSIZE'}) and 'Report Summary' in a.collected and len(a.collected['Report Summary']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACOSS'}) and 'OS Statistics By Instance' in a.collected and len(a.collected['OS Statistics By Instance']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACTM'}) and 'Time Model' in a.collected and len(a.collected['Time Model']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACFWC'}) and 'Foreground Wait Classes' in a.collected and len(a.collected['Foreground Wait Classes']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACTTE'}) and 'Top Timed Events' in a.collected and len(a.collected['Top Timed Events']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACTTFE'}) and 'Top Timed Foreground Events' in a.collected and len(a.collected['Top Timed Foreground Events']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACTTBE'}) and 'Top Timed Background Events' in a.collected and len(a.collected['Top Timed Background Events']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACGALPSS'}) and 'System Statistics' in a.collected and len(a.collected['System Statistics']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACGALPGM'}) and 'SysStat and Global Messaging  - RAC' in a.collected and len(a.collected['SysStat and Global Messaging  - RAC']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACGCEP'}) and 'Global Cache Efficiency Percentages' in a.collected and len(a.collected['Global Cache Efficiency Percentages']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACGCTS'}) and 'Global Cache Transfer Stats' in a.collected and len(a.collected['Global Cache Transfer Stats']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACSTA'}) and 'Global Messaging Statistics (Global)' in a.collected and len(a.collected['Global Messaging Statistics (Global)']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACSTAA'}) and 'System Statistics (Absolute Values)' in a.collected and len(a.collected['System Statistics (Absolute Values)']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACSEG'}) and 'Segment Statistics (Global)' in a.collected and len(a.collected['Segment Statistics (Global)']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACPING'}) and 'Ping Statistics' in a.collected and len(a.collected['Ping Statistics']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACREQ'}) and 'Complete List of SQL Text' in a.collected and len(a.collected['Complete List of SQL Text']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACSQE'}) and 'SQL ordered by Elapsed Time (Global)' in a.collected and len(a.collected['SQL ordered by Elapsed Time (Global)']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACSQC'}) and 'SQL ordered by CPU Time (Global)' in a.collected and len(a.collected['SQL ordered by CPU Time (Global)']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACSQI'}) and 'SQL ordered by User I/O Time (Global)' in a.collected and len(a.collected['SQL ordered by User I/O Time (Global)']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACSQG'}) and 'SQL ordered by Gets (Global)' in a.collected and len(a.collected['SQL ordered by Gets (Global)']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACSQR'}) and 'SQL ordered by Reads (Global)' in a.collected and len(a.collected['SQL ordered by Reads (Global)']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACSQU'}) and 'SQL ordered by UnOptimized Read Requests (Global)' in a.collected and len(a.collected['SQL ordered by UnOptimized Read Requests (Global)']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACSQX'}) and 'SQL ordered by Executions (Global)' in a.collected and len(a.collected['SQL ordered by Executions (Global)']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORARACSQW'}) and 'SQL ordered by Cluster Wait Time (Global)' in a.collected and len(a.collected['SQL ordered by Cluster Wait Time (Global)']): a.setContext('BREAK')
         if len(a.row): a.tab.append(a.row)
         a.row = {}
         a.collector = {}
@@ -370,7 +371,7 @@ class UserObject(dict):
         a.collector[a.cpt]=a.lxmltext(l)
 
     def atdget(s, a, l, g, m):
-        if a.collector.has_key(a.cpt): a.row[a.collector[a.cpt]]=a.lxmltext(l)
+        if a.cpt in a.collector: a.row[a.collector[a.cpt]]=a.lxmltext(l)
 
     def atdgetd(s, a, l, g, m):
         a.row[a.cpt] = a.lxmltext(l)
