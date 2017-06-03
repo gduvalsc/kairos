@@ -516,11 +516,13 @@ class KairosWorker:
         app.router.add_get('/getobject', s.getobject)
         app.router.add_get('/executequery', s.executequery)
         app.router.add_get('/getmemberlist', s.getmemberlist)
+        app.router.add_get('/getcollections', s.getcollections)
         app.router.add_get('/getmember', s.getmember)
         app.router.add_get('/buildallcollectioncaches', s.buildallcollectioncaches)
         app.router.add_get('/buildcollectioncache', s.buildcollectioncache)
         app.router.add_get('/clearcollectioncache', s.clearcollectioncache)
         app.router.add_get('/dropcollectioncache', s.dropcollectioncache)
+        app.router.add_get('/displaycollection', s.displaycollection)
         app.router.add_get('/createnode', s.createnode)
         app.router.add_get('/renamenode', s.renamenode)
         app.router.add_get('/deletenode', s.deletenode)
@@ -1957,6 +1959,17 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
+    def getcollections(s, request):
+        params = parse_qs(request.query_string)
+        nodesdb = params['nodesdb'][0]
+        id = params['id'][0]
+        node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True)[0]
+        list = []
+        for collection in node['datasource']['collections']: list.append(dict(label=collection))
+        return web.json_response(dict(success=True, data=list))
+
+    @intercept_logging_and_internal_error
+    @trace_call
     def getmember(s, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
@@ -2218,6 +2231,19 @@ class KairosWorker:
             return web.json_response(dict(success=False, status='error', message=message))
         else:
             return web.json_response(dict(success=True, data=result))
+
+    @intercept_logging_and_internal_error
+    @trace_call
+    def displaycollection(s, request):
+        params = parse_qs(request.query_string)
+        nodesdb = params['nodesdb'][0]
+        systemdb = params['systemdb'][0]
+        id = params['id'][0]
+        collection = params['collection'][0]
+        node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
+        s.ibuildcollectioncache(node, collections=[collection], systemdb=systemdb, nodesdb=nodesdb)
+        result = s.iqueryexecute(node, query=dict(id=collection), nodesdb=nodesdb)
+        return web.json_response(dict(success=True, data=result))
 
     @intercept_logging_and_internal_error
     @trace_call

@@ -357,24 +357,27 @@ dhtmlxEvent(window,"load",function(){
         return _.uniq(result);
     };
 
-    var gensubmenus = function (menu, items, parentid) {
+    var gensubmenus = function (menu, items, parentid, node) {
         var cpt = 0;
         var previousid = null;
         _.each(items, function (i) {
-            var id = parentid + '_' + cpt;
-            if (i.type === 'separator') {
-                menu.addNewSeparator(previousid, id);
+            i.tablecondition = i.tablecondition === undefined ? _.keys(node.datasource.collections)[0] : i.tablecondition;
+            var id = id = parentid + '_' + cpt;
+            if (_.contains(_.keys(node.datasource.collections), i.tablecondition)) {
+                if (i.type === 'separator') {
+                    menu.addNewSeparator(previousid, id);
+                }
+                if (i.type === 'menuitem') {
+                    menu.addNewChild(parentid, undefined, id, i.label);
+                    menu.actions[id] = {action: i.action, chart: i.chart, choice: i.choice, layout: i.layout, keyfunc: i.keyfunc};
+                }
+                if (i.type === 'submenu') {
+                    menu.addNewChild(parentid, undefined, id, i.label);
+                    gensubmenus(menu, i.items, id, node);
+                }
+                previousid = id;
+                cpt += 1;
             }
-            if (i.type === 'menuitem') {
-                menu.addNewChild(parentid, undefined, id, i.label);
-                menu.actions[id] = {action: i.action, chart: i.chart, choice: i.choice, layout: i.layout, keyfunc: i.keyfunc};
-            }
-            if (i.type === 'submenu') {
-                menu.addNewChild(parentid, undefined, id, i.label);
-                gensubmenus(menu, i.items, id);
-            }
-            previousid = id;
-            cpt += 1;
         });
     };
 
@@ -2159,6 +2162,8 @@ dhtmlxEvent(window,"load",function(){
 				{id: "run_chart", text: "Run chart"},
 				{id: "run_choice", text: "Run choice"},
 				{type: "separator"},
+				{id: "display_collection", text: "Display collection"},
+				{type: "separator"},
 				{id: "download", text: "Download"},
 				{id: "display_member", text: "Display member"},
 				{id: "unload", text: "Unload"},
@@ -2177,6 +2182,7 @@ dhtmlxEvent(window,"load",function(){
         contextmenu.setItemImage("run_chart","fa fa-line-chart", "fa fa-line-chart");
         contextmenu.setItemImage("run_choice","fa fa-sitemap", "fa fa-sitemap");
         contextmenu.setItemImage("download","fa fa-download", "fa fa-download");
+        contextmenu.setItemImage("display_collection","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("display_member","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("unload","fa fa-cloud-download", "fa fa-cloud-download");
         contextmenu.setItemImage("empty_trash","fa fa-trash-o", "fa fa-trash-o");
@@ -2233,7 +2239,7 @@ dhtmlxEvent(window,"load",function(){
                                     if (menu.getItemType(m.id) === null) {
                                         menu.addNewSibling(null, m.id, m.label);
                                         menu.setItemImage(m.id, m.icon, m.icon);
-                                        gensubmenus(menu, m.items, m.id);
+                                        gensubmenus(menu, m.items, m.id, node);
                                     }
                                 }
                             });
@@ -2337,6 +2343,55 @@ dhtmlxEvent(window,"load",function(){
                                 listmembers.push({text: c, value: c, selected: false});
                             });
                             getchoice(listmembers, aftergetchoice);
+                        }
+                    ]);
+                }
+                if (fid === "display_collection") {
+                    log.debug("Display collection at node: " + id + " (" + tree.getItemText(id) + ")");
+                    var aftergetcollectionslist = function(collection) {
+                        waterfall([
+                            ajax_get_first_in_async_waterfall("displaycollection", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: '#' + id, collection: collection}),
+                            function (x) {
+                                var wq = create_window("display_collection", collection);
+                                var gq =wq.attachGrid();
+                                var header = '';
+                                var colsorting = '';
+                                var filter = '';
+                                _.each(x[0], function (v, k) {
+                                    header += k + ',';
+                                    colsorting += typeof(v) === 'string' ? 'str,' : 'int,';
+                                    filter += '#text_filter,';
+                                });
+                                gq.setHeader(header.slice(0, -1));
+                                gq.setColSorting(colsorting.slice(0, -1));
+                                gq.attachHeader(filter.slice(0, -1));
+                                gq.init();
+                                gq.enableSmartRendering(true);
+                                gq.clearAll();
+                                var datarows = [];
+                                var id = 0;
+                                _.each(x, function (e) {
+                                    var data = [];
+                                    _.each(e, function (v, k) {
+                                        data.push(v);
+                                    });
+                                    datarows.push({id:id, data:data});
+                                    id += 1;
+                                });
+                                gq.parse({rows: datarows}, "json");
+                            }
+                        ]);
+                    };
+                    waterfall([
+                        ajax_get_first_in_async_waterfall("getcollections", {nodesdb: desktop.settings.nodesdb, id: '#' + id}),
+                        function (x) {
+                            var listcollections = [];
+                            _.each(_.sortBy(getallchoices(x, tree.getUserData("type")), function(c) {
+                                return c;
+                            }), function(c) {
+                                listcollections.push({text: c, value: c, selected: false});
+                            });
+                            getchoice(listcollections, aftergetcollectionslist);
                         }
                     ]);
                 }
