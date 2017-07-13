@@ -104,7 +104,7 @@ def intercept_logging_and_internal_error(func):
 class Object: pass
 
 class Buffer:
-    def __init__(s, size=100, init=None, action=None):
+    def __init__(s, size=1, init=None, action=None):
         s.init = init
         s.action = action
         s.size = size

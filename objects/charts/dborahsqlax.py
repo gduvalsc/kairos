@@ -8,7 +8,7 @@ class UserObject(dict):
             "type": "chart",
             "yaxis": [
                 {
-                    "title": "Elapsed (sec) per execution",
+                    "title": "Time (sec) per execution",
                     "position": "LEFT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -64,7 +64,7 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "Buffer gets & disk reads per second",
+                    "title": "Buffer gets & disk reads per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -91,7 +91,7 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "Executions and fetches per second",
+                    "title": "Executions and fetches per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -118,7 +118,7 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "Rows processed per second",
+                    "title": "Rows processed per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},

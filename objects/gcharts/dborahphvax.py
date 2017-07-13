@@ -8,7 +8,7 @@ class UserObject(dict):
             "type": "gchart",
             "yaxis": [
                 {
-                    "title": "Elapsed (sec) per execution",
+                    "title": "Time (sec) per execution",
                     "position": "LEFT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -31,10 +31,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(apwait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "plan_hash_value='%(DBORAHPHVAX)s'",
-                                            "value": "apwait_delta / 1000000.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 },
@@ -51,10 +51,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(ccwait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "plan_hash_value='%(DBORAHPHVAX)s'",
-                                            "value": "ccwait_delta / 1000000.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 },
@@ -71,10 +71,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(iowait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "plan_hash_value='%(DBORAHPHVAX)s'",
-                                            "value": "iowait_delta / 1000000.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 },
@@ -91,10 +91,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(clwait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "plan_hash_value='%(DBORAHPHVAX)s'",
-                                            "value": "clwait_delta / 1000000.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 },
@@ -111,10 +111,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(cpu_time_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "plan_hash_value='%(DBORAHPHVAX)s'",
-                                            "value": "cpu_time_delta / 1000000.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 }
@@ -136,10 +136,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(elapsed_time_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "plan_hash_value='%(DBORAHPHVAX)s'",
-                                            "value": "elapsed_time_delta / 1000000.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 }
@@ -147,8 +147,8 @@ class UserObject(dict):
                         }
                     ]
                 },
-                                {
-                    "title": "Buffer gets & disk reads per second",
+                {
+                    "title": "Buffer gets & disk reads per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -171,10 +171,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(buffer_gets_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "plan_hash_value='%(DBORAHPHVAX)s'",
-                                            "value": "buffer_gets_delta * 1.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 },
@@ -191,10 +191,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(disk_reads_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "plan_hash_value='%(DBORAHPHVAX)s'",
-                                            "value": "disk_reads_delta * 1.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 }
@@ -203,7 +203,7 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "Executions and fetches per second",
+                    "title": "Executions and fetches per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -226,10 +226,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(executions_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "plan_hash_value='%(DBORAHPHVAX)s'",
-                                            "value": "executions_delta * 1.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 },
@@ -246,10 +246,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(fetches_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "plan_hash_value='%(DBORAHPHVAX)s'",
-                                            "value": "fetches_delta * 1.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 }
@@ -258,7 +258,7 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "Rows processed per second",
+                    "title": "Rows processed per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -281,10 +281,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(rows_processed_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "plan_hash_value='%(DBORAHPHVAX)s'",
-                                            "value": "rows_processed_delta * 1.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 }

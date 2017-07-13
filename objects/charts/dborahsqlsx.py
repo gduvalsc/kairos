@@ -29,7 +29,7 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "Buffer gets & disk reads per second",
+                    "title": "Buffer gets & disk reads per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -56,7 +56,7 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "Executions and fetches per second",
+                    "title": "Executions and fetches per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -83,7 +83,7 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "Rows processed per second",
+                    "title": "Rows processed per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},

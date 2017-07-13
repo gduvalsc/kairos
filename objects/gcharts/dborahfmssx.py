@@ -31,10 +31,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(elapsed_time_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSSX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "force_matching_signature='%(DBORAHFMSSX)s'",
-                                            "value": "elapsed_time_delta / 1000000.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 }
@@ -43,7 +43,7 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "Buffer gets & disk reads per second",
+                    "title": "Buffer gets & disk reads per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -66,10 +66,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(buffer_gets_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSSX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "force_matching_signature='%(DBORAHFMSSX)s'",
-                                            "value": "buffer_gets_delta * 1.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 },
@@ -86,10 +86,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(disk_reads_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSSX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "force_matching_signature='%(DBORAHFMSSX)s'",
-                                            "value": "disk_reads_delta * 1.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 }
@@ -98,7 +98,7 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "Executions and fetches per second",
+                    "title": "Executions and fetches per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -121,10 +121,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(executions_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSSX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "force_matching_signature='%(DBORAHFMSSX)s'",
-                                            "value": "executions_delta * 1.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 },
@@ -141,10 +141,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(fetches_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSSX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "force_matching_signature='%(DBORAHFMSSX)s'",
-                                            "value": "fetches_delta * 1.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 }
@@ -153,7 +153,7 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "Rows processed per second",
+                    "title": "Rows processed per exec",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -176,10 +176,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHQS",
+                                            "table": "(select timestamp, sum(rows_processed_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSSX)s' group by timestamp)",
                                             "projection": "'xxx'",
-                                            "restriction": "force_matching_signature='%(DBORAHFMSSX)s'",
-                                            "value": "rows_processed_delta * 1.0 / (case when executions_delta = 0 then 1 else executions_delta end)"
+                                            "restriction": "",
+                                            "value": "value"
                                         }
                                     ]
                                 }

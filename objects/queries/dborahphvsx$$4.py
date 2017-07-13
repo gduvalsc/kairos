@@ -7,7 +7,7 @@ class UserObject(dict):
                 "ORAHQS"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Executions' label, sum(value) value from (select timestamp, 'xxx' label, executions_delta * 1.0 / (case when executions_delta = 0 then 1 else executions_delta end) value from ORAHQS where plan_hash_value='%(DBORAHPHVSX)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Executions' label, sum(value) value from (select timestamp, 'xxx' label, value value from (select timestamp, sum(executions_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVSX)s' group by timestamp)) group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": false
         }

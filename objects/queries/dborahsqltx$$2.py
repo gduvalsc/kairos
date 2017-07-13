@@ -7,7 +7,7 @@ class UserObject(dict):
                 "ORAHQS"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Concurrency' label, sum(value) value from (select timestamp, 'xxx' label, ccwait_delta / 1000000.0 / (case when executions_delta = 0 then 1 else executions_delta end) value from ORAHQS where sql_id='%(DBORAHSQLTX)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Concurrency' label, sum(value) value from (select timestamp, 'xxx' label,  value from (select timestamp, sum(ccwait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where sql_id = '%(DBORAHSQLTX)s' group by timestamp)) group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": false
         }

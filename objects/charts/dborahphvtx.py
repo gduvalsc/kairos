@@ -8,7 +8,7 @@ class UserObject(dict):
             "type": "chart",
             "yaxis": [
                 {
-                    "title": "Elapsed (sec) per execution",
+                    "title": "Time (sec) per execution",
                     "position": "LEFT",
                     "scaling": "LINEAR",
                     "properties": {},

@@ -13,7 +13,7 @@ class UserObject(dict):
                     "items": [
                         {
                             "type": "submenu",
-                            "label": "Overview",
+                            "label": "Database",
                             "items": [
                                 { "type": "menuitem", "label": "Backends per database", "action": "dispchart", "chart": "PGDBOVBACKENDS"},
                                 { "type": "separator"},
@@ -29,6 +29,26 @@ class UserObject(dict):
                                 { "type": "menuitem", "label": "Returned rows", "action": "dispchart", "chart": "PGDBOVSELECTS"},
                                 { "type": "menuitem", "label": "Commits", "action": "dispchart", "chart": "PGDBOVCOMMITS"},
                                 { "type": "menuitem", "label": "Rollbacks", "action": "dispchart", "chart": "PGDBOVROLLBACKS"},
+                            ]
+                        },
+                        {
+                            "type": "submenu",
+                            "label": "Activity",
+                            "items": [
+                                { "type": "menuitem", "label": "Backends per database", "action": "dispchart", "chart": "PGDBSBACKENDS"},
+                                { "type": "menuitem", "label": "Active backends per database", "action": "dispchart", "chart": "PGDBSABACKENDS"},
+                                { "type": "separator"},
+                                { "type": "submenu", "label": " Choose database ...","items": [
+                                    { "type": "menuitem", "label": "Backends", "action": "dispchoice", "choice": "PGDBSCBACKENDS" },
+                                    { "type": "menuitem", "label": "Applications", "action": "dispchoice", "choice": "PGDBSCAPPLICATIONS" },
+                                    { "type": "separator"},
+                                    { "type": "menuitem", "label": "Top wait events", "action": "dispchoice", "choice": "PGDBSCWAITEVENTS" },
+                                    { "type": "menuitem", "label": "Top wait event types", "action": "dispchoice", "choice": "PGDBSCWAITTYPES" },
+                                    { "type": "separator"},
+                                    { "type": "menuitem", "label": "Top requests", "action": "dispchoice", "choice": "PGDBSCREQUESTS" },
+                                    { "type": "separator"},
+                                    { "type": "menuitem", "label": "Top transactions", "action": "dispchoice", "choice": "PGDBSCTRANSACTIONS" },
+                                ]},
                             ]
                         },
                     ]
