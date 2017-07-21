@@ -2,7 +2,7 @@ class UserObject(dict):
     def __init__(s):
         object = {
             "id": "EBSTOPPRGW",
-            "title": "E-Business Suite - Programs exited with status 'W'",
+            "title": "E-Business Suite - Waiting programs",
             "subtitle": "",
             "reftime": "EBSREFTIME",
             "type": "gchart",
@@ -12,11 +12,11 @@ class UserObject(dict):
                     "position": "LEFT",
                     "scaling": "LINEAR",
                     "properties": {
-                        "text": {
-                            "fill": "red"
-                        },
                         "line": {
                             "stroke": "red"
+                        },
+                        "text": {
+                            "fill": "red"
                         }
                     },
                     "minvalue": null,
@@ -42,8 +42,8 @@ class UserObject(dict):
                                         {
                                             "table": "EBS12CM",
                                             "projection": "prg_name",
-                                            "restriction": "status_code = 'W'",
-                                            "value": "executecount * 1.0 / ebscoeff()"
+                                            "restriction": "prg_name not like 'FNDRS%'",
+                                            "value": "waitcount * 1.0 / ebscoeff()"
                                         }
                                     ]
                                 }
@@ -54,7 +54,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All programs with status W'",
+                                    "projection": "'All programs'",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -69,8 +69,8 @@ class UserObject(dict):
                                         {
                                             "table": "EBS12CM",
                                             "projection": "'xxx'",
-                                            "restriction": "status_code = 'W'",
-                                            "value": "executecount * 1.0 / ebscoeff()"
+                                            "restriction": "prg_name not like 'FNDRS%'",
+                                            "value": "waitcount * 1.0 / ebscoeff()"
                                         }
                                     ]
                                 }

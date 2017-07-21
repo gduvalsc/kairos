@@ -523,13 +523,13 @@ class UserObject(dict):
         if 'AWR' in a.type:
             try:
                 cpu=a.getfloat(0,l)/a.dur
-                elapsed=a.getfloat(4,l)/a.dur if '11.2' or '12.1' in a.version else a.getfloat(1,l)/a.dur
-                execs=a.getfloat(1,l)/a.dur if '11.2' or '12.1' in a.version else a.getfloat(2,l)/a.dur
-                percent=a.getfloat(3,l) if '11.2' or '12.1' in a.version else a.getfloat(4,l)
+                elapsed=a.getfloat(4,l)/a.dur if '11.2' in a.version  or '12.1' in a.version else a.getfloat(1,l)/a.dur
+                execs=a.getfloat(1,l)/a.dur if '11.2' in a.version  or '12.1' in a.version else a.getfloat(2,l)/a.dur
+                percent=a.getfloat(3,l) if '11.2' in a.version  or '12.1' in a.version else a.getfloat(4,l)
                 gets=0.0
                 a.sqlid=a.getstring(5,l).lstrip() if 'AWR_10G' in a.type else a.getstring(6,l).lstrip()
                 a.sqlid=a.getstring(6,l).lstrip() if '10.2.0.5' in a.version else a.sqlid
-                a.sqlid=a.getstring(7,l).lstrip() if '11.2' or '12.1' in a.version else a.sqlid
+                a.sqlid=a.getstring(7,l).lstrip() if '11.2' in a.version  or '12.1' in a.version else a.sqlid
             except: return
         else:
             try:
@@ -551,12 +551,12 @@ class UserObject(dict):
         if 'AWR' in a.type:
             try:
                 elapsed=a.getfloat(0,l)/a.dur
-                cpu=elapsed*a.getfloat(4,l)/100 if '11.2' or '12.1' in a.version else a.getfloat(1,l)/a.dur
-                execs=a.getfloat(1,l)/a.dur if '11.2' or '12.1' in a.version else a.getfloat(2,l)/a.dur
-                percent=a.getfloat(3,l) if '11.2' or '12.1' in a.version else a.getfloat(4,l)
+                cpu=elapsed*a.getfloat(4,l)/100 if '11.2' in a.version  or '12.1' in a.version else a.getfloat(1,l)/a.dur
+                execs=a.getfloat(1,l)/a.dur if '11.2' in a.version  or '12.1' in a.version else a.getfloat(2,l)/a.dur
+                percent=a.getfloat(3,l) if '11.2' in a.version  or '12.1' in a.version else a.getfloat(4,l)
                 reads=0.0
                 a.sqlid=a.getstring(5,l).lstrip()
-                a.sqlid=a.getstring(6,l).lstrip() if '11.2' or '12.1' in a.version else a.sqlid
+                a.sqlid=a.getstring(6,l).lstrip() if '11.2' in a.version  or '12.1' in a.version else a.sqlid
             except: return
         else:
             try:
@@ -655,10 +655,10 @@ class UserObject(dict):
                 gets=a.getfloat(0,l)/a.dur
                 execs=a.getfloat(1,l)/a.dur
                 percent=a.getfloat(3,l)
-                elapsed=a.getfloat(4,l)/a.dur if '11.2' or '12.1' in a.version else a.getfloat(5,l)/a.dur
-                cpu=elapsed*a.getfloat(5,l)/100 if '11.2' or '12.1' in a.version else a.getfloat(4,l)/a.dur
+                elapsed=a.getfloat(4,l)/a.dur if '11.2' in a.version  or '12.1' in a.version else a.getfloat(5,l)/a.dur
+                cpu=elapsed*a.getfloat(5,l)/100 if '11.2' in a.version  or '12.1' in a.version else a.getfloat(4,l)/a.dur
                 a.sqlid=a.getstring(6,l).lstrip()
-                a.sqlid=a.getstring(7,l).lstrip() if '11.2' or '12.1' in a.version else a.sqlid
+                a.sqlid=a.getstring(7,l).lstrip() if '11.2' in a.version  or '12.1' in a.version else a.sqlid
             except: return
         d=dict(timestamp='text',sqlid='text',gets='real',execs='real',percent='real',cpu='real',elapsed='real')
         v=dict(timestamp=a.date,sqlid=a.sqlid,gets=gets,execs=execs,percent=percent,cpu=cpu,elapsed=elapsed)
@@ -682,10 +682,10 @@ class UserObject(dict):
                 reads=a.getfloat(0,l)/a.dur
                 execs=a.getfloat(1,l)/a.dur
                 percent=a.getfloat(3,l)
-                elapsed=a.getfloat(4,l)/a.dur if '11.2' or '12.1' in a.version else a.getfloat(5,l)/a.dur
-                cpu=elapsed*a.getfloat(5,l)/100 if '11.2' or '12.1' in a.version else a.getfloat(4,l)/a.dur
+                elapsed=a.getfloat(4,l)/a.dur if '11.2' in a.version  or '12.1' in a.version else a.getfloat(5,l)/a.dur
+                cpu=elapsed*a.getfloat(5,l)/100 if '11.2' in a.version  or '12.1' in a.version else a.getfloat(4,l)/a.dur
                 a.sqlid=a.getstring(6,l).lstrip()
-                a.sqlid=a.getstring(7,l).lstrip() if '11.2' or '12.1' in a.version else a.sqlid
+                a.sqlid=a.getstring(7,l).lstrip() if '11.2' in a.version  or '12.1' in a.version else a.sqlid
             except: return
         d=dict(timestamp='text',sqlid='text',reads='real',execs='real',percent='real',cpu='real',elapsed='real')
         v=dict(timestamp=a.date,sqlid=a.sqlid,reads=reads,execs=execs,percent=percent,cpu=cpu,elapsed=elapsed)
@@ -722,10 +722,10 @@ class UserObject(dict):
             try:
                 execs=a.getfloat(0,l)/a.dur
                 rows=a.getfloat(1,l)/a.dur
-                elapsedperexec=a.getfloat(3,l)/execs if '11.2' or '12.1' in a.version else a.getfloat(4,l)
-                cpuperexec=elapsedperexec*a.getfloat(4,l)/100 if '11.2' or '12.1' in a.version else a.getfloat(3,l)
+                elapsedperexec=a.getfloat(3,l)/execs if '11.2' in a.version  or '12.1' in a.version else a.getfloat(4,l)
+                cpuperexec=elapsedperexec*a.getfloat(4,l)/100 if '11.2' in a.version  or '12.1' in a.version else a.getfloat(3,l)
                 a.sqlid=a.getstring(5,l).lstrip()
-                a.sqlid=a.getstring(6,l).lstrip() if '11.2' or '12.1' in a.version else a.sqlid
+                a.sqlid=a.getstring(6,l).lstrip() if '11.2' in a.version  or '12.1' in a.version else a.sqlid
             except: return
         d=dict(timestamp='text',sqlid='text',execs='real',rows='real',cpuperexec='real',elapsedperexec='real')
         v=dict(timestamp=a.date,sqlid=a.sqlid,execs=execs,rows=rows,cpuperexec=cpuperexec,elapsedperexec=elapsedperexec)

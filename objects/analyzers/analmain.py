@@ -10,7 +10,8 @@ class UserObject(dict):
                 {"context": "gentype", "action": s.gentype, "regexp": '^\w+\s(\w+)\s+'}
             ],
             "outcontextrules": [
-                {"action": s.awr, "regexp": '(^STATSPACK Statistics Report for|^STATSPACK report for|^WORKLOAD REPOSITORY report for)'},
+                {"action": s.awr, "regexp": '^WORKLOAD REPOSITORY report for'},
+                {"action": s.astatspack, "regexp": '(^STATSPACK Statistics Report for|^STATSPACK report for)'},
                 {"action": s.ebs, "regexp": '^REPORT TYPE: EBS12CM'},
                 {"action": s.bo, "regexp": '^REPORT TYPE: BO'},
                 {"action": s.gen, "regexp": '^REPORT TYPE: (\w+) '},
@@ -37,7 +38,15 @@ class UserObject(dict):
         a.emit(None, None, {
             "member": m,
             "analyzer": "ANALAWR",
-            "collections": ['DBORAINFO', 'DBORAMISC', 'DBORAWEC', 'DBORAWEV', 'DBORAWEB', 'DBORASTA', 'DBORAMTT', 'DBORALIB', 'DBORASQE', 'DBORASQP', 'DBORASQM', 'DBORASQV', 'DBORASQW', 'DBORASQG', 'DBORASQR', 'DBORASQX', 'DBORASQC', 'DBORAREQ', 'DBORALAT', 'DBORALAW', 'DBORAENQ', 'DBORATBS', 'DBORAFIL', 'DBORASGA', 'DBORAPGA', 'DBORAPGB', 'DBORAPGC', 'DBORAOSS', 'DBORATMS', 'DBORASRV', 'DBORASVW', 'DBORABUF', 'DBORASGLR', 'DBORASGPR', 'DBORASGPRR', 'DBORASGUR', 'DBORASGOR', 'DBORASGDPR', 'DBORASGPW', 'DBORASGPWR', 'DBORASGDPW', 'DBORASGTS', 'DBORASGDBC', 'DBORASGRLW', 'DBORASGIW', 'DBORASGBBW', 'DBORASGGCBB', 'DBORASGCRBR', 'DBORASGCBR']
+            "collections": ['DBORAAWR', 'DBORAINFO', 'DBORAMISC', 'DBORAWEC', 'DBORAWEV', 'DBORAWEB', 'DBORASTA', 'DBORAMTT', 'DBORALIB', 'DBORASQE', 'DBORASQP', 'DBORASQM', 'DBORASQV', 'DBORASQW', 'DBORASQG', 'DBORASQR', 'DBORASQX', 'DBORASQC', 'DBORAREQ', 'DBORALAT', 'DBORALAW', 'DBORAENQ', 'DBORATBS', 'DBORAFIL', 'DBORASGA', 'DBORAPGA', 'DBORAPGB', 'DBORAPGC', 'DBORAOSS', 'DBORATMS', 'DBORASRV', 'DBORASVW', 'DBORABUF', 'DBORASGLR', 'DBORASGPR', 'DBORASGPRR', 'DBORASGUR', 'DBORASGOR', 'DBORASGDPR', 'DBORASGPW', 'DBORASGPWR', 'DBORASGDPW', 'DBORASGTS', 'DBORASGDBC', 'DBORASGRLW', 'DBORASGIW', 'DBORASGBBW', 'DBORASGGCBB', 'DBORASGCRBR', 'DBORASGCBR']
+        })
+
+    def astatspack(s, a, l ,g, m):
+        a.setContext('BREAK')
+        a.emit(None, None, {
+            "member": m,
+            "analyzer": "ANALAWR",
+            "collections": ['DBORASTATSPACK', 'DBORAINFO', 'DBORAMISC', 'DBORAWEC', 'DBORAWEV', 'DBORAWEB', 'DBORASTA', 'DBORAMTT', 'DBORALIB', 'DBORASQE', 'DBORASQP', 'DBORASQM', 'DBORASQV', 'DBORASQW', 'DBORASQG', 'DBORASQR', 'DBORASQX', 'DBORASQC', 'DBORAREQ', 'DBORALAT', 'DBORALAW', 'DBORAENQ', 'DBORATBS', 'DBORAFIL', 'DBORASGA', 'DBORAPGA', 'DBORAPGB', 'DBORAPGC', 'DBORAOSS', 'DBORATMS', 'DBORASRV', 'DBORASVW', 'DBORABUF', 'DBORASGLR', 'DBORASGPR', 'DBORASGPRR', 'DBORASGUR', 'DBORASGOR', 'DBORASGDPR', 'DBORASGPW', 'DBORASGPWR', 'DBORASGDPW', 'DBORASGTS', 'DBORASGDBC', 'DBORASGRLW', 'DBORASGIW', 'DBORASGBBW', 'DBORASGGCBB', 'DBORASGCRBR', 'DBORASGCBR']
         })
 
     def tthtml(s, a, l ,g, m):

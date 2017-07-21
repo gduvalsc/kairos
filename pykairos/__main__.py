@@ -36,6 +36,7 @@ def catchrun(*c):
 parser = argparse.ArgumentParser()
 parser.add_argument('--version', action='version', version='KAIROS V3.2')
 parser.add_argument('--launcher', action='store_true', dest='launcher', help='The launcher is requested to start')
+parser.add_argument('--monoprocess', action='store_true', dest='monoprocess', help='Only one subprocess required')
 parser.add_argument('--notifier', action='store_true', dest='notifier', help='A notifier is requested to start')
 parser.add_argument('--bootstrap', action='store_true', dest='bootstrap', help='Bootstraping the system')
 args = parser.parse_args()
@@ -48,8 +49,7 @@ if args.launcher:
     setproctitle.setproctitle('KairosMain')
     logging.info('Process name: ' + setproctitle.getproctitle())
     logging.info('Process id: ' + str(os.getpid()))
-    workers = multiprocessing.cpu_count() + 1
-    workers = 1
+    workers = 1 if args.monoprocess else multiprocessing.cpu_count() + 1
     gunicorn = ['gunicorn']
     gunicorn.extend(['-b', '0.0.0.0:443'])
     gunicorn.extend(['-k', 'aiohttp.worker.GunicornWebWorker'])
@@ -74,7 +74,7 @@ if args.bootstrap:
         exit(1)
     logging.info("Orientdb startup has been initiated!")
     print('K', end='', flush=True)
-    kairos = subprocess.run(['daemonmgr', '--daemon', 'kairosd', '-start'])
+    kairos = subprocess.run(['daemonmgr', '--daemon', 'kairoscreate', '-start']) if args.monoprocess else subprocess.run(['daemonmgr', '--daemon', 'kairosd', '-start'])
     if  kairos.returncode:
         logging.error("Error during startup of Kairos")
         exit(1)

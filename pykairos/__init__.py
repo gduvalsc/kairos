@@ -284,6 +284,8 @@ class Analyzer:
                 if  not "scope" in r or r["scope"] in scope or '*' in scope: s.addOutContextRule(r)
         if "begin" in c: s.addContextRule({"context": "BEGIN", "action": c["begin"], "regexp": '.'})
         if "end" in c: s.addContextRule({"context": "END", "action": c["end"], "regexp": '.'})
+    def debug(s, m):
+        logging.debug(s.name + ' - ' +m)
     def addRule(s, r):
         logging.debug(s.name + ' - Adding rule, regular expression: /' + r["regexp"] + '/, action: ' + r["action"].__name__)
         if 'tag' in r: s.rules.append({"action": r["action"], "regexp": re.compile(r["regexp"]), "tag": re.compile(r["tag"])})
@@ -305,6 +307,7 @@ class Analyzer:
         s.gcpt += 1;
         logging.debug(json.dumps(d))
     def analyze(s, stream, name):
+        logging.debug(s.name + ' - Scope: ' + str(s.scope))
         if "content" in s.configurator and s.configurator["content"] == "xml": s.analyzexml(stream.decode(), name)
         elif "content" in s.configurator and s.configurator["content"] == "json": s.analyzejson(stream.decode(), name)
         else: s.analyzestr(stream.decode(errors="ignore"), name)
@@ -809,13 +812,14 @@ class KairosWorker:
         s.odbrun("create property settings.keycode short")
         s.odbrun("create property settings.logging string")
         s.odbrun("create property settings.loglines short")
+        s.odbrun("create property settings.arrayinsert short")
         s.odbrun("create property settings.nodesdb string")
         s.odbrun("create property settings.plotorientation string")
         s.odbrun("create property settings.systemdb string")
         s.odbrun("create property settings.template string")
         s.odbrun("create property settings.top short")
         s.odbrun("create property settings.wallpaper string")
-        s.odbrun("create vertex settings set colors='COLORS', keycode=0, logging='info', loglines=100, nodesdb='kairos_user_" + user + "', plotorientation='horizontal', systemdb='kairos_system_system', template='DEFAULT', top=15, wallpaper='DEFAULT'")
+        s.odbrun("create vertex settings set colors='COLORS', keycode=0, logging='info', loglines=100, arrayinsert=100, nodesdb='kairos_user_" + user + "', plotorientation='horizontal', systemdb='kairos_system_system', template='DEFAULT', top=15, wallpaper='DEFAULT'")
 
     @trace_call
     def icreateobjects(s, database=None):
@@ -1295,7 +1299,7 @@ class KairosWorker:
         hcache.disconnect()
 
     @trace_call
-    def ibuildcolcachetypeB(s, node, cache=None, collections=None, analyzers=None):
+    def ibuildcolcachetypeB(s, node, cache=None, arrayinsert=100, collections=None, analyzers=None):
         nid = node['id']
         hcache = Cache(cache.name)
 
@@ -1315,7 +1319,7 @@ class KairosWorker:
             for e in buff: parameter.append(tuple([e[k] for k in sorted(e.keys())]))
             hcache.executemany(context.patterninsert, parameter)
             
-        buff = Buffer(init=init, action=action)
+        buff = Buffer(init=init, size=arrayinsert, action=action)
         def listener(col, d, v, n):
             buff.push(col, d, v, n)
         def nulllistener(col, d, v, n): pass
@@ -1376,7 +1380,7 @@ class KairosWorker:
         return (todo, mapproducers, analyzers)
 
     @trace_call
-    def ibuildcollectioncache(s, node, collections=None, nodesdb=None, systemdb=None):
+    def ibuildcollectioncache(s, node, collections=None, arrayinsert=100, nodesdb=None, systemdb=None):
         nid = node['id']
         ntype = node['datasource']['type']
         ncache = node['datasource']['cache']
@@ -1398,7 +1402,7 @@ class KairosWorker:
                 if ntype in ['D']:
                     liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + node['datasource']['liveobject'] + "' and type='liveobject'")[0]
                     s.ibuildcolcachetypeD(node, cache=cache, collection=collection, liveobject=liveobject)
-            if ntype in ['B']: s.ibuildcolcachetypeB(node, cache=cache, collections=tcollections, analyzers=analyzers)
+            if ntype in ['B']: s.ibuildcolcachetypeB(node, cache=cache, arrayinsert=arrayinsert, collections=tcollections, analyzers=analyzers)
             logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with collections info: '" + str(tcollections) + "' ...")
             s.odbget(database=nodesdb)
             s.odbrun("update caches set collections = '" + json.dumps(cache.collections) + "' where @rid = " + cache.rid)
@@ -1707,6 +1711,7 @@ class KairosWorker:
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
         loglines = params['loglines'][0]
+        arrayinsert = params['arrayinsert'][0]
         template = params['template'][0]
         colors = params['colors'][0]
         wallpaper = params['wallpaper'][0]
@@ -1715,7 +1720,7 @@ class KairosWorker:
         plotorientation = params['plotorientation'][0]
         logging = params['logging'][0]
         s.odbget(database="kairos_user_" + user)
-        s.odbrun("update settings set colors='" + colors + "', keycode='" + keycode + "', logging='" + logging + "', loglines='" + loglines + "', nodesdb='" + nodesdb + "', plotorientation='" + plotorientation + "', systemdb='" + systemdb + "', template='" + template + "', top='" + top + "', wallpaper='" + wallpaper + "'")
+        s.odbrun("update settings set colors='" + colors + "', keycode='" + keycode + "', logging='" + logging + "', loglines='" + loglines + "', arrayinsert='" + arrayinsert + "', nodesdb='" + nodesdb + "', plotorientation='" + plotorientation + "', systemdb='" + systemdb + "', template='" + template + "', top='" + top + "', wallpaper='" + wallpaper + "'")
         return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
@@ -2219,12 +2224,13 @@ class KairosWorker:
         id = params['id'][0]
         query = params['query'][0]
         limit = int(params['top'][0])
+        arrayinsert = int(params['arrayinsert'][0])
         id = params['id'][0]
         variables = json.loads(params['variables'][0])
         for v in variables: kairos[v] = variables[v]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
         query = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + query + "' and type='query'")[0]
-        s.ibuildcollectioncache(node, collections=query['collections'], systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncache(node, collections=query['collections'], arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
         message = s.ibuildquerycache(node, query=query, systemdb=systemdb, nodesdb=nodesdb)
         if not message: result = s.iqueryexecute(node, query=query, nodesdb=nodesdb, limit=limit)
         if message:
@@ -2237,11 +2243,12 @@ class KairosWorker:
     def displaycollection(s, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
+        arrayinsert = int(params['arrayinsert'][0])
         systemdb = params['systemdb'][0]
         id = params['id'][0]
         collection = params['collection'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        s.ibuildcollectioncache(node, collections=[collection], systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncache(node, collections=[collection], arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
         result = s.iqueryexecute(node, query=dict(id=collection), nodesdb=nodesdb)
         return web.json_response(dict(success=True, data=result))
 
@@ -2251,10 +2258,11 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
+        arrayinsert = int(params['arrayinsert'][0])
         collection = params['collection'][0]
         id = params['id'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        s.ibuildcollectioncache(node, collections={collection}, systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncache(node, collections={collection}, arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
         return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
@@ -2263,9 +2271,10 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
+        arrayinsert = int(params['arrayinsert'][0])
         id = params['id'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncache(node, collections={'*'}, arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
         return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
@@ -2331,9 +2340,9 @@ class KairosWorker:
         producers.append(dict(path=s.igetpath(nodesdb=origindb, id=fromid), id=fromid))
         s.odbget(database=targetdb)
         if 'aggregatorselector' not in tnode['datasource']:
-            s.odbrun("update nodes set type='A', icon='A', aggregated=sysdate(), aggregatorselector='" + s.igetpath(nodesdb=origindb, id=fromid) + "', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none', producers = '" + json.dumps(producers) + "' where @rid = " + toid)
+            s.odbrun("update nodes set type='A', icon='A', aggregated=sysdate(), aggregatorselector='" + s.igetpath(nodesdb=origindb, id=fromid) + "$', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none', producers = '" + json.dumps(producers) + "' where @rid = " + toid)
         else:
-            s.odbrun("update nodes set aggregated=sysdate(), aggregatorselector='" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + "', aggregatortake=" +  str(tnode['datasource']['aggregatortake'] +  1) + ", producers = '" + json.dumps(producers) + "' where @rid = " + toid)
+            s.odbrun("update nodes set aggregated=sysdate(), aggregatorselector='" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + "$', aggregatortake=" +  str(tnode['datasource']['aggregatortake'] +  1) + ", producers = '" + json.dumps(producers) + "' where @rid = " + toid)
         tnode = s.igetnodes(nodesdb=targetdb, id=toid, getsource=True)[0]
         return web.json_response(dict(success=True, data=tnode))
     
@@ -2400,6 +2409,7 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
+        arrayinsert = int(params['arrayinsert'][0])
         id = params['id'][0]
         logging.info("Unloading node: " + id + " ...")
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
@@ -2408,7 +2418,7 @@ class KairosWorker:
         fname = '/var/tmp/' + archive
         zip = Arcfile(fname, 'w:zip')
         cut = 10000
-        done = s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
+        done = s.ibuildcollectioncache(node, collections={'*'}, arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]        
         hcache = Cache(node['datasource']['cache']['dbname'])
         for collection in node['datasource']['collections']:

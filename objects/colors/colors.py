@@ -10,6 +10,7 @@ class UserObject(dict):
                 "DB CPU": "yellow",
                 "on cpu": "yellow",
                 "cpu": "yellow",
+                "CPU used by this session": "yellow",
                 "elapsed": "black",
                 "Gets": "darkgreen",
                 "Reads": "red",
