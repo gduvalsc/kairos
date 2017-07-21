@@ -28,7 +28,7 @@ As said above, `KAIROS` can be extended to other domains by experts in these dom
 
 ## Documentation
 
-The documentation is available in the tool and [here](https://www.github.com/gduvalsc/kairos/blob/master/kairos.pdf).
+The documentation is available in the tool and [here](https://openkairos.freshdesk.com/support/solutions/).
 
 ## Installation
 
