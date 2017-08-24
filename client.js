@@ -18,7 +18,7 @@
 
 dhtmlxEvent(window,"load",function(){
 
-    var VERSION = "3.2";
+    var VERSION = "3.3";
     var ajaxcpt = 0;
     var desktop = {};
     desktop.variables = {};
@@ -49,7 +49,6 @@ dhtmlxEvent(window,"load",function(){
         e = e || window.event;
         desktop.mouseevent = e;
         desktop.click = null;
-
     }
 
     document.onmouseup = function (e) {
@@ -2037,7 +2036,7 @@ dhtmlxEvent(window,"load",function(){
         });
         tree.attachEvent("onBeforeDrop", function (id, pid) {
             var ret = true;
-            if (desktop.mouseevent.ctrlKey === false && desktop.mouseevent.altKey === false && desktop.mouseevent.metaKey === false && pid !== startpid) {
+            if (desktop.mouseevent.ctrlKey === false && desktop.mouseevent.shiftKey === false && desktop.mouseevent.altKey === false && desktop.mouseevent.metaKey === false && pid !== startpid) {
                 if (tree.getUserData(pid, "type") !== "T") {
                     _.each(tree.getSubItems(pid), function (e) {
                         if (tree.getItemText(id) === tree.getItemText(e)) {
@@ -2057,7 +2056,7 @@ dhtmlxEvent(window,"load",function(){
                 xid = tree.getParentId(id);
                 yid = tree.getParentId(pid);
             }
-            if (desktop.mouseevent.ctrlKey) {
+            if (desktop.mouseevent.ctrlKey  || desktop.mouseevent.shiftKey) {
                 if (_.contains(["C", "L", "N", "T"], tree.getUserData(id, "type"))) {
                     ret = false;
                 }
@@ -2080,7 +2079,7 @@ dhtmlxEvent(window,"load",function(){
             return ret;
         });
         tree.attachEvent("onDrop", function (id, pid) {
-            if (desktop.mouseevent.ctrlKey === false && desktop.mouseevent.altKey === false && desktop.mouseevent.metaKey === false && pid !== startpid) {
+            if (desktop.mouseevent.ctrlKey === false && desktop.mouseevent.shiftKey === false && desktop.mouseevent.altKey === false && desktop.mouseevent.metaKey === false && pid !== startpid) {
                 waterfall([
                     ajax_get_first_in_async_waterfall("movenode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid}),
                     function () {
@@ -2103,7 +2102,7 @@ dhtmlxEvent(window,"load",function(){
                     }
                 ]);
             }
-            if (desktop.mouseevent.ctrlKey) {
+            if (desktop.mouseevent.ctrlKey || desktop.mouseevent.shiftKey) {
                 waterfall([
                     ajax_get_first_in_async_waterfall("compareaddnode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid, path: tree.getPath(id)}),
                     function () {
@@ -2168,7 +2167,8 @@ dhtmlxEvent(window,"load",function(){
 				{type: "separator"},
 				{id: "display_collection", text: "Display collection"},
 				{type: "separator"},
-				{id: "download", text: "Download"},
+                {id: "download", text: "Download"},
+                {id: "downloadc", text: "Download children"},                
 				{id: "display_member", text: "Display member"},
 				{id: "unload", text: "Unload"},
 				{type: "separator"},
@@ -2186,6 +2186,7 @@ dhtmlxEvent(window,"load",function(){
         contextmenu.setItemImage("run_chart","fa fa-line-chart", "fa fa-line-chart");
         contextmenu.setItemImage("run_choice","fa fa-sitemap", "fa fa-sitemap");
         contextmenu.setItemImage("download","fa fa-download", "fa fa-download");
+        contextmenu.setItemImage("downloadc","fa fa-download", "fa fa-download");
         contextmenu.setItemImage("display_collection","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("display_member","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("unload","fa fa-cloud-download", "fa fa-cloud-download");
@@ -2201,7 +2202,7 @@ dhtmlxEvent(window,"load",function(){
         tree.attachEvent("onSelect", function(id, select){
             if (select) {
                 var type = tree.getUserData(id, "type");
-                var contextmenuenabled = {upload: false, create_node: true, rename_node: false, delete_node: false, refresh_node: true, open_node: true, execute_query: false, run_chart: false, run_choice: false, download: false, display_member: false, unload: false, empty_trash: false};
+                var contextmenuenabled = {upload: false, create_node: true, rename_node: false, delete_node: false, refresh_node: true, open_node: true, execute_query: false, run_chart: false, run_choice: false, download: false, downloadc: true, display_member: false, unload: false, empty_trash: false};
                 if (_.contains(["B", "N"], type)) {
                     contextmenuenabled.upload = true;
                 }
@@ -2325,6 +2326,36 @@ dhtmlxEvent(window,"load",function(){
                     log.debug("Download at node: " + id + " (" + tree.getItemText(id) + ")");
                     window.location.href = '/downloadsource?id=' + encodeURIComponent('#' + id) + '&nodesdb=' + desktop.settings.nodesdb;
                 }
+                if (fid === "downloadc") {
+                    log.debug("Download children at node: " + id + " (" + tree.getItemText(id) + ")");
+                    waterfall([
+                        ajax_get_first_in_async_waterfall("getBchildren", {nodesdb: desktop.settings.nodesdb, id: '#' + id}),
+                        function (x) {
+                            var download_files = function (f) {
+                                var download_next = function (i) {
+                                    if (i >= f.length) {
+                                        return;
+                                    }
+                                    var a = document.createElement('a');
+                                    a.href = f[i].download;
+                                    a.target = '_parent';
+                                    (document.body || document.documentElement).appendChild(a);
+                                    a.click();
+                                    a.parentNode.removeChild(a);
+                                    setTimeout(function() {
+                                        download_next(i + 1);
+                                    }, 500);
+                                };
+                                download_next(0);
+                            };
+                            var list = [];
+                            _.each(x, function (nid) {
+                                list.push({download: '/downloadsource?id=' + encodeURIComponent(nid) + '&nodesdb=' + desktop.settings.nodesdb});
+                            });
+                            download_files(list);
+                        }
+                    ]);
+                }
                 if (fid === "display_member") {
                     log.debug("Display member at node: " + id + " (" + tree.getItemText(id) + ")");
                     var aftergetchoice = function(member) {
@@ -2401,7 +2432,7 @@ dhtmlxEvent(window,"load",function(){
                 }
                 if (fid === "unload") {
                     log.debug("Unload at node: " + id + " (" + tree.getItemText(id) + ")");
-                    window.location.href = '/unload?id=' + encodeURIComponent('#' + id) + '&arrayinsert=' + dektop.settings.arrayinsert + '&nodesdb=' + desktop.settings.nodesdb + '&systemdb=' + desktop.settings.systemdb;
+                    window.location.href = '/unload?id=' + encodeURIComponent('#' + id) + '&arrayinsert=' + desktop.settings.arrayinsert + '&nodesdb=' + desktop.settings.nodesdb + '&systemdb=' + desktop.settings.systemdb;
                 }
                 if (fid === "empty_trash") {
                     log.debug("Empty trash");

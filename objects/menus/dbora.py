@@ -77,9 +77,9 @@ class UserObject(dict):
                     "tablecondition": "DBORAAWR",
                     "label": "Advisors",
                     "items": [
-                        { "type": "menuitem", "label": "Default buffer pool", "action": "dispchart", "chart": "DBORABPAD" },
-                        { "type": "menuitem", "label": "Keep buffer pool", "action": "dispchart", "chart": "DBORABPAK" },
-                        { "type": "menuitem", "label": "Recycle buffer pool", "action": "dispchart", "chart": "DBORABPAR" },
+                        { "type": "menuitem", "tablecondition": "DBORABPA", "label": "Default buffer pool", "action": "dispchart", "chart": "DBORABPAD" },
+                        { "type": "menuitem", "tablecondition": "DBORABPA", "label": "Keep buffer pool", "action": "dispchart", "chart": "DBORABPAK" },
+                        { "type": "menuitem", "tablecondition": "DBORABPA", "label": "Recycle buffer pool", "action": "dispchart", "chart": "DBORABPAR" },
                     ]
                 },
                 { "type": "separator"},

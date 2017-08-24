@@ -22,7 +22,7 @@ class UserObject(dict):
                                     "groupby": "sum",
                                     "projection": "label",
                                     "collections": [
-                                        "vpsutil_virtual_memory"
+                                        "vpsutil_virt_memory"
                                     ],
                                     "userfunctions": [],
                                     "info": null,
@@ -31,49 +31,49 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "vpsutil_virtual_memory",
+                                            "table": "vpsutil_virt_memory",
                                             "projection": "'Total size'",
                                             "restriction": "",
                                             "value": "total"
                                         },
                                         {
-                                            "table": "vpsutil_virtual_memory",
+                                            "table": "vpsutil_virt_memory",
                                             "projection": "'Available size'",
                                             "restriction": "",
                                             "value": "available"
                                         },
                                         {
-                                            "table": "vpsutil_virtual_memory",
+                                            "table": "vpsutil_virt_memory",
                                             "projection": "'Used size'",
                                             "restriction": "",
                                             "value": "used"
                                         },
                                         {
-                                            "table": "vpsutil_virtual_memory",
+                                            "table": "vpsutil_virt_memory",
                                             "projection": "'Free size'",
                                             "restriction": "",
                                             "value": "free"
                                         },
                                         {
-                                            "table": "vpsutil_virtual_memory",
+                                            "table": "vpsutil_virt_memory",
                                             "projection": "'Active size'",
                                             "restriction": "",
                                             "value": "active"
                                         },
                                         {
-                                            "table": "vpsutil_virtual_memory",
+                                            "table": "vpsutil_virt_memory",
                                             "projection": "'Inactive size'",
                                             "restriction": "",
                                             "value": "inactive"
                                         },
                                         {
-                                            "table": "vpsutil_virtual_memory",
+                                            "table": "vpsutil_virt_memory",
                                             "projection": "'Buffers size'",
                                             "restriction": "",
                                             "value": "buffers"
                                         },
                                         {
-                                            "table": "vpsutil_virtual_memory",
+                                            "table": "vpsutil_virt_memory",
                                             "projection": "'Cached size'",
                                             "restriction": "",
                                             "value": "cached"

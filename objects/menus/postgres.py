@@ -62,8 +62,8 @@ class UserObject(dict):
                         { "type": "menuitem", "label": "CPU usage", "action": "dispchart", "chart": "PGSYSCPU"},
                         { "type": "separator", "tablecondition": "vpsutil_swap_memory"},
                         { "type": "menuitem", "tablecondition": "vpsutil_swap_memory", "label": "Swapping activity", "action": "dispchart", "chart": "PGSYSSWP"},
-                        { "type": "separator", "tablecondition": "vpsutil_virtual_memory"},
-                        { "type": "menuitem", "tablecondition": "vpsutil_virtual_memory", "label": "Memory usage", "action": "dispchart", "chart": "PGSYSMEM"},
+                        { "type": "separator", "tablecondition": "vpsutil_virt_memory"},
+                        { "type": "menuitem", "tablecondition": "vpsutil_virt_memory", "label": "Memory usage", "action": "dispchart", "chart": "PGSYSMEM"},
                         { "type": "separator", "tablecondition": "vpsutil_disk_io_counters"},
                         {
                             "type": "submenu",

@@ -57,7 +57,6 @@ def replaceeval(obj, recursive=False):
         for e in obj:
             obj[e] = replaceeval(obj[e], recursive=True)
     if type(obj) == type('a'):
-        logging.debug('STRING: ' + str(obj))
         try: obj = obj % kairos
         except: pass
     elif type(obj) == type([]):
@@ -94,11 +93,13 @@ def intercept_logging_and_internal_error(func):
             return response
         except:
             tb = sys.exc_info()
-            message = "Kairos internal error!"
-            logging.critical(message)
+            #message = "Kairos internal error!"
+            logging.error(str(tb))
+            #logging.critical(message)
             message = str(tb[1])
-            logging.critical(message)
-            raise
+            #logging.critical(message)
+            return web.json_response(dict(success=False, message=message))
+            #raise
     return wrapper
 
 class Object: pass
@@ -155,7 +156,7 @@ class Cache:
         if table:
             if not source: c=s.execute("pragma table_info("+table+")")
             else: c=s.execute("pragma "+source+".table_info("+table+")")
-            for x in c: d[x['name']]=x['type']
+            for x in c: d[x['name']]=x['type'].lower()
         else:
             if not source: c=s.execute("select name,sql from sqlite_master where type='table'")
             else: c=s.execute("select name,sql from "+source+".sqlite_master where type='table'")
@@ -558,6 +559,7 @@ class KairosWorker:
         app.router.add_get('/deleteobject', s.deleteobject)
         app.router.add_get('/downloadobject', s.downloadobject)
         app.router.add_get('/downloadsource', s.downloadsource)
+        app.router.add_get('/getBchildren', s.getBchildren)
         app.router.add_get('/unload', s.unload)
         app.router.add_get('/compareaddnode', s.compareaddnode)
         app.router.add_get('/aggregateaddnode', s.aggregateaddnode)
@@ -1031,8 +1033,10 @@ class KairosWorker:
             if item['type'] in ['D']:
                 node['datasource']['liveobject'] = item['liveobject']
                 d = dict()
-                liveobject = s.igetobjects(nodesdb=nodesdb, systemdb='kairos_system_system', where="where id='" + item['liveobject'] + "' and type='liveobject'")[0]
-                for e in liveobject['tables']: d[e] = True
+                try:
+                    liveobject = s.igetobjects(nodesdb=nodesdb, systemdb='kairos_system_system', where="where id='" + item['liveobject'] + "' and type='liveobject'")[0]
+                    for e in liveobject['tables']: d[e] = True
+                except: pass
                 node['datasource']['collections'] = d
             if countchildren:
                 s.odbget(database=nodesdb)
@@ -1948,6 +1952,21 @@ class KairosWorker:
         filename = s.igetpath(nodesdb=nodesdb, id=id)[1:].replace('/','_')+'.zip'
         stream = open(location, 'rb').read()
         return web.Response(headers=MultiDict({'Content-Disposition': 'Attachment;filename="' + filename + '"'}), body=stream)
+
+    @intercept_logging_and_internal_error
+    @trace_call
+    def getBchildren(s, request):
+        params = parse_qs(request.query_string)
+        nodesdb = params['nodesdb'][0]
+        id = params['id'][0]
+        s.odbget(database=nodesdb)
+        node = s.igetnodes(nodesdb=nodesdb, id=id)[0]
+        list = []
+        tabx = s.odbquery("select @rid, type from (traverse out('node_has_children') from " + id + ")", -1)
+        for rx in tabx:
+            rid = str(rx.oRecordData['rid'])
+            if rx.oRecordData['type'] == 'B': list.append(rid)
+        return web.json_response(dict(success=True, data=list))
 
     @intercept_logging_and_internal_error
     @trace_call

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import argparse, json, os, getpass, sys, syslog, aiohttp, asyncio, magic
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action = 'version', version='KAIROS V3.2')
+parser.add_argument('--version', action = 'version', version='KAIROS V3.3')
 parser.add_argument('-a', action = 'store', dest='authname', default='', help='KAIROS user name to be authentified')
 parser.add_argument('-p', action = 'store', dest='password', default='', help='KAIROS user password')
 parser.add_argument('-s', action = 'store', dest='service', default='', help='Service to be executed')
