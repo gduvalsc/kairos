@@ -67,12 +67,36 @@ if args.launcher:
     os.system('rm -fr /var/log/gunicorn.pid')
     catchrun(gunicorn, notifier)
 if args.bootstrap:
-    print('O', end='', flush=True)
-    odb = subprocess.run(['/etc/init.d/orientdb', 'start'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    if  odb.returncode:
-        logging.error("Error during startup of Orientdb!")
-        exit(1)
-    logging.info("Orientdb startup has been initiated!")
+    print('A', end='', flush=True)
+    logging.info("Trying to startup AgensGraph server ...")
+    ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'ag_ctl start'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if  ag.returncode:
+        logging.info("Trying to init AgensGraph server ...")
+        print('i', end='', flush=True)
+        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'initdb; echo "local all agensgraph trust" > $PGDATA/pg_hba.conf;echo "host all agensgraph all trust" >> $PGDATA/pg_hba.conf;echo "host all all all md5" >> $PGDATA/pg_hba.conf  '], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if ag.returncode:
+            logging.error("Fatal error when trying to init AgensGraph!")
+            exit(1)
+        else:
+            print('A', end='', flush=True)
+            logging.info("Trying to startup AgensGraph server after init ...")
+            ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'ag_ctl start'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if  ag.returncode:
+                logging.error("Unable to start AgensGraph for an unknown reason!")
+                exit(1)
+            else:
+                logging.info("Trying to create agensgraph database ...")
+                while True:
+                    print('c', end='', flush=True)
+                    ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'createdb'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    if not ag.returncode: break
+                    time.sleep(1)
+    while True:
+        print('a', end='', flush=True)
+        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'echo ""|agens'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if not ag.returncode: break
+        time.sleep(1)
+    logging.info("AgensGraph startup has been initiated!")
     print('K', end='', flush=True)
     kairos = subprocess.run(['daemonmgr', '--daemon', 'kairoscreate', '-start']) if args.monoprocess else subprocess.run(['daemonmgr', '--daemon', 'kairosd', '-start'])
     if  kairos.returncode:
@@ -89,7 +113,7 @@ if args.bootstrap:
         if not crs.returncode: break
     logging.info("System database created!")
     print('L', end='', flush=True)
-    obj = subprocess.run(['kairos', '-s', 'listobjects', '-a', 'kairos', '-p', 'root', '--nodesdb', 'kairos_system_system', '--systemdb', 'kairos_system_system'], stdout=subprocess.PIPE)
+    obj = subprocess.run(['kairos', '-s', 'listobjects', '--nodesdb', 'kairos_system_system', '--systemdb', 'kairos_system_system'], stdout=subprocess.PIPE)
     lines = obj.stdout.decode().split('\n')
     if len(lines) - 1 == 0:
         logging.info("Loading system database...")
@@ -99,11 +123,11 @@ if args.bootstrap:
         for o in objects:
             print('l', end='', flush=True)
             logging.info('Loading ' + o + " ...")
-            p = subprocess.run(['kairos', '-s', 'uploadobject', '-a', 'kairos', '-p', 'root', '--nodesdb', 'kairos_system_system', '--file', o])
+            p = subprocess.run(['kairos', '-s', 'uploadobject', '--nodesdb', 'kairos_system_system', '--file', o])
             if p.returncode: logging.error('Error during loading of: ' + o)
         print('', flush=True)
         logging.info(str(len(objects)) + ' found objects in /tmp/objects!')
-        obj = subprocess.run(['kairos', '-s', 'listobjects', '-a', 'kairos', '-p', 'root', '--nodesdb', 'kairos_system_system', '--systemdb', 'kairos_system_system'], stdout=subprocess.PIPE)
+        obj = subprocess.run(['kairos', '-s', 'listobjects', '--nodesdb', 'kairos_system_system', '--systemdb', 'kairos_system_system'], stdout=subprocess.PIPE)
         lines = obj.stdout.decode().split('\n')
         logging.info("System database has " + str(int((len(lines) - 1) / 2)) + " objects.")
         try:
@@ -113,6 +137,4 @@ if args.bootstrap:
              subprocess.run(['cat', '/var/log/kairos/webserver.log'])
              raise
         subprocess.run(['rm', '-fr', '/tmp/objects'])
-        subprocess.run(['mkdir', '/orientdb/exports'])
-        subprocess.run(['orientdb', "connect remote:localhost/kairos_system_system kairos root; export database /orientdb/exports/system"])
     catchrun(['bash'])

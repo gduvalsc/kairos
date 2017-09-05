@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 import argparse, json, os, getpass, sys, syslog, aiohttp, asyncio, magic
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action = 'version', version='KAIROS V3.3')
+parser.add_argument('--version', action = 'version', version='KAIROS V4.0')
 parser.add_argument('-a', action = 'store', dest='authname', default='', help='KAIROS user name to be authentified')
 parser.add_argument('-p', action = 'store', dest='password', default='', help='KAIROS user password')
 parser.add_argument('-s', action = 'store', dest='service', default='', help='Service to be executed')
@@ -40,13 +40,13 @@ async def main(loop, method, url, params):
 if not args.service:
     wlog('*** KAIROS service is mandatory!')
     exit(1)
-if not args.authname and args.service not in ['uploadnode','createsystem']:
+if not args.authname and args.service not in ['uploadnode','createsystem', 'listobjects', 'uploadobject']:
     wlog('*** KAIROS user is mandatory!')
     exit(1)
-if not args.password and args.service not in ['uploadnode','createsystem']:
+if not args.password and args.service not in ['uploadnode','createsystem', 'listobjects', 'uploadobject']:
     wlog('*** KAIROS password is mandatory!')
     exit(1)
-if args.service not in ['uploadnode','createsystem']:
+if args.service not in ['uploadnode','createsystem', 'listobjects', 'uploadobject']:
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main(loop, 'post', 'https://localhost/checkuserpassword', [('user', args.authname), ('password', args.password)]))
     if not result['success']:

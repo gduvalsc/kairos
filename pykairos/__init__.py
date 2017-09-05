@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
-import string, random, ssl, logging, pyorient, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, sqlite3, magic, cgi, sys, multiprocessing, pyinotify, urllib, apsw, base64, jpype
+import string, random, ssl, logging, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, jpype, psycopg2, psycopg2.extras, psycopg2.extensions
 from collections import *
 from datetime import datetime
 from aiohttp import web, WSCloseCode, WSMsgType, MultiDict
@@ -473,12 +473,11 @@ class KairosNotifier:
     
 class KairosWorker:
     def __init__(s, jpypeflag=True):
-        s.root = 'root'
-        s.admin = 'root'
-        s.name = 'kairos'
-        s.host = 'localhost'
-        s.orientport = 2424
-        s.odb = pyorient.OrientDB(s.host, s.orientport)
+        #s.admin = 'root'
+        #s.name = 'kairos'
+        #s.host = 'localhost'
+        #s.orientport = 2424
+        #s.odb = pyorient.OrientDB(s.host, s.orientport)
         s.odbroot=False
         s.odbdatabase = None
         s.odbuser = None
@@ -555,7 +554,7 @@ class KairosWorker:
         app.router.add_get('/updatesettings', s.updatesettings)
         app.router.add_get('/get_kairos_log', s.websocket_handler)
         app.router.add_get('/get_webserver_log', s.websocket_handler)
-        app.router.add_get('/get_orientdb_errfile', s.websocket_handler)
+        app.router.add_get('/get_postgres_logfile', s.websocket_handler)
         app.router.add_get('/deleteobject', s.deleteobject)
         app.router.add_get('/downloadobject', s.downloadobject)
         app.router.add_get('/downloadsource', s.downloadsource)
@@ -621,7 +620,7 @@ class KairosWorker:
         if root:
             if not s.odbroot:
                 logging.debug("Connecting to OrientDB through root ...")
-                s.odb.connect('root', s.root)
+                s.odb.connect('root', 'root')
                 s.odbroot = True
                 s.odbdatabase = None
                 s.odbuser = None
@@ -719,7 +718,7 @@ class KairosWorker:
             for x in v['collections']:
                 if x not in collections: collections[x] = dict(analyzer=v['analyzer'],members=[])
                 collections[x]['members'].append(v['member'])
-        analmain = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='ANALMAIN' and type='analyzer'")[0]
+        analmain = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'ANALMAIN', type:'analyzer'}")[0]
         analyzer = Analyzer(analmain, {}, listener, None)
         logging.info('Analyzing archive: ' + filepath + '...')
         ziparchive = Arcfile(filepath, 'r')
@@ -760,234 +759,236 @@ class KairosWorker:
 
     @trace_call
     def icreatesystem(s):
-        s.odbget(root=True)
-        if 'kairos_system_system' in s.odb.db_list().oRecordData['databases'].keys(): return
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("select datname from pg_database")
+        databases = [row['datname'] for row in cursor.fetchall()]
+        if 'kairos_system_system' in databases:
+            cursor.close()
+            agens.close()
+            return
         logging.info("Creating a new kairos_system_system database...")
-        curdatabase = "kairos_system_system"
-        s.odb.db_create(curdatabase)
-        s.odbget(database=curdatabase, user="admin", password="admin")
-        s.odbrun("insert into ouser set name = '" + s.name + "', password = '" + s.admin + "', status = 'ACTIVE', roles = (select from orole where name ='admin')")
-        s.odbget(database=curdatabase)
-        s.odbrun("delete from ouser where name <> '" + s.name + "'")
-        s.odbrun("create class objects extends v")
-        s.odbrun("create property objects.id string")
-        s.odbrun("create property objects.type string")
-        s.odbrun("create property objects.created datetime")
-        s.odbrun("create property objects.filename string")
-        s.odbrun("create property objects.content string")
-        s.odbrun("create index iobjects on objects(id, type) unique")
-        if os.path.isdir('/orientdb/exports'):
-            os.system('orientdb "connect remote:localhost/kairos_system_system ' + s.name + ' ' + s.admin + '; import database /orientdb/exports/system.json.gz"')
-        logging.info(curdatabase + " database created.")
+        cursor.execute("create database kairos_system_system")
+        cursor.close()
+        agens.close()
+
+        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'agens -d kairos_system_system < /usr/local/src/kairos_system_system.sql'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if  ag.returncode: 
+            logging.error('Error when trying to import data in kairos_system_system!')
+            agensstr = "host='localhost' dbname='kairos_system_system' user='agensgraph'"
+            agens = psycopg2.connect(agensstr)
+            agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+            cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cursor.execute("create graph kairos")
+            cursor.execute("create vlabel objects")
+            cursor.close()
+            agens.close()
+            logging.info("kairos_system_system database created.")
+        else: logging.info("kairos_system_system database created and populated.")
 
     @trace_call
     def icreaterole(s, role=None):
-        s.odbget(root=True)
         curdatabase = "kairos_group_" + role
-        if curdatabase in s.odb.db_list().oRecordData['databases'].keys(): return dict(success=False, message=role + ' role already exists!')
-        logging.info("Creating a new " + curdatabase + " database...")
-        s.odb.db_create(curdatabase)
-        s.odbget(database=curdatabase, user="admin", password="admin")
-        s.odbrun("insert into ouser set name = '" + s.name + "', password = '" + s.admin + "', status = 'ACTIVE', roles = (select from orole where name ='admin')")
-        s.odbget(database=curdatabase)
-        s.odbrun("delete from ouser where name <> '" + s.name + "'")
-        s.icreateobjects(database=curdatabase)
-        s.icreatenodes(database=curdatabase)
-        s.icreatesources(database=curdatabase)
-        s.icreatecaches(database=curdatabase)
-        s.odbrun("create sequence fileseq type ordered")
-        try: shutil.rmtree('/orientdb/files/kairos_group_' + role)
-        except: pass
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("select datname from pg_database")
+        databases = [row['datname'] for row in cursor.fetchall()]
+        if curdatabase in databases: return dict(success=False, message=user + ' role already exists!')
+        logging.info("Creating a new " + curdatabase + " database ...")
+        cursor.execute("create database kairos_group_" + role)
+        logging.info(curdatabase + " database created.")
+        cursor.execute("create role " + role)
+        logging.info(role + " role created.")
+        cursor.close()
+        agens.close()
+        agensstr = "host='localhost' dbname='kairos_group_" + role + "' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("create graph kairos")
+        cursor.execute("create vlabel objects")
+        cursor.execute("create vlabel nodes")
+        cursor.execute("create (:nodes {name:'/', type:'N', created:now(), status:'ACTIVE', icon:'N'})")
+        cursor.execute("create (:nodes {name:'Trash', type:'T', created:now(), status:'DELETED', icon:'T'})")
+        cursor.execute("create elabel node_has_children")
+        cursor.execute("match (r:nodes {name:'/'}), (t:nodes {name:'Trash'}) create ((r)-[:node_has_children]->(t))") 
+        cursor.execute("create elabel node_has_source")
+        cursor.execute("create elabel node_has_cache")
+        cursor.execute("create vlabel sources")
+        cursor.execute("create vlabel caches")
+        #s.odbrun("create sequence fileseq type ordered")
+        #try: shutil.rmtree('/orientdb/files/kairos_user_' + user)
+        #except: pass
         try: shutil.rmtree('/autoupload/kairos_group_' + role)
         except: pass
-        os.mkdir('/orientdb/files/' + curdatabase)
+        #os.mkdir('/orientdb/files/' + curdatabase)
         os.mkdir('/autoupload/' + curdatabase)
         logging.info(curdatabase + " database created.")
         return dict(success=True, data=dict(msg=role + " role has been successfully created!"))
 
     @trace_call
-    def icreatesettings(s, user=None):
-        curdatabase = "kairos_user_" + user
-        s.odbget(database=curdatabase)
-        s.odbrun("create class settings extends v")
-        s.odbrun("create property settings.colors string")
-        s.odbrun("create property settings.keycode short")
-        s.odbrun("create property settings.logging string")
-        s.odbrun("create property settings.loglines short")
-        s.odbrun("create property settings.arrayinsert short")
-        s.odbrun("create property settings.nodesdb string")
-        s.odbrun("create property settings.plotorientation string")
-        s.odbrun("create property settings.systemdb string")
-        s.odbrun("create property settings.template string")
-        s.odbrun("create property settings.top short")
-        s.odbrun("create property settings.wallpaper string")
-        s.odbrun("create vertex settings set colors='COLORS', keycode=0, logging='info', loglines=100, arrayinsert=100, nodesdb='kairos_user_" + user + "', plotorientation='horizontal', systemdb='kairos_system_system', template='DEFAULT', top=15, wallpaper='DEFAULT'")
-
-    @trace_call
-    def icreateobjects(s, database=None):
-        s.odbget(database=database)
-        s.odbrun("create class objects extends v")
-        s.odbrun("create property objects.id string")
-        s.odbrun("create property objects.type string")
-        s.odbrun("create property objects.created datetime")
-        s.odbrun("create property objects.filename string")
-        s.odbrun("create property objects.content string")
-        s.odbrun("create index iobjects on objects(id, type) unique")
-
-    @trace_call
-    def icreatenodes(s, database=None):
-        s.odbget(database=database)
-        s.odbrun("create class nodes extends v")
-        s.odbrun("create property nodes.name string")
-        s.odbrun("create property nodes.type string")
-        s.odbrun("create property nodes.created datetime")
-        s.odbrun("create property nodes.status string")
-        s.odbrun("create property nodes.icon string")
-        s.odbrun("create property nodes.aggregated datetime")
-        s.odbrun("create property nodes.aggregatormethod string")
-        s.odbrun("create property nodes.aggregatorselector string")
-        s.odbrun("create property nodes.aggregatorskip short")
-        s.odbrun("create property nodes.aggregatortake short")
-        s.odbrun("create property nodes.aggregatorsort string")
-        s.odbrun("create property nodes.aggregatortimefilter string")
-        s.odbrun("create property nodes.liveobject string")        
-        s.odbrun("create property nodes.producers string")
-        rootid = s.odbrun("create vertex nodes set name='/', type='N', created=sysdate(), status='ACTIVE', icon='N'")[0]._rid
-        trashid = s.odbrun("create vertex nodes set name='Trash', type='T', created=sysdate(), status='DELETED', icon='T'")[0]._rid
-        s.odbrun("create class node_has_children extends e")
-        s.odbrun("create edge node_has_children from " + rootid + " to " + trashid)
-        s.odbrun("create class node_has_source extends e")
-        s.odbrun("create class node_has_cache extends e")
-
-    @trace_call
-    def icreatesources(s, database=None):
-        s.odbget(database=database)
-        s.odbrun("create class sources extends v")
-        s.odbrun("create property sources.name string")
-        s.odbrun("create property sources.created datetime")
-        s.odbrun("create property sources.location string")
-        s.odbrun("create property sources.collections string")
-
-    @trace_call
-    def icreatecaches(s, database=None):
-        s.odbget(database=database)
-        s.odbrun("create class caches extends v")
-        s.odbrun("create property caches.name string")
-        s.odbrun("create property caches.created datetime")
-        s.odbrun("create property caches.collections string")
-        s.odbrun("create property caches.queries string")
-
-    @trace_call
     def icreateuser(s, user=None):
-        s.odbget(root=True)
         curdatabase = "kairos_user_" + user
-        if curdatabase in s.odb.db_list().oRecordData['databases'].keys(): return dict(success=False, message=user + ' user already exists!')
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("select datname from pg_database")
+        databases = [row['datname'] for row in cursor.fetchall()]
+        if curdatabase in databases: return dict(success=False, message=user + ' user already exists!')
         logging.info("Creating a new " + curdatabase + " database ...")
-        s.odb.db_create(curdatabase)
-        s.odbget(database=curdatabase, user="admin", password="admin")
-        s.odbrun("insert into ouser set name = '" + s.name + "', password = '" + s.admin + "', status = 'ACTIVE', roles = (select from orole where name ='admin')")
-        s.odbget(database=curdatabase)
-        s.odbrun("delete from ouser where name <> '" + s.name + "'")
-        s.odbrun("insert into ouser set name = '" + user + "', password = '" + user + "', status = 'ACTIVE', roles = (select from orole where name ='writer')")
-        s.icreatesettings(user=user)
-        s.icreateobjects(database=curdatabase)
-        s.icreatenodes(database=curdatabase)
-        s.icreatesources(database=curdatabase)
-        s.icreatecaches(database=curdatabase)
-        s.odbrun("create sequence fileseq type ordered")
-        try: shutil.rmtree('/orientdb/files/kairos_user_' + user)
-        except: pass
+        cursor.execute("create database kairos_user_" + user)
+        logging.info(curdatabase + " database created.")
+        cursor.execute("create user " + user + " password '" + user + "'")
+        logging.info(user + " user created.")
+        cursor.close()
+        agens.close()
+        agensstr = "host='localhost' dbname='kairos_user_" + user + "' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("create graph kairos")
+        cursor.execute("create vlabel settings")
+        cursor.execute("create (:settings {colors:'COLORS', keycode:0, logging:'info', loglines:100, arrayinsert:100, nodesdb:'kairos_user_" + user + "', plotorientation:'horizontal', systemdb:'kairos_system_system', template:'DEFAULT', top:15, wallpaper:'DEFAULT'})")
+        cursor.execute("create vlabel objects")
+        cursor.execute("create vlabel nodes")
+        cursor.execute("create (:nodes {name:'/', type:'N', created:now(), status:'ACTIVE', icon:'N'})")
+        cursor.execute("create (:nodes {name:'Trash', type:'T', created:now(), status:'DELETED', icon:'T'})")
+        cursor.execute("create elabel node_has_children")
+        cursor.execute("match (r:nodes {name:'/'}), (t:nodes {name:'Trash'}) create ((r)-[:node_has_children]->(t))") 
+        cursor.execute("create elabel node_has_source")
+        cursor.execute("create elabel node_has_cache")
+        cursor.execute("create vlabel sources")
+        cursor.execute("create vlabel caches")
+        #s.odbrun("create sequence fileseq type ordered")
+        #try: shutil.rmtree('/orientdb/files/kairos_user_' + user)
+        #except: pass
         try: shutil.rmtree('/autoupload/kairos_user_' + user)
         except: pass
-        os.mkdir('/orientdb/files/' + curdatabase)
+        #os.mkdir('/orientdb/files/' + curdatabase)
         os.mkdir('/autoupload/' + curdatabase)
-        logging.info(curdatabase + " database created.")
         return dict(success=True, data=dict(msg=user + " user has been successfully created!"))
 
     @trace_call
     def icreategrant(s, user=None, role=None):
-        s.odbget(root=True)
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("select datname from pg_database")
+        databases = [row['datname'] for row in cursor.fetchall()]
         dbgroup = "kairos_group_" + role
         dbuser = "kairos_user_" + user
-        if dbgroup not in s.odb.db_list().oRecordData['databases'].keys(): return dict(success=False, message=role + " role doesn't exist!")
-        if dbuser not in s.odb.db_list().oRecordData['databases'].keys(): return dict(success=False, message=user + " user doesn't exist!")
-        s.odbget(database=dbuser)
-        tabx = s.odbquery("select password from ouser where name = '" + user + "'")
-        password = [rx.oRecordData['password'] for rx in tabx][0]
-        s.odbget(database=dbgroup)
-        tabx = s.odbquery("select name from ouser where name = '" + user + "'")
-        users = [rx.oRecordData['name'] for rx in tabx]
-        if len(users) > 0: return dict(success=False, message=user + " user is already granted with " + role + " role!")
-        s.odbrun("insert into ouser set name = '" + user + "', password = '" + password + "', status = 'ACTIVE', roles = (select from orole where name ='writer')")
+        if dbgroup not in databases:
+            cursor.close()
+            agens.close()
+            return dict(success=False, message=role + " role doesn't exist!")
+        if dbuser not in databases: 
+            cursor.close()
+            agens.close()
+            return dict(success=False, message=user + " user doesn't exist!")
+        cursor.execute("select groname,usename from pg_group,pg_user where usesysid = any(grolist) and groname='" + role + "' and usename='" + user + "'")
+        if len([row for row in cursor.fetchall()]) > 0:
+            cursor.close()
+            agens.close()
+            return dict(success=False, message=user + " user is already granted with " + role + " role!")
+        for row in cursor.fetchall():
+            data.append(dict(_id=row['usename'] + ':' + row['groname'], user=row['usename'], role=row['groname']))
+        cursor.execute("grant " + role + " to " + user)
+        cursor.close()
+        agens.close()
         return dict(success=True, data=dict(msg=role + " role has been successfully granted to " + user + " user!"))
 
     @trace_call
     def ideleterole(s, role=None):
-        s.odbget(root=True)
         dbgroup = "kairos_group_" + role
         logging.info("Dropping " + dbgroup + " database...")
-        s.odb.db_drop(dbgroup)
-        shutil.rmtree('/orientdb/files/' + dbgroup)
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("drop database " + dbgroup)
+        cursor.execute("drop role " + role)
+        #shutil.rmtree('/orientdb/files/' + dbgroup)
         logging.info(dbgroup + " database removed.")
         return dict(success=True, data=dict(msg=role + " role has been successfully removed!"))
 
     @trace_call
     def ideleteuser(s, user=None):
-        s.odbget(root=True)
         if user=='admin': return dict(success=False, message='admin user cannot be removed!')
         dbuser = "kairos_user_" + user
         logging.info("Dropping " + dbuser + " database...")
-        s.odb.db_drop(dbuser)
-        for k in s.odb.db_list().oRecordData['databases'].keys():
-            if 'kairos_group_' in k:
-                s.odbget(database=k)
-                s.odbrun("delete from ouser where name = '" + user + "'")
-        shutil.rmtree('/orientdb/files/' + dbuser)
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("drop database " + dbuser)
+        cursor.execute("drop user " + user)
+        #shutil.rmtree('/orientdb/files/' + dbuser)
         logging.info(dbuser + " database removed.")
         return dict(success=True, data=dict(msg=user + " user has been successfully removed!"))
 
     @trace_call
     def iresetpassword(s, user=None):
-        s.odbget(root=True)
         if user=='admin': return dict(success=False, message='admin password cannot be reset!')
         dbuser = "kairos_user_" + user
-        logging.info("Updating " + user + " password...")
-        s.odbget(database=dbuser)
-        s.odbrun("update ouser set password = '" + user + "' where name = '" + user + "'")
+        logging.info("Resetting " + user + " password...")
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("alter user " + user + " password '" + user + "'")
+        cursor.close()
+        agens.close()
         logging.info(user + " password reset.")
         return dict(success=True, data=dict(msg=user + " password has been successfully reset!"))
 
     @trace_call
     def ideletegrant(s, role=None, user=None):
-        dbgroup = "kairos_group_" + role
-        s.odbget(database=dbgroup)
-        s.odbrun("delete from ouser where name = '" + user + "'")
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("revoke " + role + " from " + user)
+        cursor.close()
+        agens.close()
         return dict(success=True, data=dict(msg=user + " user has been successfully revoked from " + role + " role!"))
 
     @trace_call
     def ilistobjects(s, systemdb=None, nodesdb=None, where=''):
         data = []
         for db in [nodesdb, systemdb]:
-            s.odbget(database=db)
-            tabx = s.odbquery("select @rid, id, type, created.format('yyyy-MM-dd HH:mm:ss.SSS') as created from objects " + where, -1)
-            for rx in tabx:
-                item = rx.oRecordData
-                item['rid'] = str(item['rid'])
+            agensstr = "host='localhost' user='agensgraph' dbname='" + db + "'"
+            agens = psycopg2.connect(agensstr)
+            cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cursor.execute("set graph_path = 'kairos'")
+            cursor.execute("match (o:objects " + where + ") return id(o) as rid, o.id, o.type, to_char(cast(o.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created")
+            for row in cursor.fetchall():
+                item = dict()
+                for x in row.keys(): item[x] = row[x]
                 item['origin'] = db
                 data.append(item)
+            cursor.close()
+            agens.close()
         return data
 
     @trace_call
     def igetobjects(s, systemdb=None, nodesdb=None, where='', evalobject=True):
         data = []
         for db in [nodesdb, systemdb]:
-            s.odbget(database=db)
-            tabx = s.odbquery("select filename, content, created.format('yyyy-MM-dd HH:mm:ss.SSS') as created from objects " + where, -1)
-            for rx in tabx:
-                item = rx.oRecordData
-                source = binascii.a2b_base64(item['content'])
-                filename = item['filename']
-                created = item['created']
+            agensstr = "host='localhost' user='agensgraph' dbname='" + db + "'"
+            agens = psycopg2.connect(agensstr)
+            cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cursor.execute("set graph_path = 'kairos'")
+            cursor.execute("match (o:objects " + where + ") return o.filename, o.content, to_char(cast(o.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created")
+            for row in cursor.fetchall():
+                source = binascii.a2b_base64(row['content'])
+                filename = row['filename']
+                created = row['created']
                 p = compile(source, filename, 'exec')
                 global kairos
                 locals()['kairos'] = kairos
@@ -1000,69 +1001,75 @@ class KairosWorker:
                 obj['created'] = created
                 if evalobject: obj = replaceeval(obj)
                 data.append(obj)
+            cursor.close()
+            agens.close()
         return data
 
     @trace_call
     def igetnodes(s, nodesdb=None, id=None, name=None, parent=None, root=False, child=None, countchildren=False, getsource=False, getcache=False):
-        s.odbget(database=nodesdb)
-        selector = "@rid, type, name, icon, status,  created.format('yyyy-MM-dd HH:mm:ss.SSS') as created, liveobject, aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip, aggregatormethod, aggregatortimefilter, aggregated.format('yyyy-MM-dd HH:mm:ss.SSS') as aggregated, producers"
-        if root: tabx = s.odbquery("select " + selector + " from nodes where @rid not in (select in from node_has_children)", -1)
-        if name and parent: tabx = s.odbquery("select " + selector + " from nodes where name = '" + name + "' and @rid in (select in from node_has_children where out =" + parent + ")", -1)
-        if not name and parent: tabx = s.odbquery("select " + selector + " from nodes where @rid in (select in from node_has_children where out = " + parent + ")", -1)
-        if not name and child: tabx = s.odbquery("select " + selector + " from nodes where @rid in (select out from node_has_children where in = " + child + ")", -1)
-        if id: tabx = s.odbquery("select " + selector + " from nodes where @rid = " + id, -1)
+        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
+        agens = psycopg2.connect(agensstr)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = 'kairos'")
+        selector = "id(n) as rid, n.type, n.name, n.icon, n.status, to_char(cast(n.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, n.liveobject, n.aggregatorselector, n.aggregatorsort, n.aggregatortake, n.aggregatorskip, n.aggregatormethod, n.aggregatortimefilter, to_char(cast(n.aggregated as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as aggregated, n.producers"
+        if root: cursor.execute("match (n:nodes {name:'/'})-[:node_has_children]->(t:nodes {name:'Trash',status:'DELETED'}) return " + selector)
+        if name and parent: cursor.execute("match (p:nodes)-[:node_has_children]->(n:nodes {name:'" + name + "'}) where id(p)='" + parent + "' return " + selector)
+        if not name and parent: cursor.execute("match (p:nodes)-[:node_has_children]->(n:nodes) where id(p)='" + parent + "' return " + selector)
+        if not name and child: cursor.execute("match (n:nodes)-[:node_has_children]->(c:nodes) where id(c)='" + child + "' return " + selector)
+        if id: cursor.execute("match (n:nodes) where id(n)='" + id + "' return " + selector)
+        selectednodes = [row for row in cursor.fetchall()]
         nodes=[]
-        for rx in tabx:
-            item = rx.oRecordData
+        for row in selectednodes:
             node = dict(datasource=dict(cache=dict()))
-            node['id'] = str(item['rid'])
-            node['name'] = item['name']
-            node['icon'] = item['icon']
-            node['status'] = item['status']
-            node['created'] = item['created']
-            node['datasource']['type'] = item['type']
-            node['datasource']['producers'] = json.loads(item['producers']) if 'producers' in item else []
-            if item['type'] in ['A', 'L']:
-                node['datasource']['aggregated'] = item['aggregated'] if 'aggregated' in item else None
-                node['datasource']['aggregatorselector'] = item['aggregatorselector'] if 'aggregatorselector' in item else '/'
-                node['datasource']['aggregatorsort'] = item['aggregatorsort'] if 'aggregatorsort' in item else 'desc'
-                node['datasource']['aggregatortake'] = item['aggregatortake'] if 'aggregatortake' in item else 1
-                node['datasource']['aggregatorskip'] = item['aggregatorskip'] if 'aggregatorskip' in item else 0
-                node['datasource']['aggregatormethod'] = item['aggregatormethod'] if 'aggregatormethod' in item else '$none'
-                node['datasource']['aggregatortimefilter'] = item['aggregatortimefilter'] if 'aggregatortimefilter' in item else '.'
-            if item['type'] in ['D']:
-                node['datasource']['liveobject'] = item['liveobject']
+            node['id'] = row['rid']
+            node['name'] = row['name']
+            node['icon'] = row['icon']
+            node['status'] = row['status']
+            node['created'] = row['created']
+            node['datasource']['type'] = row['type']
+            node['datasource']['producers'] = json.loads(row['producers']) if 'producers' in row  and row['producers'] else []
+            if row['type'] in ['A', 'L']:
+                node['datasource']['aggregated'] = row['aggregated'] if 'aggregated' in row and row['aggregated'] else None
+                node['datasource']['aggregatorselector'] = row['aggregatorselector'] if 'aggregatorselector' in row and row['aggregatorselector'] else '/'
+                node['datasource']['aggregatorsort'] = row['aggregatorsort'] if 'aggregatorsort' in row and row['aggregatorsort'] else 'desc'
+                node['datasource']['aggregatortake'] = row['aggregatortake'] if 'aggregatortake' in row and row['aggregatortake'] else 1
+                node['datasource']['aggregatorskip'] = row['aggregatorskip'] if 'aggregatorskip' in row and row['aggregatorskip'] else 0
+                node['datasource']['aggregatormethod'] = row['aggregatormethod'] if 'aggregatormethod' in row and row['aggregatormethod'] else '$none'
+                node['datasource']['aggregatortimefilter'] = row['aggregatortimefilter'] if 'aggregatortimefilter' in row and row['aggregatortimefilter'] else '.'
+            if row['type'] in ['D']:
+                node['datasource']['liveobject'] = row['liveobject']
                 d = dict()
                 try:
-                    liveobject = s.igetobjects(nodesdb=nodesdb, systemdb='kairos_system_system', where="where id='" + item['liveobject'] + "' and type='liveobject'")[0]
+                    liveobject = s.igetobjects(nodesdb=nodesdb, systemdb='kairos_system_system', where="{id:'" + item['liveobject'] + "', type:'liveobject'}")[0]
                     for e in liveobject['tables']: d[e] = True
                 except: pass
                 node['datasource']['collections'] = d
             if countchildren:
-                s.odbget(database=nodesdb)
-                taby = s.odbquery("select count(*) as count from node_has_children where out = " + node['id'], -1)
-                for r in taby:
-                    node['kids'] = r.oRecordData['count']
+                cursor.execute("select count(*) as count from (match (n:nodes)-[:node_has_children]->(c:nodes) where id(n)='" + node['id'] + "' return c) foo")
+                for r in cursor.fetchall():
+                    node['kids'] = r['count']
             if getsource:
-                if item['type'] == 'B':
+                if row['type'] == 'B':
                     source = s.igetsource(node['id'], nodesdb=nodesdb)
                     if hasattr(source, 'rid'):
                         node['datasource']['uploaded'] = source.created
                         node['datasource']['collections'] = source.collections
                         node['datasource']['location'] = source.location
-                if item['type'] in ['A', 'C']:
+                if row['type'] in ['A', 'C']:
                     try:
                         firstproducer = s.igetnodes(nodesdb=nodesdb, id=node['datasource']['producers'][0]['id'], getsource=True)[0]
                         node['datasource']['collections'] = firstproducer['datasource']['collections']
                     except: node['datasource']['collections'] = None
             if getcache:
-                if item['type'] in ['A', 'B', 'D']:
+                if row['type'] in ['A', 'B', 'D']:
                     cache = s.igetcache(node['id'], nodesdb=nodesdb)
                     if hasattr(cache, 'rid'):
                         node['datasource']['cache']['collections'] = cache.collections
                         node['datasource']['cache']['queries'] = cache.queries
                         node['datasource']['cache']['dbname'] = cache.name
             nodes.append(node)
+        cursor.close()
+        agens.close
         return nodes
     
     @trace_call
@@ -1072,12 +1079,19 @@ class KairosWorker:
 
     @trace_call
     def icreatenode(s, nodesdb=None, id=None, name=None):
-        s.odbget(database=nodesdb)
+        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = 'kairos'")
         if not name:
-            tabx =  s.odbquery("select sysdate().format('yyyy-MM-dd HH:mm:ss.SSS') as name")
-            for rx in tabx: name = rx.oRecordData['name']
-        rid = s.odbrun("create vertex nodes set name='" + name + "', type='N', created=sysdate(), status='ACTIVE', icon='N'")[0]._rid
-        s.odbrun("create edge node_has_children from " + id + " to " + rid)
+            cursor.execute("select to_char(now(), 'YYYY-MM-DD HH24:MI:SS.MS') as name")
+            for row in cursor.fetchall(): name = row['name']
+        cursor.execute("match (p:nodes) where id(p)='" + id + "' create (p)-[:node_has_children]->(n:nodes {name:'" + name + "', type:'N', created:now(), status:'ACTIVE', icon:'N'}) return id(n) as rid") 
+        for row in cursor.fetchall():
+            rid = row['rid']
+        cursor.close()
+        agens.close()
         return rid
 
     @trace_call
@@ -1181,7 +1195,7 @@ class KairosWorker:
             logging.info("Node: " + nid + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
             todo[collection] = False
             analyzername = node ['datasource']['collections'][collection]['analyzer']
-            analyzer = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + analyzername + "' and type='analyzer'")[0]
+            analyzer = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + analyzername + "', type:'analyzer'}")[0]
             datepart = cache.collections[collection][nid] if nid in cache.collections[collection] else None
             todo[collection] = True if datepart == None else todo[collection]
             todo[collection] = True if datepart != None and node['datasource']['uploaded'] > datepart else todo[collection]
@@ -1245,14 +1259,14 @@ class KairosWorker:
         ntype = node['datasource']['type']
         logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
         hcache = Cache(cache.name)
-        function = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + node['datasource']['aggregatormethod'] + "' and type='aggregator'")[0]
+        function = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['aggregatormethod'] + "', type:'aggregator'}")[0]
         hcache.create_function(function["name"], function["numparameters"], function["function"])
         hcache.create_function("match",2,lambda x,r: True if re.match(r,x) else False)
         producers = list(mapproducers[collection]['updated'].keys())
         producers.extend(list(mapproducers[collection]['created'].keys()))
         for producer in producers:
             logging.info("Node: " + nid + ", Type: " + ntype + ", building partition for producer: '" + producer + "' ...")
-            specavg = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='specavg' and type='function'")[0]
+            specavg = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'specavg', type:'function'}")[0]
             hcache.create_function(specavg["name"], specavg["numparameters"], specavg["function"])
             pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]
             indbname = pnode['datasource']['cache']['dbname']
@@ -1404,7 +1418,7 @@ class KairosWorker:
             for collection in tcollections:
                 if ntype in ['A']: s.ibuildcolcachetypeA(node, cache=cache, collection=collection, nodesdb=nodesdb, systemdb=systemdb, mapproducers=mapproducers)
                 if ntype in ['D']:
-                    liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + node['datasource']['liveobject'] + "' and type='liveobject'")[0]
+                    liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['liveobject'] + "', type:'liveobject'}")[0]
                     s.ibuildcolcachetypeD(node, cache=cache, collection=collection, liveobject=liveobject)
             if ntype in ['B']: s.ibuildcolcachetypeB(node, cache=cache, arrayinsert=arrayinsert, collections=tcollections, analyzers=analyzers)
             logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with collections info: '" + str(tcollections) + "' ...")
@@ -1440,7 +1454,7 @@ class KairosWorker:
                 logging.info("Node: " + nid + ", Type: " + ntype + ", building new query cache: '" + qid + "' ...")
                 if 'userfunctions' in query:
                     for ufn in query['userfunctions']:
-                        uf = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + ufn + "' and type='function'")[0]
+                        uf = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + ufn + "', type:'function'}")[0]
                         hcache.create_function(uf["name"], uf["numparameters"], uf["function"])
                 global kairos
                 kairos['node'] = node
@@ -1518,16 +1532,11 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         user = multipart['user'] if 'user' in multipart else params['user'][0]
         password = multipart['password'] if 'password' in multipart else params['password'][0]
-        if user == s.name and password != s.admin:
-            message = "Invalid password!"
-            logging.warning(message)
-            return web.json_response(dict(success=False, message=message))
-        if user == s.name:
-            adminrights = True
-            return web.json_response(dict(success=True, data=dict(adminrights = adminrights)))
         adminrights = True if user == 'admin' else False
-        try:
-            s.odbget(database="kairos_user_" + user, user=user, password=password)
+        agensstr = "host='localhost' dbname='kairos_user_" + user + "' user='" + user + "' password='" + password + "'"
+        try: 
+            agens = psycopg2.connect(agensstr)
+            agens.close()
             return web.json_response(dict(success=True, data=dict(adminrights = adminrights)))
         except:
             message = "Invalid password!"
@@ -1541,9 +1550,6 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         database = multipart['database'] if 'database' in multipart else params['database'][0]
         source = multipart['source'] if 'source' in multipart else params['source'][0]
-        x = s.odbget(database=database)
-        x = s.odbreload()
-        clusterid = [y.id for y in x if y.name==b'objects'][0]
         try:
             p = compile(source, 'stream', 'exec')
             kairos = dict()
@@ -1556,10 +1562,15 @@ class KairosWorker:
             id = obj['id']
             filename = id.lower() + '.py'
             content = binascii.b2a_base64(source.encode())
-            s.odbget(database=database)
-            s.odbrun("delete vertex objects where id='" + id + "' and type = '" + typeobj + "'")
-            rid = s.odb.record_create(clusterid, {'@objects': dict(id=id, type=typeobj, filename=filename, content=content.decode())})._rid
-            s.odbrun("update objects set created=sysdate() where @rid=" + rid)
+            agensstr = "host='localhost' user='agensgraph' dbname='" + database + "'"
+            agens = psycopg2.connect(agensstr)
+            cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+            cursor.execute("set graph_path = 'kairos'")
+            cursor.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
+            cursor.execute("create (:objects {id:'" + id + "', type:'" + typeobj + "', created: now(), filename:'" + filename + "', content:'" + content.decode() + "'})")
+            cursor.close()
+            agens.commit()
+            agens.close()
             return web.json_response(dict(success=True, data=dict(msg='Object: ' + id + ' of type: ' + typeobj + ' has been successfully saved!')))
         except:
             tb = sys.exc_info()
@@ -1573,10 +1584,17 @@ class KairosWorker:
     def getsettings(s, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
-        s.odbget(database="kairos_user_" + user)
+        db = 'kairos_user_' + user
+        agensstr = "host='localhost' user='agensgraph' dbname='" + db + "'"
+        agens = psycopg2.connect(agensstr)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = 'kairos'")
+        cursor.execute("match (s:settings) return cast(s.top as int) as top, s.colors, cast(s.keycode as int) as keycode, s.logging, s.nodesdb, cast(s.loglines as int) as loglines, s.systemdb, s.template, s.wallpaper, cast(s.arrayinsert as int) as arrayinsert, s.plotorientation")
         settings = dict()
-        tabx = s.odbquery("select from settings", -1)
-        for rx in tabx: settings = rx.oRecordData
+        for row in cursor.fetchall():
+            for x in row.keys(): settings[x] = row[x]
+        cursor.close()
+        agens.close()
         return web.json_response(dict(success=True, data=dict(settings=settings)))
 
     @intercept_logging_and_internal_error
@@ -1617,26 +1635,38 @@ class KairosWorker:
     @intercept_logging_and_internal_error
     @trace_call
     def listsystemdb(s, request):
-        s.odbget(root=True)
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("select datname from pg_database")
+        databases = [row['datname'] for row in cursor.fetchall()]
+        cursor.close()
+        agens.close()
         data = []
-        for k in s.odb.db_list().oRecordData['databases'].keys():
+        for k in databases:
             if 'kairos_system_' in k: data.append(dict(name=k))
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
     @trace_call
     def listnodesdb(s, request):
-        s.odbget(root=True)
         params = parse_qs(request.query_string)
         user = params['user'][0]
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("select datname from pg_database")
+        databases = [row['datname'] for row in cursor.fetchall()]
+        cursor.execute("select groname from pg_group,pg_user where usesysid = any(grolist) and usename='" + user + "'")
+        groupdb = ['kairos_group_' + row['groname'] for row in cursor.fetchall()]
+        cursor.close()
+        agens.close()
         data = []
-        for k in s.odb.db_list().oRecordData['databases'].keys():
+        for k in databases:
             if k == 'kairos_user_' + user: data.append(dict(name=k))
-            if 'kairos_group_' in k:
-                s.odbget(database=k)
-                tabx = s.odbquery("select name from ouser where name <> '" + s.name + "'")
-                users = [rx.oRecordData['name'] for rx in tabx]
-                if user in users: data.append(dict(name=k))
+            if k in groupdb: data.append(dict(name=k))
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
@@ -1645,7 +1675,7 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
-        data = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="where type='template'")
+        data = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="{type:'template'}")
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
@@ -1654,7 +1684,7 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
-        data = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="where type='aggregator'")
+        data = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="{type:'aggregator'}")
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
@@ -1663,7 +1693,7 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
-        data = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="where type='liveobject'")
+        data = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="{type:'liveobject'}")
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
@@ -1672,7 +1702,7 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
-        data = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="where type='wallpaper'")
+        data = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="{type:'wallpaper'}")
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
@@ -1681,7 +1711,7 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
-        data = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="where type='color'")
+        data = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="{type:'color'}")
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
@@ -1700,11 +1730,17 @@ class KairosWorker:
         database = params['database'][0]
         objtype = params['type'][0]
         objid = params['id'][0]
-        s.odbget(database=database)
-        tabx = s.odbquery("select content from objects where id='" + objid + "' and type = '" + objtype + "'", -1)
-        for rx in tabx:
-            item = rx.oRecordData
-            source = binascii.a2b_base64(item['content'])
+        agensstr = "host='localhost' user='agensgraph' dbname='" + database + "'"
+        agens = psycopg2.connect(agensstr)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = 'kairos'")
+        cursor.execute("match (o:objects {id:'" + objid + "', type:'" + objtype + "'}) return o.content")
+        result = dict()
+        for row in cursor.fetchall():
+            for x in row.keys(): result[x] = row[x]
+        cursor.close()
+        agens.close()
+        source = binascii.a2b_base64(result['content'])
         return web.json_response(dict(success=True, data=source.decode()))
 
     @intercept_logging_and_internal_error
@@ -1723,8 +1759,14 @@ class KairosWorker:
         keycode = params['keycode'][0]
         plotorientation = params['plotorientation'][0]
         logging = params['logging'][0]
-        s.odbget(database="kairos_user_" + user)
-        s.odbrun("update settings set colors='" + colors + "', keycode='" + keycode + "', logging='" + logging + "', loglines='" + loglines + "', arrayinsert='" + arrayinsert + "', nodesdb='" + nodesdb + "', plotorientation='" + plotorientation + "', systemdb='" + systemdb + "', template='" + template + "', top='" + top + "', wallpaper='" + wallpaper + "'")
+        db = "kairos_user_" + user
+        agensstr = "host='localhost' user='agensgraph' dbname='" + db + "'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = 'kairos'")
+        cursor.execute("match (s:settings) detach delete (s)")
+        cursor.execute("create (:settings {colors:'" + colors + "', keycode:" + keycode + ", logging:'" + logging + "', loglines:" + loglines + ", arrayinsert:" + arrayinsert + ", nodesdb:'" + nodesdb + "', plotorientation:'" + plotorientation + "', systemdb:'" + systemdb + "', template:'" + template + "', top:" + top + ", wallpaper:'" + wallpaper + "'})")
         return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
@@ -1738,9 +1780,6 @@ class KairosWorker:
         multipart = await request.post()
         upload = multipart['file']
         nodesdb = multipart['nodesdb'] if 'nodesdb' in multipart else params['nodesdb'][0]
-        x = s.odbget(database=nodesdb)
-        x = s.odbreload()
-        clusterid = [y.id for y in x if y.name==b'objects'][0]
         filename = upload.filename
         content = upload.file.read()
         uploadtype = upload.content_type
@@ -1758,10 +1797,15 @@ class KairosWorker:
             typeobj = obj['type']
             id = obj['id']
         content = binascii.b2a_base64(content)
-        s.odbget(database=nodesdb)
-        s.odbrun("delete vertex objects where id='" + id + "' and type = '" + typeobj + "'")
-        rid = s.odb.record_create(clusterid, {'@objects': dict(id=id, type=typeobj, filename=filename, content=content.decode())})._rid
-        s.odbrun("update objects set created=sysdate() where @rid=" + rid)
+        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
+        agens = psycopg2.connect(agensstr)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = 'kairos'")
+        cursor.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
+        cursor.execute("create (:objects {id:'" + id + "', type:'" + typeobj + "', created: now(), filename:'" + filename + "', content:'" + content.decode() + "'})")
+        cursor.close()
+        agens.commit()
+        agens.close()
         return web.json_response(dict(success=True, state=True, name=filename))
 
     @intercept_logging_and_internal_error
@@ -1799,10 +1843,17 @@ class KairosWorker:
     @intercept_logging_and_internal_error
     @trace_call
     def listroles(s, request):
-        s.odbget(root=True)
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("select datname from pg_database")
+        databases = [row['datname'] for row in cursor.fetchall()]
+        cursor.close()
+        agens.close()
         data = []
-        for k in s.odb.db_list().oRecordData['databases'].keys():
-            if 'kairos_group' in k:
+        for k in databases:
+            if 'kairos_group_' in k:
                 role = k.replace('kairos_group_','')
                 data.append(dict(_id=role, role=role))
         return web.json_response(dict(success=True, data=data))
@@ -1810,10 +1861,17 @@ class KairosWorker:
     @intercept_logging_and_internal_error
     @trace_call
     def listusers(s, request):
-        s.odbget(root=True)
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("select datname from pg_database")
+        databases = [row['datname'] for row in cursor.fetchall()]
+        cursor.close()
+        agens.close()
         data = []
-        for k in s.odb.db_list().oRecordData['databases'].keys():
-            if 'kairos_user' in k:
+        for k in databases:
+            if 'kairos_user_' in k:
                 user = k.replace('kairos_user_','')
                 data.append(dict(_id=user, user=user))
         return web.json_response(dict(success=True, data=data))
@@ -1821,16 +1879,16 @@ class KairosWorker:
     @intercept_logging_and_internal_error
     @trace_call
     def listgrants(s, request):
-        s.odbget(root=True)
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("select groname,usename from pg_group,pg_user where usesysid = any(grolist)")
         data = []
-        for k in s.odb.db_list().oRecordData['databases'].keys():
-            if 'kairos_group' in k:
-                role = k.replace('kairos_group_','')
-                s.odbget(database="kairos_group_" + role)
-                tabx = s.odbquery("select name from ouser where name <> '" + s.name + "'")
-                for rx in tabx:
-                    user = rx.oRecordData['name']
-                    data.append(dict(_id=user + ':' + role, user=user, role=role))
+        for row in cursor.fetchall():
+            data.append(dict(_id=row['usename'] + ':' + row['groname'], user=row['usename'], role=row['groname']))
+        cursor.close()
+        agens.close()
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
@@ -1899,19 +1957,22 @@ class KairosWorker:
         user = multipart['user'] if 'user' in multipart else params['user'][0]
         password = multipart['password'] if 'password' in multipart else params['password'][0]
         new = multipart['new'] if 'new' in multipart else params['new'][0]
-        s.odbget(root=True)
-        databases =  s.odb.db_list().oRecordData['databases'].keys()
-        try:
-            s.odbget(database="kairos_user_" + user, user=user, password=password)
+        agensstr = "host='localhost' dbname='kairos_user_" + user + "' user='" + user + "' password='" + password + "'"
+        try: 
+            agens = psycopg2.connect(agensstr)
+            agens.close()
             logging.debug('Old password is valid.')
         except:
             message = "Invalid password!"
-            logging.error(message)
-            return web.json_response(dict(success=False, status='error', message=message))
-        for k in databases:
-            if 'kairos_group_' in k or k == 'kairos_user_' + user:
-                s.odbget(database=k)
-                s.odbrun("update ouser set password = '" + new + "' where name = '" + user + "'")
+            logging.warning(message)
+            return web.json_response(dict(success=False, message=message))
+        agensstr = "host='localhost' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("alter user " + user + " password '" + new + "'")
+        cursor.close()
+        agens.close()
         return web.json_response(dict(success=True, data=dict(msg='Password has been successfully updated!')))
 
     @intercept_logging_and_internal_error
@@ -1923,10 +1984,16 @@ class KairosWorker:
             message = 'A system object cannot be deleted!'
             return web.json_response(dict(success=False, status='error', message=message))
         id = params['id'][0]
-        type = params['type'][0]
-        s.odbget(database=database)
-        s.odbrun("delete vertex objects where id='" + id + "' and type = '" + type + "'")
-        return web.json_response(dict(success=True, data=dict(msg=id + ' ' + type + ' object has been successfully removed!')))
+        typeobj = params['type'][0]
+        agensstr = "host='localhost' dbname='" + database + "' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = kairos")
+        cursor.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
+        cursor.close()
+        agens.close()
+        return web.json_response(dict(success=True, data=dict(msg=id + ' ' + typeobj + ' object has been successfully removed!')))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -1935,11 +2002,18 @@ class KairosWorker:
         database = params['database'][0]
         id = params['id'][0]
         typeobj = params['type'][0]
-        s.odbget(database=database)
-        tabx = s.odbquery("select filename, content from objects where id='" + id + "' and type='" + typeobj + "'")
-        for rx in tabx: item = rx.oRecordData
-        stream = binascii.a2b_base64(item['content'])
-        return web.Response(headers=MultiDict({'Content-Disposition': 'Attachment;filename="' + item['filename'] + '"'}), body=stream)
+        agensstr = "host='localhost' dbname='" + database + "' user='agensgraph'"
+        agens = psycopg2.connect(agensstr)
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = kairos")
+        cursor.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) return o.filename, o.content")
+        result = dict()
+        for row in cursor.fetchall():
+            for x in row.keys(): result[x] = row[x]
+        cursor.close()
+        agens.close()
+        stream = binascii.a2b_base64(result['content'])
+        return web.Response(headers=MultiDict({'Content-Disposition': 'Attachment;filename="' + result['filename'] + '"'}), body=stream)
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -2016,7 +2090,7 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
-        data = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where type='menu'")
+        data = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{type:'menu'}")
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
@@ -2148,7 +2222,7 @@ class KairosWorker:
         variables = json.loads(params['variables'][0])
         global kairos
         for v in variables: kairos[v] = variables[v]
-        chart = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + chart + "' and type='chart'")[0]
+        chart = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + chart + "', type:'chart'}")[0]
         return web.json_response(dict(success=True, data=chart))
 
     @intercept_logging_and_internal_error
@@ -2158,7 +2232,7 @@ class KairosWorker:
         database = params['database'][0]
         id = params['id'][0]
         type = params['type'][0]
-        obj = s.igetobjects(nodesdb=database, systemdb=database, where="where id='" + id + "' and type='" + type + "'", evalobject=False)[0]
+        obj = s.igetobjects(nodesdb=database, systemdb=database, where="{id:'" + id + "', type:'" + type + "'}", evalobject=False)[0]
         return web.json_response(dict(success=True, data=obj))
     
     @intercept_logging_and_internal_error
@@ -2171,7 +2245,7 @@ class KairosWorker:
         variables = json.loads(params['variables'][0])
         global kairos
         for v in variables: kairos[v] = variables[v]
-        layout = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + layout + "' and type='layout'")[0]
+        layout = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + layout + "', type:'layout'}")[0]
         return web.json_response(dict(success=True, data=layout))
     
     @intercept_logging_and_internal_error
@@ -2184,7 +2258,7 @@ class KairosWorker:
         variables = json.loads(params['variables'][0])
         global kairos
         for v in variables: kairos[v] = variables[v]
-        choice = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + choice + "' and type='choice'")[0]
+        choice = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + choice + "', type:'choice'}")[0]
         return web.json_response(dict(success=True, data=choice))
 
     @intercept_logging_and_internal_error
@@ -2194,7 +2268,7 @@ class KairosWorker:
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
         template = params['template'][0]
-        template = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + template + "' and type='template'")[0]
+        template = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + template + "', type:'template'}")[0]
         return web.json_response(dict(success=True, data=template))
 
     @intercept_logging_and_internal_error
@@ -2204,7 +2278,7 @@ class KairosWorker:
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
         colors = params['colors'][0]
-        colors = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + colors + "' and type='color'")[0]
+        colors = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + colors + "', type:'color'}")[0]
         return web.json_response(dict(success=True, data=colors))
 
     @intercept_logging_and_internal_error
@@ -2213,7 +2287,7 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
-        queries = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="where type='query'")
+        queries = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="{type:'query'}")
         return web.json_response(dict(success=True, data=queries))
 
     @intercept_logging_and_internal_error
@@ -2222,7 +2296,7 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
-        charts = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="where type='chart'")
+        charts = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="{type:'chart'}")
         return web.json_response(dict(success=True, data=charts))
 
     @intercept_logging_and_internal_error
@@ -2231,7 +2305,7 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
-        choices = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="where type='choice'")
+        choices = s.ilistobjects(nodesdb=nodesdb, systemdb=systemdb, where="{type:'choice'}")
         return web.json_response(dict(success=True, data=choices))
 
     @intercept_logging_and_internal_error
@@ -2248,7 +2322,7 @@ class KairosWorker:
         variables = json.loads(params['variables'][0])
         for v in variables: kairos[v] = variables[v]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        query = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + query + "' and type='query'")[0]
+        query = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + query + "', type:'query'}")[0]
         s.ibuildcollectioncache(node, collections=query['collections'], arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
         message = s.ibuildquerycache(node, query=query, systemdb=systemdb, nodesdb=nodesdb)
         if not message: result = s.iqueryexecute(node, query=query, nodesdb=nodesdb, limit=limit)
@@ -2508,7 +2582,7 @@ class KairosWorker:
         systemdb = params['systemdb'][0]
         loname = params['liveobject'][0]
         id = params['id'][0]
-        liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="where id='" + loname + "' and type='liveobject'")[0]
+        liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + loname + "', type:'liveobject'}")[0]
         node = s.igetnodes(nodesdb=nodesdb, id=id)[0]
         if node['datasource']['type'] in ['D']:
             logging.info("Node: " + id + ", Type: " + node['datasource']['type'] + ", deleting cache ...")

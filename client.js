@@ -18,7 +18,7 @@
 
 dhtmlxEvent(window,"load",function(){
 
-    var VERSION = "3.3";
+    var VERSION = "4.0";
     var ajaxcpt = 0;
     var desktop = {};
     desktop.variables = {};
@@ -1683,9 +1683,9 @@ dhtmlxEvent(window,"load",function(){
         manage_log(prefix + "/get_kairos_log", "kairos_log", "KAIROS log", "/var/log/kairos/kairos.log");
     };
 
-    var orientdb_errfile = function () {
+    var postgres_logfile = function () {
 		var prefix = "wss://" + window.location.host;
-        manage_log(prefix + "/get_orientdb_errfile", "orientdb_errfile", "ORIENTDB errfile", "/orientdb/log/orientdb.err");
+        manage_log(prefix + "/get_postgres_logfile", "postgres_logfile", "PostgreSQL log", "/home/agensgraph/data/logfile");
     };
 
     var webserver_log = function () {
@@ -1892,7 +1892,7 @@ dhtmlxEvent(window,"load",function(){
                         ajax_get_first_in_async_waterfall(method, params),
                         function () {
                             waterfall([
-                                ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: '#' + id}),
+                                ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: id}),
                                 function (x) {
                                     node = x;
                                     genform(w, listaggregators, listliveobjects);
@@ -2091,7 +2091,7 @@ dhtmlxEvent(window,"load",function(){
                     ajax_get_first_in_async_waterfall("aggregateaddnode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid, path: tree.getPath(id)}),
                     function () {
                         waterfall([
-                            ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: '#' + pid}),
+                            ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: pid}),
                             function (x) {
                                 curnode = x;
                                 setTimeout(function () {tree.refreshItem(yid)}, 0);
@@ -2107,7 +2107,7 @@ dhtmlxEvent(window,"load",function(){
                     ajax_get_first_in_async_waterfall("compareaddnode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid, path: tree.getPath(id)}),
                     function () {
                         waterfall([
-                            ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: '#' + pid}),
+                            ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: pid}),
                             function (x) {
                                 curnode = x;
                                 setTimeout(function () {tree.refreshItem(yid)}, 0);
@@ -2123,7 +2123,7 @@ dhtmlxEvent(window,"load",function(){
                     ajax_get_first_in_async_waterfall("linkfathernode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid, path: tree.getPath(id)}),
                     function () {
                         waterfall([
-                            ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: '#' + pid}),
+                            ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: pid}),
                             function (x) {
                                 curnode = x;
                                 setTimeout(function () {tree.refreshItem(yid)}, 0);
@@ -2235,7 +2235,7 @@ dhtmlxEvent(window,"load",function(){
                 menu.clearAll();
                 menu.actions = {};
                 waterfall([
-                    ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: '#' + id}),
+                    ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: id}),
                     function (node) {
                         curnode = node;
                         if (_.contains(["A", "B", "C", "D"], type)) {
@@ -2271,7 +2271,7 @@ dhtmlxEvent(window,"load",function(){
                 if (fid === "create_node") {
                     log.debug("Create node within item: " + id + " (" + tree.getItemText(id) + ")");
                     waterfall([
-                        ajax_get_first_in_async_waterfall("createnode", {nodesdb: desktop.settings.nodesdb, id: '#' + id}),
+                        ajax_get_first_in_async_waterfall("createnode", {nodesdb: desktop.settings.nodesdb, id: id}),
                         function (x) {
                             tree.loadStruct("gettree?nodesdb=" + desktop.settings.nodesdb + "&id=" + id);
                         }
@@ -2283,7 +2283,7 @@ dhtmlxEvent(window,"load",function(){
                     var aftergetnewname = function(name) {
                         if (name !== oldname) {
                             waterfall([
-                                ajax_get_first_in_async_waterfall("renamenode", {nodesdb: desktop.settings.nodesdb, id: '#' + id, new: name}),
+                                ajax_get_first_in_async_waterfall("renamenode", {nodesdb: desktop.settings.nodesdb, id: id, new: name}),
                                 function (x) {
                                     tree.setItemText(id, name);
                                 }
@@ -2295,7 +2295,7 @@ dhtmlxEvent(window,"load",function(){
                 if (fid === "delete_node") {
                     log.debug("Delete node: " + id + " (" + tree.getItemText(id) + ")");
                     waterfall([
-                        ajax_get_first_in_async_waterfall("deletenode", {nodesdb: desktop.settings.nodesdb, id: '#' + id}),
+                        ajax_get_first_in_async_waterfall("deletenode", {nodesdb: desktop.settings.nodesdb, id: id}),
                         function (x) {
                             tree.deleteItem(id);
                             tree.refreshItem(trashid);                           
@@ -2790,7 +2790,7 @@ dhtmlxEvent(window,"load",function(){
     var toolbardata = [
         {type: "buttonSelect", id: "kairos", text: "KAIROS", title: "KAIROS", openAll: true, img: "fa fa-home yellow", options: [
             {type: "obj", id: "kairos_log", text: "KAIROS log", img: "fa fa-file-text-o yellow"},
-            {type: "obj", id: "orientdb_errfile", text: "ORIENTDB errfile", img: "fa fa-file-text-o"},
+            {type: "obj", id: "postgres_logfile", text: "PostgreSQL log", img: "fa fa-file-text-o"},
             {type: "obj", id: "webserver_log", text: "WEBSERVER log", img: "fa fa-file-text-o"},
             {type: "separator"},
             {type: "obj", id: "documentation", text: "KAIROS documentation", img: "fa fa-file-pdf-o"},
@@ -2824,8 +2824,8 @@ dhtmlxEvent(window,"load",function(){
         if (id === "kairos_log") {
             kairos_log();
         }
-        if (id === "orientdb_errfile") {
-            orientdb_errfile();
+        if (id === "postgres_logfile") {
+            postgres_logfile();
         }
         if (id === "webserver_log") {
             webserver_log();
