@@ -20,6 +20,7 @@ class UserObject(dict):
                 {"action": s.nmon, "regexp": '^AAA,progname,'},
                 {"action": s.nmon, "regexp": '^CPU_ALL,'},
                 {"action": s.awrrachtml, "regexp": '.head.<title>AWR RAC Report for DB:'},
+                {"action": s.vmstat, "regexp": 'Collection Module:.+VmstatExaWatcher'},
                 {"action": s.tthtml, "regexp": '.<[Tt][Ii][Tt][Ll][Ee]>TTSTATS REPORT'},
                 {"action": s.sar, "regexp": '^(AIX|SunOS|HP-UX|Linux)[ \t]+(.+?)[ \t]+.*[ \t]+[0-9][0-9]/[0-9][0-9]/2?0?[0-9][0-9].*$'},
                 {"action": s.stop, "regexp": '^'}
@@ -62,7 +63,15 @@ class UserObject(dict):
         a.emit(None, None, {
             "member": m,
             "analyzer": 'ANALAWRHTML',
-            "collections": ['DBORAAWR', 'DBORAINFO', 'DBORAMISC', 'DBORABPA', 'DBORAWEC', 'DBORAWEV', 'DBORAWEB', 'DBORASTA', 'DBORAMTT', 'DBORALIB', 'DBORASQE', 'DBORASQP', 'DBORASQM', 'DBORASQV', 'DBORASQW', 'DBORASQG', 'DBORASQR', 'DBORASQX', 'DBORASQC', 'DBORAREQ', 'DBORALAT', 'DBORALAW', 'DBORAENQ', 'DBORATBS', 'DBORAFIL', 'DBORASGA', 'DBORAPGA', 'DBORAPGB', 'DBORAPGC', 'DBORAOSS', 'DBORATMS', 'DBORASRV', 'DBORASVW', 'DBORABUF', 'DBORASGLR', 'DBORASGPR', 'DBORASGPRR', 'DBORASGUR', 'DBORASGOR', 'DBORASGDPR', 'DBORASGPW', 'DBORASGPWR', 'DBORASGDPW', 'DBORASGTS', 'DBORASGDBC', 'DBORASGRLW', 'DBORASGIW', 'DBORASGBBW', 'DBORASGGCBB', 'DBORASGCRBR', 'DBORASGCBR']
+            "collections": ['DBORAAWR', 'DBORAINFO', 'DBORAMISC', 'DBORABPA', 'DBORAWEC', 'DBORAWEV', 'DBORAWEB', 'DBORASTA', 'DBORAMTT', 'DBORALIB', 'DBORASQE', 'DBORASQP', 'DBORASQM', 'DBORASQV', 'DBORASQW', 'DBORASQG', 'DBORASQR', 'DBORASQX', 'DBORASQC', 'DBORAREQ', 'DBORALAT', 'DBORALAW', 'DBORAENQ', 'DBORATBS', 'DBORAFIL', 'DBORASGA', 'DBORAPGA', 'DBORAPGB', 'DBORAPGC', 'DBORAOSS', 'DBORATMS', 'DBORASRV', 'DBORASVW', 'DBORABUF', 'DBORASGLR', 'DBORASGPR', 'DBORASGPRR', 'DBORASGUR', 'DBORASGOR', 'DBORASGDPR', 'DBORASGPW', 'DBORASGPWR', 'DBORASGDPW', 'DBORASGTS', 'DBORASGDBC', 'DBORASGRLW', 'DBORASGIW', 'DBORASGBBW', 'DBORASGGCBB', 'DBORASGCRBR', 'DBORASGCBR', 'EXACPU', 'EXATOPDBIOR', 'EXATOPDBIOV', 'EXATOPDSKIOR', 'EXATOPDSKIOV', 'EXATOPCLLOSIO', 'EXATOPCLLOSIOL', 'EXATOPDSKOSIO', 'EXATOPDSKOSIOL']
+        })
+        
+    def vmstat(s, a, l, g, m):
+        a.setContext('BREAK')
+        a.emit(None, None, {
+            "member": m,
+            "analyzer": 'ANALVMSTAT',
+            "collections": ['VMSTAT']
         })
 
     def awrrachtml(s, a, l, g, m):

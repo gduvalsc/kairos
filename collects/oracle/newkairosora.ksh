@@ -157,7 +157,7 @@ function foraenv
 {
      ORAENVFILE=oraenv_$$.out
      export PATH=$PATH:/usr/local/bin
-     export ORACLE_SID=${LD_INSTANCENAME}
+     export ORACLE_SID=${INSTANCENAME}
      export ORAENV_ASK=NO
      export NLS_LANG=AMERICAN_AMERICA
      export NLS_DATE_LANGUAGE=AMERICAN
@@ -241,7 +241,7 @@ function fawr_oravers
 {
      sqlplus -s "$CONNECTSTRING" <<EOF
      set heading off feedback off pages 0 lines 5000 trimspool on verify off
-     select distinct substr(version,1,4) from dba_hist_database_instance where instance_name = '$INSTANCENAME';
+     select distinct substr(version,1,4) from dba_hist_database_instance where instance_name = '$LD_INSTANCENAME';
      exit
 EOF
 }
@@ -276,7 +276,7 @@ function fawr_dbid
 {
      sqlplus -s "$CONNECTSTRING" <<EOF
      set heading off feedback off pages 0 lines 5000 trimspool on verify off
-     select * from (select dbid from dba_hist_database_instance where instance_name = '$INSTANCENAME' order by startup_time desc) where rownum=1;
+     select * from (select dbid from dba_hist_database_instance where instance_name = '$LD_INSTANCENAME' order by startup_time desc) where rownum=1;
      exit
 EOF
 }
@@ -300,7 +300,7 @@ function fawr_instancenumber
 {
      sqlplus -s "$CONNECTSTRING" <<EOF
      set heading off feedback off pages 0 lines 5000 trimspool on verify off
-     select * from (select to_char(instance_number) from dba_hist_database_instance where instance_name='$INSTANCENAME' and dbid=$DBID order by startup_time desc) where rownum=1;
+     select * from (select to_char(instance_number) from dba_hist_database_instance where instance_name='$LD_INSTANCENAME' and dbid=$DBID order by startup_time desc) where rownum=1;
      exit
 EOF
 }
@@ -324,7 +324,7 @@ function fawr_dbname
 {
      sqlplus -s "$CONNECTSTRING" <<EOF
      set heading off feedback off pages 0 lines 5000 trimspool on verify off
-     select * from (select db_name from dba_hist_database_instance where instance_name='$INSTANCENAME' and dbid=$DBID order by startup_time desc) where rownum=1;
+     select * from (select db_name from dba_hist_database_instance where instance_name='$LD_INSTANCENAME' and dbid=$DBID order by startup_time desc) where rownum=1;
      exit
 EOF
 }
@@ -458,11 +458,11 @@ function fawr
           dbn=$(echo $i|cut -f 4 -d '@')
           inu=$(echo $i|cut -f 5 -d '@')
           vdbid=$(echo $i|cut -f 6 -d '@')
-          REPORT=rep_${INSTANCENAME}_$timestmp.${EXT}
+          REPORT=rep_${LD_INSTANCENAME}_$timestmp.${EXT}
           sqlplus  -s "$CONNECTSTRING"<< EOF >/dev/null
               define  inst_num     = $inu;
               define  num_days     = 1;
-              define  inst_name    = '$INSTANCENAME';
+              define  inst_name    = '$LD_INSTANCENAME';
               define  db_name      = $dbn;
               define  dbid         = $vdbid;
               define  begin_snap   = $bid;
@@ -489,7 +489,7 @@ function fawr2
 {
      SEP1=":,"
      SEP2=":="
-     REPORT=${INSTANCENAME}_dbahistsqlstat_${DAY}.lst
+     REPORT=${LD_INSTANCENAME}_dbahistsqlstat_${DAY}.lst
      fheader ${SEP1} ${SEP2} > $REPORT
      echo 'TYPE ORAHQS plan_hash_value text' >>$REPORT
      echo 'TYPE ORAHQS optimizer_cost text' >>$REPORT
@@ -531,7 +531,7 @@ function fawr2
      fdbahistsqlstat ${SEP1} ${SEP2} >> $REPORT
      tar rf ${TEMPFILE} ${REPORT}
      rm ${REPORT}
-     REPORT=${INSTANCENAME}_dbahistsysmetric_${DAY}.lst
+     REPORT=${LD_INSTANCENAME}_dbahistsysmetric_${DAY}.lst
      fheader ${SEP1} ${SEP2} > $REPORT
      echo 'TYPE ORAHSM intsize int' >>$REPORT
      echo 'TYPE ORAHSM group_id text' >>$REPORT
@@ -545,7 +545,7 @@ function fawr2
      rm ${REPORT}
      SEP1="|>!!<|,"
      SEP2="=_||_="
-     REPORT=${INSTANCENAME}_dbahistsqltext_${DAY}.lst
+     REPORT=${LD_INSTANCENAME}_dbahistsqltext_${DAY}.lst
      fheader ${SEP1} ${SEP2} > $REPORT
      echo 'TYPE ORAHQT command_type text' >>$REPORT
      echo 'TYPE ORAHQT con_dbid text' >>$REPORT
@@ -562,7 +562,7 @@ function fawr3
      for f in kairos_extr_*
      do
           SUFFIX=$(echo $f|sed -e 's/kairos_extr_//')
-          REPORT=${INSTANCENAME}_dbahistactivesesshistory_${DAY}_$SUFFIX.lst
+          REPORT=${LD_INSTANCENAME}_dbahistactivesesshistory_${DAY}_$SUFFIX.lst
           fheader ${SEP1} ${SEP2} > $REPORT
           echo 'TYPE ORAHAS action text' >>$REPORT
           echo 'TYPE ORAHAS session_id text' >>$REPORT
@@ -1349,7 +1349,7 @@ function fbash
      for f in kairos_extr_*
      do
           SUFFIX=$(echo $f|sed -e 's/kairos_extr_//')
-          REPORT=${INSTANCENAME}_bashhistactivesesshistory_${DAY}_$SUFFIX.lst
+          REPORT=${LD_INSTANCENAME}_bashhistactivesesshistory_${DAY}_$SUFFIX.lst
           fheader ${SEP1} ${SEP2} > $REPORT
           echo 'TYPE ORAHAS action text' >>$REPORT
           echo 'TYPE ORAHAS session_id text' >>$REPORT
@@ -1496,7 +1496,7 @@ if [[ ${GLOBAL} -ne 1 ]]
 then
    if [[ ${STDBY} -ne 1 ]]
    then
-     PREFIX=$DIR/kairos_${GROUP}_${INSTANCENAME}_${WEEKDAY}
+     PREFIX=$DIR/kairos_${GROUP}_${LD_INSTANCENAME}_${WEEKDAY}
    else
      PREFIX=$DIR/kairos_${GROUP}_${STDBYINSTANCENAME}_${WEEKDAY}
    fi

@@ -611,47 +611,47 @@ class KairosWorker:
     def file_client(s, request):
         return web.Response(content_type='application/octet-stream', text=open('/kairos/client.js').read())
     
-    @trace_call
-    def odbreload(s):
-        return s.odb.db_reload()
+    # @trace_call
+    # def odbreload(s):
+    #     return s.odb.db_reload()
     
-    @trace_call
-    def odbget(s, root=False, database=None, user=None, password=None):
-        if root:
-            if not s.odbroot:
-                logging.debug("Connecting to OrientDB through root ...")
-                s.odb.connect('root', 'root')
-                s.odbroot = True
-                s.odbdatabase = None
-                s.odbuser = None
-            return None
-        if database and not user:
-            if database != s.odbdatabase:
-                s.odbroot = False
-                s.odbdatabase = database
-                s.odbuser = None
-                logging.debug("Connecting to database: '" + database + "' with: '" + s.name + "' ...")
-                x = s.odb.db_open(database, s.name, s.admin)
-                s.odbx = x
-            return s.odbx
-        if user and database:
-            s.odbroot = False
-            s.odbdatabase = False
-            logging.debug("Connecting to database: '" + database + "' with: '" + user + "' ...")
-            x = s.odb.db_open(database, user, password)
-            s.odbx = x
-            return s.odbx
+    # @trace_call
+    # def odbget(s, root=False, database=None, user=None, password=None):
+    #     if root:
+    #         if not s.odbroot:
+    #             logging.debug("Connecting to OrientDB through root ...")
+    #             s.odb.connect('root', 'root')
+    #             s.odbroot = True
+    #             s.odbdatabase = None
+    #             s.odbuser = None
+    #         return None
+    #     if database and not user:
+    #         if database != s.odbdatabase:
+    #             s.odbroot = False
+    #             s.odbdatabase = database
+    #             s.odbuser = None
+    #             logging.debug("Connecting to database: '" + database + "' with: '" + s.name + "' ...")
+    #             x = s.odb.db_open(database, s.name, s.admin)
+    #             s.odbx = x
+    #         return s.odbx
+    #     if user and database:
+    #         s.odbroot = False
+    #         s.odbdatabase = False
+    #         logging.debug("Connecting to database: '" + database + "' with: '" + user + "' ...")
+    #         x = s.odb.db_open(database, user, password)
+    #         s.odbx = x
+    #         return s.odbx
         
-    @trace_call
-    def odbrun(s, command):
-        logging.debug(command)
-        return s.odb.command(command)
+    # @trace_call
+    # def odbrun(s, command):
+    #     logging.debug(command)
+    #     return s.odb.command(command)
         
-    @trace_call
-    def odbquery(s, request, limit=-1):
-        logging.debug(str(request))
-        r = s.odb.query(request, limit)
-        return r
+    # @trace_call
+    # def odbquery(s, request, limit=-1):
+    #     logging.debug(str(request))
+    #     r = s.odb.query(request, limit)
+    #     return r
         
     @trace_call
     def ideletecollection(s, nid, collection=None, nodesdb=None):
@@ -669,31 +669,41 @@ class KairosWorker:
         
     @trace_call
     def ideletecache(s, nid, nodesdb=None):
-        s.odbget(database=nodesdb)
-        tabx = s.odbquery("select @rid, name from (traverse out('node_has_cache') from " + nid + ")", -1)
-        for rx in tabx:
-            rid = str(rx.oRecordData['rid'])
-            if rid != nid: 
-                dbname = rx.oRecordData['name']
-                if os.path.exists(dbname): 
-                    try: os.unlink(dbname)
-                    except: pass
-                s.odbrun("delete vertex " + rid)
+        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = 'kairos'")
+        cursor.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' return id(c) as cid")
+        cids = [row['cid'] for row in cursor.fetchall()]
+        if len(cids):
+            cid = cids[0]
+            cursor.execute("match (c:caches) where id(c) = '" + cid + "' return c.name as name")
+            dbname = [row['name'] for row in cursor.fetchall()][0]
+            cursor.execute("drop database " + dbname)
+            cursor.execute("match (c:caches) where id(c) = '" + cid + "' detach delete c")
+        cursor.close()
+        agens.close()
         
     @trace_call
     def ideletesource(s, nid, nodesdb=None):
-        s.odbget(database=nodesdb)
-        tabx = s.odbquery("select @rid from (traverse out('node_has_source') from " + nid + ")", -1)
-        for rx in tabx:
-            rid = str(rx.oRecordData['rid'])
-            if rid != nid: 
-                taby = s.odbquery("select location from sources where @rid = " + rid)
-                for ry in taby: 
-                    location = ry.oRecordData['location']
-                    try: os.unlink(location)
-                    except: pass
-                s.odbrun("delete vertex " + rid)
-        
+        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = 'kairos'")
+        cursor.execute("match (n:nodes)-[:node_has_source]->(s:sources) where id(n) = '" + nid + "' return id(s) as sid")
+        sids = [row['sid'] for row in cursor.fetchall()]
+        if len(sids):
+            sid = sids[0]
+            cursor.execute("match (s:sources) where id(s) = '" + sid + "' return s.location as location")
+            location = [row['location'] for row in cursor.fetchall()][0]
+            try: os.unlink(location)
+            except: pass
+            cursor.execute("match (s:sources) where id(s) = '" + sid + "' detach delete s")
+        cursor.close()
+        agens.close()
+
     @trace_call
     def icreatecache(s, nid, nodesdb=None):
         s.odbget(database=nodesdb)
@@ -1101,18 +1111,28 @@ class KairosWorker:
         trash = s.igetnodes(nodesdb=nodesdb, parent=root['id'], name='Trash')[0]
         if root['id'] == node['id']: return 'Root node cannot be removed!'
         if node['datasource']['type'] == 'T': return 'A trash cannot be removed!'
-        s.odbget(database=nodesdb)
-        s.odbrun("delete edge node_has_children to " + id )
-        s.odbrun("create edge node_has_children from " + trash['id'] + " to " + id)
-        tabx = s.odbquery("select @rid from (traverse out('node_has_children') from " + id + ")", -1)
-        for rx in tabx:
-            rid = str(rx.oRecordData['rid'])
-            if node['status'] == 'DELETED':
+        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = 'kairos'")
+        if node['status'] == 'DELETED':
+            cursor.execute("match (n:nodes)-[:node_has_children*]->(d:nodes) where id(n) = '" + id + "' return id(d) as rid")
+            listnodes = [row['rid'] for row in cursor.fetchall()]
+            listnodes.append(id)
+            for rid in listnodes:
                 s.ideletesource(rid, nodesdb=nodesdb)
                 s.ideletecache(rid, nodesdb=nodesdb)
-                s.odbrun("delete vertex " + rid)
-            else:
-                s.odbrun("update nodes set status='DELETED' where @rid = " + rid)
+                cursor.execute("match (n:nodes) where id(n) = '" + rid + "' detach delete n") 
+        else:
+            cursor.execute("match (p:nodes)-[l:node_has_children]->(n:nodes) where id(n) = '" + id + "' detach delete l") 
+            cursor.execute("match (t:nodes {name:'Trash'}), (n:nodes) where id(n) = '" + id + "' create (t)-[:node_has_children]->(n)") 
+            cursor.execute("match (n:nodes)-[:node_has_children*]->(d:nodes) where id(n) = '" + id + "' return id(d) as rid") 
+            listnodes = [row['rid'] for row in cursor.fetchall()]
+            for rid in listnodes: cursor.execute("match (n:nodes) where id(n) = '" + rid + "' set n.status='" + json.dumps('DELETED') + "'")
+            cursor.execute("match (n:nodes) where id(n) = '" + id + "' set n.status='" + json.dumps('DELETED') + "'")
+        cursor.close()
+        agens.close()
         return None
     
     @trace_call
@@ -1821,23 +1841,26 @@ class KairosWorker:
         nodesdb = multipart['nodesdb'] if 'nodesdb' in multipart else params['nodesdb'][0]
         systemdb = multipart['systemdb'] if 'systemdb' in multipart else params['systemdb'][0]
         id = multipart['id'] if 'id' in multipart else params['id'][0] if 'id' in params else None
+        logging.debug(id)
+
         filename = urllib.parse.unquote(upload.filename)
         node = s.igetnodes(nodesdb=nodesdb, root=True)[0] if id == None else s.igetnodes(nodesdb=nodesdb, id=id)[0]
         (base, ext) = os.path.splitext(filename)
         while ext != '': (base, ext) = os.path.splitext(base)
         nodes = base.split('_')
         for d in nodes:
+            logging.debug(d)
             lnode = s.igetnodes(nodesdb=nodesdb, parent=node['id'], name=d)
             if len(lnode) == 0:
                 child = s.icreatenode(nodesdb, id=node['id'])
-                s.odbget(database=nodesdb)
-                s.odbrun("update nodes set name ='" + d + "' where @rid = " + child )
+                # s.odbget(database=nodesdb)
+                # s.odbrun("update nodes set name ='" + d + "' where @rid = " + child )
                 node = s.igetnodes(nodesdb=nodesdb, id=child)[0]
             else:
                 node = lnode[0]
         id = node['id']
         s.ideletesource(id, nodesdb=nodesdb)
-        s.icreatesource(id, nodesdb=nodesdb, systemdb=systemdb, stream=upload.file, filename=filename)
+        # s.icreatesource(id, nodesdb=nodesdb, systemdb=systemdb, stream=upload.file, filename=filename)
         return web.json_response(dict(success=True, state=True, name=filename))
 
     @intercept_logging_and_internal_error
@@ -2149,15 +2172,22 @@ class KairosWorker:
         if node['datasource']['type'] == 'T':
             message = 'A trash cannot be renamed!'
             return web.json_response(dict(success=False, status='error', message=message))
-        s.odbget(database=nodesdb)
-        tabx = s.odbquery("select out from node_has_children where in = " + id, -1);
-        for rx in tabx: parent = str(rx.oRecordData['out'])
+        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = 'kairos'")
+        cursor.execute("match (p:nodes)-[:node_has_children]->(n:nodes) where id(n) = '" + id + "' return id(p) as pid")
+        parent=[row['pid'] for row in cursor.fetchall()][0]
         x = s.igetnodes(nodesdb=nodesdb, parent=parent, name=new)
         if len(x):
             message = new + " name already exists for parent: " + x[0]['name']
+            cursor.close()
+            agens.close()
             return web.json_response(dict(success=False, status='error', message=message))
-        s.odbget(database=nodesdb)
-        s.odbrun("update nodes set name ='" + new + "' where @rid = " + id )
+        cursor.execute("match (n:nodes) where id(n) = '" + id + "' set n.name = '" + json.dumps(new) + "'")
+        cursor.close()
+        agens.close()
         node = s.igetnodes(nodesdb=nodesdb, id=id)[0]
         return web.json_response(dict(success=True, data=node))
 
@@ -2178,15 +2208,19 @@ class KairosWorker:
         nodesdb = params['nodesdb'][0]
         root = s.igetnodes(nodesdb=nodesdb, root=True)[0]
         trash = s.igetnodes(nodesdb=nodesdb, parent=root['id'], name='Trash')[0]
-        s.odbget(database=nodesdb)
-        tabx = s.odbquery("select @rid from (traverse out('node_has_children') from " + trash['id'] + ")", -1)
-        for rx in tabx:
-            rid = str(rx.oRecordData['rid'])
-            if rid != trash['id']:
-                node = s.igetnodes(nodesdb=nodesdb, id=rid, getcache=True, getsource=True)[0]
-                s.ideletesource(rid, nodesdb=nodesdb)
-                s.ideletecache(rid, nodesdb=nodesdb)
-                s.odbrun("delete vertex " + rid)
+        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
+        agens = psycopg2.connect(agensstr)
+        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
+        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("set graph_path = 'kairos'")
+        cursor.execute("match (t:nodes)-[:node_has_children*]->(d:nodes) where id(t) = '" + trash['id'] + "' return id(d) as rid")
+        listnodes = [row['rid'] for row in cursor.fetchall()]
+        for rid in listnodes:
+            s.ideletesource(rid, nodesdb=nodesdb)
+            s.ideletecache(rid, nodesdb=nodesdb)
+            cursor.execute("match (n:nodes) where id(n) = '" + rid + "' detach delete n") 
+        cursor.close()
+        agens.close()
         return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error

@@ -2264,7 +2264,7 @@ dhtmlxEvent(window,"load",function(){
             onclick = contextmenu.attachEvent("onClick", function (fid) {
                 if (fid === "upload") {
                     log.debug("Upload on item: " + id + " (" + tree.getItemText(id) + ")");
-                    upload(makeURL("uploadnode", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: '#' + id}), function () {
+                    upload(makeURL("uploadnode", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id}), function () {
                         tree.loadStruct("gettree?nodesdb=" + desktop.settings.nodesdb + "&id=" + id);
                     });
                 }
