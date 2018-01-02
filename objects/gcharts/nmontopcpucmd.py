@@ -31,7 +31,7 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select t.timestamp timestamp, command label, value from (select timestamp, process, (value+0)/100.0 value from NMONTOP where id='%CPU') t, (select timestamp, process, value command from NMONTOP where id='Command') s where t.timestamp=s.timestamp and t.process=s.process)",
+                                            "table": "(select t.timestamp as timestamp, command as label, value from (select timestamp, process, (value+0)/100.0 as value from NMONTOP where id='%CPU') t, (select timestamp, process, value command from NMONTOP where id='Command') s where t.timestamp=s.timestamp and t.process=s.process) as foo",
                                             "projection": "label",
                                             "restriction": "",
                                             "value": "value"
@@ -45,7 +45,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All captured commands'",
+                                    "projection": "'All captured commands'::text",
                                     "collections": [
                                         "NMONTOP"
                                     ],
@@ -57,8 +57,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONTOP",
-                                            "projection": "'xxx'",
-                                            "restriction": "id = '%CPU'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "id = '%CPU'::text",
                                             "value": "(value+0) / 100.0"
                                         }
                                     ]

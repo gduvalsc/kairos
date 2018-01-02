@@ -7,7 +7,7 @@ class UserObject(dict):
                 "NMONTOP"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, label label, value value from (select t.timestamp timestamp, command label, value from (select timestamp, process, (value+0)/100.0 value from NMONTOP where id='%CPU') t, (select timestamp, process, value command from NMONTOP where id='Command') s where t.timestamp=s.timestamp and t.process=s.process)) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, label as label, value as value from (select t.timestamp as timestamp, command as label, value from (select timestamp, process, (value+0)/100.0 as value from NMONTOP where id='%CPU') t, (select timestamp, process, value command from NMONTOP where id='Command') s where t.timestamp=s.timestamp and t.process=s.process) as foo) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

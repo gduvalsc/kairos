@@ -2358,7 +2358,11 @@ class KairosWorker:
         for collection in node['datasource']['collections']:
             logging.info("Unloading collection: " + collection + " ...")
             d = dict(collection=collection, desc=dict(), data=[])
-            desc = hcache.desc(table=collection)
+            desc = OrderedDict()
+            x = hcache.execute("select column_name, data_type from information_schema.columns where table_name = '" + collection.lower() + "' and table_schema = '" + node['datasource']['cache']['name'] + "'")
+            for row in x.fetchall(): desc[row['column_name']] = row['data_type']
+
+            #desc = hcache.desc(table=collection)
             request = 'select '
             for k in desc:
                 if k != 'kairos_nodeid':

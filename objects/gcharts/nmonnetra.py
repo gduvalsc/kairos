@@ -33,7 +33,7 @@ class UserObject(dict):
                                         {
                                             "table": "NMONNET",
                                             "projection": "id",
-                                            "restriction": "id like '%read%'",
+                                            "restriction": "id like '%read%'::text",
                                             "value": "value / 1024.0"
                                         }
                                     ]
@@ -45,7 +45,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All adapters (read)'",
+                                    "projection": "'All adapters (read)'::text",
                                     "collections": [
                                         "NMONNET"
                                     ],
@@ -57,8 +57,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONNET",
-                                            "projection": "'xxx'",
-                                            "restriction": "id like '%read%'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "id like '%read%'::text",
                                             "value": "value / 1024.0"
                                         }
                                     ]

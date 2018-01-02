@@ -112,14 +112,14 @@ class UserObject(dict):
         a.nmontimestamp[g(1)] = g(7) + a.month[g(6).upper()] + g(5) + g(2) + g(3) + g(4) + "000"
 
     def getcpuval(s, a, l, g, m):
-        if "NMONCPU" not in a.desc: a.desc["NMONCPU"] = dict(timestamp='text', id='text', user='real', sys='real', wait='real', idle='real', busy='real', cpus='real')
+        if "NMONCPU" not in a.desc: a.desc["NMONCPU"] = dict(timestamp='text', id='text', usr='real', sys='real', wait='real', idle='real', busy='real', cpus='real')
         cpuid = int(g(1)[3:])
-        a.emit("NMONCPU", a.desc["NMONCPU"], dict(timestamp = a.nmontimestamp[g(2)], id = cpuid, user = a.tof(g(3)), sys = a.tof(g(4)), wait = a.tof(g(5)), idle = a.tof(g(6)), busy = 0.0, cpus = 1.0))
+        a.emit("NMONCPU", a.desc["NMONCPU"], dict(timestamp = a.nmontimestamp[g(2)], id = cpuid, usr = a.tof(g(3)), sys = a.tof(g(4)), wait = a.tof(g(5)), idle = a.tof(g(6)), busy = 0.0, cpus = 1.0))
 
     def getcpuall(s, a, l, g, m):
-        if "NMONCPU" not in a.desc: a.desc["NMONCPU"] = dict(timestamp='text', id='text', user='real', sys='real', wait='real', idle='real', busy='real', cpus='real')
+        if "NMONCPU" not in a.desc: a.desc["NMONCPU"] = dict(timestamp='text', id='text', usr='real', sys='real', wait='real', idle='real', busy='real', cpus='real')
         cpuid='ALL'
-        a.emit("NMONCPU", a.desc["NMONCPU"], dict(timestamp = a.nmontimestamp[g(1)], id = cpuid, user = a.tof(g(2)), sys = a.tof(g(3)), wait = a.tof(g(4)), idle = a.tof(g(5)), busy = a.tof(g(6)), cpus = a.tof(g(7))))
+        a.emit("NMONCPU", a.desc["NMONCPU"], dict(timestamp = a.nmontimestamp[g(1)], id = cpuid, usr = a.tof(g(2)), sys = a.tof(g(3)), wait = a.tof(g(4)), idle = a.tof(g(5)), busy = a.tof(g(6)), cpus = a.tof(g(7))))
 
     def genc1(s, table):
         def f(a, l ,g, m):

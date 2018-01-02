@@ -32,9 +32,9 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONCPU",
-                                            "projection": "'CPU'||id",
+                                            "projection": "'CPU'::text||id",
                                             "restriction": "",
-                                            "value": "(user + sys) / 100.0"
+                                            "value": "(usr + sys) / 100.0"
                                         }
                                     ]
                                 }
@@ -57,9 +57,9 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONCPU",
-                                            "projection": "'Logical CPU'",
+                                            "projection": "'Logical CPU'::text",
                                             "restriction": "",
-                                            "value": "(user + sys) / 100.0"
+                                            "value": "(usr + sys) / 100.0"
                                         }
                                     ]
                                 }

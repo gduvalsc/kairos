@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "NMONDISKCHOICE",
             "collections": ["NMONDISKREAD"],
-            "request": "select distinct id label from NMONDISKREAD order by label"
+            "request": "select distinct id as label from NMONDISKREAD order by label"
         }
         super(UserObject, s).__init__(**object)

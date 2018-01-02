@@ -33,7 +33,7 @@ class UserObject(dict):
                                         {
                                             "table": "NMONIOADAPT",
                                             "projection": "id",
-                                            "restriction": "id like '%write%'",
+                                            "restriction": "id like '%write%'::text",
                                             "value": "value / 1024.0"
                                         }
                                     ]
@@ -45,7 +45,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All adapters (write)'",
+                                    "projection": "'All adapters (write)'::text",
                                     "collections": [
                                         "NMONIOADAPT"
                                     ],
@@ -57,8 +57,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONIOADAPT",
-                                            "projection": "'xxx'",
-                                            "restriction": "id like '%write%'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "id like '%write%'::text",
                                             "value": "value / 1024.0"
                                         }
                                     ]

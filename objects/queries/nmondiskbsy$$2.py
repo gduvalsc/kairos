@@ -7,7 +7,7 @@ class UserObject(dict):
                 "NMONDISKBUSY"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Max busy' label, max(value) value from (select timestamp, 'xxx' label, value value from NMONDISKBUSY) group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Max busy'::text as label, max(value) as value from (select timestamp, 'xxx'::text as label, value as value from NMONDISKBUSY) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

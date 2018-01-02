@@ -7,7 +7,7 @@ class UserObject(dict):
                 "NMONPAGE"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, id label, value value from NMONPAGE where id in ('pgin', 'pgout', 'pgsin', 'pgsout')) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, id as label, value as value from NMONPAGE where id in ('pgin', 'pgout', 'pgsin', 'pgsout')) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

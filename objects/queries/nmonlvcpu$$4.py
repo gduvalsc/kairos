@@ -7,7 +7,7 @@ class UserObject(dict):
                 "NMONCPU"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Logical CPU (computation 2) %' label, avg(value) value from (select timestamp, 'xxx' label, value value from (select timestamp, sum(user + sys) / count(cpus) value from NMONCPU where id != 'ALL' group by timestamp)) group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Logical CPU (computation 2) %'::text as label, avg(value) as value from (select timestamp, 'xxx'::text as label, value as value from (select timestamp, sum(usr + sys) / count(cpus) as value from NMONCPU where id != 'ALL' group by timestamp) as foo) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

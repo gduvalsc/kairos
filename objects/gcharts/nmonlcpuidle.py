@@ -32,7 +32,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONCPU",
-                                            "projection": "'CPU'||id",
+                                            "projection": "'CPU'::text||id",
                                             "restriction": "",
                                             "value": "(idle) / 100.0"
                                         }
@@ -57,7 +57,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONCPU",
-                                            "projection": "'Idle logical CPU'",
+                                            "projection": "'Idle logical CPU'::text",
                                             "restriction": "",
                                             "value": "(idle) / 100.0"
                                         }

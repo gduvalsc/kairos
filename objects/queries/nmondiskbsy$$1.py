@@ -7,7 +7,7 @@ class UserObject(dict):
                 "NMONDISKBUSY"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, avg(value) value from (select timestamp, id label, value value from NMONDISKBUSY) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, avg(value) as value from (select timestamp, id as label, value as value from NMONDISKBUSY) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

@@ -7,7 +7,7 @@ class UserObject(dict):
                 "NMONDISKBUSY"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Busy rate' label, avg(value) value from (select timestamp, 'xxx' label, value value from NMONDISKBUSY where id = '%(NMONDISK)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Busy rate'::text as label, avg(value) as value from (select timestamp, 'xxx'::text as label, value as value from NMONDISKBUSY where id = '%(NMONDISK)s'::text) as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": false
         }

@@ -1306,9 +1306,9 @@ dhtmlxEvent(window,"load",function(){
                     var pieces = [];
                     _.each(q.pieces, function(p) {
                         var where = p.restriction === undefined || p.restriction === null || p.restriction === "" ? "" : " where " + p.restriction;
-                        pieces.push("select timestamp, " + p.projection + " label, " + p.value + " value from " + p.table + where);
+                        pieces.push("select timestamp, " + p.projection + " as label, " + p.value + " as value from " + p.table + where);
                     });
-                    var query = {type: "query", id: chartid + '$$' + i, collections: q.collections, userfunctions: q.userfunctions, request: "select timestamp, " + q.projection + " label, " + q.groupby + "(value) value from (" + pieces.join(" union all ") + ") group by timestamp, label order by timestamp", nocache: q.nocache === undefined ? false : q.nocache, filterable: q.filterable === undefined ? true : q.filterable};
+                    var query = {type: "query", id: chartid + '$$' + i, collections: q.collections, userfunctions: q.userfunctions, request: "select timestamp, " + q.projection + " as label, " + q.groupby + "(value) as value from (" + pieces.join(" union all ") + ") as foo group by timestamp, label order by timestamp", nocache: q.nocache === undefined ? false : q.nocache, filterable: q.filterable === undefined ? true : q.filterable};
                     var source = '\nobject = ' + JSON.stringify(query, undefined, 4) + '\nsuper(UserObject, s).__init__(**object)';
                     source = '\ndef __init__(s):' + source.replace(/\n/g, '\n    ');
                     source = 'class UserObject(dict):' + source.replace(/\n/g, '\n    ');
@@ -1906,22 +1906,22 @@ dhtmlxEvent(window,"load",function(){
                     ]);                   
                 }
                 if (btn === 'buildall') {
-                    f("buildallcollectioncaches", {nodesdb: desktop.settings.nodesdb, arrayinsert: desktop.settings.arrayinsert, id: '#' + id, systemdb: desktop.settings.systemdb});
+                    f("buildallcollectioncaches", {nodesdb: desktop.settings.nodesdb, arrayinsert: desktop.settings.arrayinsert, id: id, systemdb: desktop.settings.systemdb});
                 }
                 if (btn === 'buildcolcache') {
-                    f("buildcollectioncache", {nodesdb: desktop.settings.nodesdb, arrayinsert: desktop.settings.arrayinsert, id: '#' + id, systemdb: desktop.settings.systemdb, collection: curcollection});
+                    f("buildcollectioncache", {nodesdb: desktop.settings.nodesdb, arrayinsert: desktop.settings.arrayinsert, id: id, systemdb: desktop.settings.systemdb, collection: curcollection});
                 }
                 if (btn === 'dropcolcache') {
-                    f("dropcollectioncache", {nodesdb: desktop.settings.nodesdb, id: '#' + id, systemdb: desktop.settings.systemdb, collection: curcollection});
+                    f("dropcollectioncache", {nodesdb: desktop.settings.nodesdb, id: id, systemdb: desktop.settings.systemdb, collection: curcollection});
                 }
                 if (btn === 'clearall') {
-                    f("clearcollectioncache", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: '#' + id});
+                    f("clearcollectioncache", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id});
                 }
                 if (btn === 'aggregate') {
-                    f("applyaggregator", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: '#' + id, aggregatorselector: wf.getItemValue("aggregatorselector"), aggregatortake: wf.getItemValue("aggregatortake"), aggregatortimefilter: wf.getItemValue("aggregatortimefilter"), aggregatorskip: wf.getItemValue("aggregatorskip"), aggregatorsort: wf.getItemValue("aggregatorsort"), aggregatormethod: wf.getItemValue("aggregatormethod")});
+                    f("applyaggregator", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id, aggregatorselector: wf.getItemValue("aggregatorselector"), aggregatortake: wf.getItemValue("aggregatortake"), aggregatortimefilter: wf.getItemValue("aggregatortimefilter"), aggregatorskip: wf.getItemValue("aggregatorskip"), aggregatorsort: wf.getItemValue("aggregatorsort"), aggregatormethod: wf.getItemValue("aggregatormethod")});
                 }
                 if (btn === 'makelive') {
-                    f("applyliveobject", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: '#' + id, liveobject: wf.getItemValue("liveobject")});
+                    f("applyliveobject", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id, liveobject: wf.getItemValue("liveobject")});
                 }
             });
             return wf;
@@ -2081,14 +2081,14 @@ dhtmlxEvent(window,"load",function(){
         tree.attachEvent("onDrop", function (id, pid) {
             if (desktop.mouseevent.ctrlKey === false && desktop.mouseevent.shiftKey === false && desktop.mouseevent.altKey === false && desktop.mouseevent.metaKey === false && pid !== startpid) {
                 waterfall([
-                    ajax_get_first_in_async_waterfall("movenode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid}),
+                    ajax_get_first_in_async_waterfall("movenode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: id, to: pid}),
                     function () {
                     }
                 ]);
             }
             if (desktop.mouseevent.altKey) {
                 waterfall([
-                    ajax_get_first_in_async_waterfall("aggregateaddnode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid, path: tree.getPath(id)}),
+                    ajax_get_first_in_async_waterfall("aggregateaddnode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: id, to: pid, path: tree.getPath(id)}),
                     function () {
                         waterfall([
                             ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: pid}),
@@ -2104,7 +2104,7 @@ dhtmlxEvent(window,"load",function(){
             }
             if (desktop.mouseevent.ctrlKey || desktop.mouseevent.shiftKey) {
                 waterfall([
-                    ajax_get_first_in_async_waterfall("compareaddnode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid, path: tree.getPath(id)}),
+                    ajax_get_first_in_async_waterfall("compareaddnode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: id, to: pid, path: tree.getPath(id)}),
                     function () {
                         waterfall([
                             ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: pid}),
@@ -2120,7 +2120,7 @@ dhtmlxEvent(window,"load",function(){
             }
             if (desktop.mouseevent.metaKey) {
                 waterfall([
-                    ajax_get_first_in_async_waterfall("linkfathernode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: '#' + id, to: '#' + pid, path: tree.getPath(id)}),
+                    ajax_get_first_in_async_waterfall("linkfathernode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: id, to: pid, path: tree.getPath(id)}),
                     function () {
                         waterfall([
                             ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: pid}),
@@ -2324,12 +2324,12 @@ dhtmlxEvent(window,"load",function(){
                 }
                 if (fid === "download") {
                     log.debug("Download at node: " + id + " (" + tree.getItemText(id) + ")");
-                    window.location.href = '/downloadsource?id=' + encodeURIComponent('#' + id) + '&nodesdb=' + desktop.settings.nodesdb;
+                    window.location.href = '/downloadsource?id=' + encodeURIComponent(id) + '&nodesdb=' + desktop.settings.nodesdb;
                 }
                 if (fid === "downloadc") {
                     log.debug("Download children at node: " + id + " (" + tree.getItemText(id) + ")");
                     waterfall([
-                        ajax_get_first_in_async_waterfall("getBchildren", {nodesdb: desktop.settings.nodesdb, id: '#' + id}),
+                        ajax_get_first_in_async_waterfall("getBchildren", {nodesdb: desktop.settings.nodesdb, id: id}),
                         function (x) {
                             var download_files = function (f) {
                                 var download_next = function (i) {
@@ -2360,7 +2360,7 @@ dhtmlxEvent(window,"load",function(){
                     log.debug("Display member at node: " + id + " (" + tree.getItemText(id) + ")");
                     var aftergetchoice = function(member) {
                         waterfall([
-                            ajax_get_first_in_async_waterfall("getmember", {nodesdb: desktop.settings.nodesdb, id: '#' + id, member: member}),
+                            ajax_get_first_in_async_waterfall("getmember", {nodesdb: desktop.settings.nodesdb, id: id, member: member}),
                             function (x) {
                                 var wmem = create_window("display_member", tree.getItemText(id) + ' / ' + member);
                                 var uniqueid = _.uniqueId('display_member');
@@ -2369,7 +2369,7 @@ dhtmlxEvent(window,"load",function(){
                         ]);
                     };
                     waterfall([
-                        ajax_get_first_in_async_waterfall("getmemberlist", {nodesdb: desktop.settings.nodesdb, id: '#' + id}),
+                        ajax_get_first_in_async_waterfall("getmemberlist", {nodesdb: desktop.settings.nodesdb, id: id}),
                         function (x) {
                             var listmembers = [];
                             _.each(_.sortBy(getallchoices(x, tree.getUserData("type")), function(c) {
@@ -2385,7 +2385,7 @@ dhtmlxEvent(window,"load",function(){
                     log.debug("Display collection at node: " + id + " (" + tree.getItemText(id) + ")");
                     var aftergetcollectionslist = function(collection) {
                         waterfall([
-                            ajax_get_first_in_async_waterfall("displaycollection", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, arrayinsert: desktop.settings.arrayinsert, id: '#' + id, collection: collection}),
+                            ajax_get_first_in_async_waterfall("displaycollection", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, arrayinsert: desktop.settings.arrayinsert, id: id, collection: collection}),
                             function (x) {
                                 var wq = create_window("display_collection", collection);
                                 var gq =wq.attachGrid();
@@ -2418,7 +2418,7 @@ dhtmlxEvent(window,"load",function(){
                         ]);
                     };
                     waterfall([
-                        ajax_get_first_in_async_waterfall("getcollections", {nodesdb: desktop.settings.nodesdb, id: '#' + id}),
+                        ajax_get_first_in_async_waterfall("getcollections", {nodesdb: desktop.settings.nodesdb, id: id}),
                         function (x) {
                             var listcollections = [];
                             _.each(_.sortBy(getallchoices(x, tree.getUserData("type")), function(c) {
@@ -2432,7 +2432,7 @@ dhtmlxEvent(window,"load",function(){
                 }
                 if (fid === "unload") {
                     log.debug("Unload at node: " + id + " (" + tree.getItemText(id) + ")");
-                    window.location.href = '/unload?id=' + encodeURIComponent('#' + id) + '&arrayinsert=' + desktop.settings.arrayinsert + '&nodesdb=' + desktop.settings.nodesdb + '&systemdb=' + desktop.settings.systemdb;
+                    window.location.href = '/unload?id=' + encodeURIComponent(id) + '&arrayinsert=' + desktop.settings.arrayinsert + '&nodesdb=' + desktop.settings.nodesdb + '&systemdb=' + desktop.settings.systemdb;
                 }
                 if (fid === "empty_trash") {
                     log.debug("Empty trash");

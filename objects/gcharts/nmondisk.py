@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Read MB/s'",
+                                    "projection": "'Read MB/s'::text",
                                     "collections": [
                                         "NMONDISKREAD"
                                     ],
@@ -32,15 +32,15 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONDISKREAD",
-                                            "projection": "'xxx'",
-                                            "restriction": "id = '%(NMONDISK)s'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "id = '%(NMONDISK)s'::text",
                                             "value": "value / 1024.0"
                                         }
                                     ]
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Write MB/s'",
+                                    "projection": "'Write MB/s'::text",
                                     "collections": [
                                         "NMONDISKWRITE"
                                     ],
@@ -52,8 +52,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONDISKWRITE",
-                                            "projection": "'xxx'",
-                                            "restriction": "id = '%(NMONDISK)s'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "id = '%(NMONDISK)s'::text",
                                             "value": "value / 1024.0"
                                         }
                                     ]
@@ -75,7 +75,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Busy rate'",
+                                    "projection": "'Busy rate'::text",
                                     "collections": [
                                         "NMONDISKBUSY"
                                     ],
@@ -87,8 +87,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONDISKBUSY",
-                                            "projection": "'xxx'",
-                                            "restriction": "id = '%(NMONDISK)s'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "id = '%(NMONDISK)s'::text",
                                             "value": "value"
                                         }
                                     ]

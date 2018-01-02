@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Virtual usr+sys+idle %'",
+                                    "projection": "'Virtual usr+sys+idle %'::text",
                                     "collections": [
                                         "NMONLPAR"
                                     ],
@@ -31,8 +31,8 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(value) value from NMONLPAR where id in ('VP_User%', 'VP_Sys%', 'VP_Idle%') group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(value) as value from NMONLPAR where id in ('VP_User%', 'VP_Sys%', 'VP_Idle%') group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -40,7 +40,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Virtual usr+sys %'",
+                                    "projection": "'Virtual usr+sys %'::text",
                                     "collections": [
                                         "NMONLPAR"
                                     ],
@@ -51,8 +51,8 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(value) value from NMONLPAR where id in ('VP_User%', 'VP_Sys%') group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(value) as value from NMONLPAR where id in ('VP_User%', 'VP_Sys%') group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -60,7 +60,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Logical CPU (computation 1) %'",
+                                    "projection": "'Logical CPU (computation 1) %'::text",
                                     "collections": [
                                         "NMONCPU"
                                     ],
@@ -72,15 +72,15 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONCPU",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "id = 'ALL'",
-                                            "value": "user + sys"
+                                            "value": "usr + sys"
                                         }
                                     ]
                                 },
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Logical CPU (computation 2) %'",
+                                    "projection": "'Logical CPU (computation 2) %'::text",
                                     "collections": [
                                         "NMONCPU"
                                     ],
@@ -91,8 +91,8 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(user + sys) / count(cpus) value from NMONCPU where id != 'ALL' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(usr + sys) / count(cpus) as value from NMONCPU where id != 'ALL' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

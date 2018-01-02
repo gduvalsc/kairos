@@ -7,7 +7,7 @@ class UserObject(dict):
                 "NMONLPAR"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Virtual usr+sys+idle %' label, avg(value) value from (select timestamp, 'xxx' label, value value from (select timestamp, sum(value) value from NMONLPAR where id in ('VP_User%', 'VP_Sys%', 'VP_Idle%') group by timestamp)) group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Virtual usr+sys+idle %'::text as label, avg(value) as value from (select timestamp, 'xxx'::text as label, value as value from (select timestamp, sum(value) as value from NMONLPAR where id in ('VP_User%', 'VP_Sys%', 'VP_Idle%') group by timestamp) as foo) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }
