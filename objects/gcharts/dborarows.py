@@ -23,7 +23,7 @@ class UserObject(dict):
                                         "DBORASTA"
                                     ],
                                     "userfunctions": [
-                                        "match"
+                                        "meet"
                                     ],
                                     "filterable": false,
                                     "nocache": false,
@@ -31,7 +31,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORASTA",
                                             "projection": "statistic",
-                                            "restriction": "match(statistic, '(table fetch|table scan rows)')",
+                                            "restriction": "meet(statistic, '(table fetch|table scan rows)')",
                                             "value": "value"
                                         }
                                     ]

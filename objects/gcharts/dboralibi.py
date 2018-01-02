@@ -42,7 +42,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Invalidations'",
+                                    "projection": "'Invalidations'::text",
                                     "collections": [
                                         "DBORALIB"
                                     ],
@@ -52,7 +52,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORALIB",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "invalidations"
                                         }

@@ -9,7 +9,7 @@ class UserObject(dict):
             "userfunctions": [
                 "ashcoeff"
             ],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, sql_plan_hash_value||' - '||sql_exec_id label, kairos_count * 1.0 /ashcoeff() value from ORAHAS where sql_id = '%(DBORAASHSQLXID)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, sql_plan_hash_value||' - '||sql_exec_id as label, kairos_count * 1.0 /ashcoeff() as value from ORAHAS where sql_id = '%(DBORAASHSQLXID)s') as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

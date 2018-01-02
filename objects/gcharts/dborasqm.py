@@ -60,7 +60,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASQM",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "sharedmem"
                                         }

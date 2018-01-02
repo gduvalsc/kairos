@@ -7,7 +7,7 @@ class UserObject(dict):
                 "EXATOPDSKOSIO"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, avg(value) value from (select timestamp, 'Hard disk maximum capacity for disk' label, 111.0 value from EXATOPDSKOSIO) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , avg(value) as value from (select timestamp, 'Hard disk maximum capacity for disk'::text as label, 111.0::real as value from EXATOPDSKOSIO) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

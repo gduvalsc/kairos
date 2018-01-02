@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "DBORAASHSESCHOICE",
             "collections": ["ORAHAS"],
-            "request": "select distinct session_id||' - '||program label from ORAHAS order by label"
+            "request": "select distinct session_id||' - '||program as label from ORAHAS order by label"
         }
         super(UserObject, s).__init__(**object)

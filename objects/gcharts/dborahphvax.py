@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Application'",
+                                    "projection": "'Application'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -31,8 +31,8 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(apwait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(apwait_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -40,7 +40,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Concurrency'",
+                                    "projection": "'Concurrency'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -51,8 +51,8 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(ccwait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(ccwait_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -60,7 +60,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'User I/O'",
+                                    "projection": "'User I/O'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -71,8 +71,8 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(iowait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(iowait_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -80,7 +80,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Cluster'",
+                                    "projection": "'Cluster'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -91,8 +91,8 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(clwait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(clwait_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -100,7 +100,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Cpu'",
+                                    "projection": "'Cpu'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -111,8 +111,8 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(cpu_time_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(cpu_time_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -125,7 +125,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Elapsed'",
+                                    "projection": "'Elapsed'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -136,8 +136,8 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(elapsed_time_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(elapsed_time_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -160,7 +160,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Gets'",
+                                    "projection": "'Gets'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -171,8 +171,8 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(buffer_gets_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(buffer_gets_delta::real) * 1.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -180,7 +180,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Reads'",
+                                    "projection": "'Reads'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -191,8 +191,8 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(disk_reads_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(disk_reads_delta::real) * 1.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -215,7 +215,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Executions'",
+                                    "projection": "'Executions'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -226,8 +226,8 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(executions_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(executions_delta::real) * 1.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -235,7 +235,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Fetches'",
+                                    "projection": "'Fetches'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -246,8 +246,8 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(fetches_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(fetches_delta::real) * 1.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -270,7 +270,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Rows processed'",
+                                    "projection": "'Rows processed'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -281,8 +281,8 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(rows_processed_delta) * 1.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(rows_processed_delta::real) * 1.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where plan_hash_value = '%(DBORAHPHVAX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

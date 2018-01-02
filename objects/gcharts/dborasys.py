@@ -28,7 +28,7 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select t.timestamp, statistic, value, avgelapsed from (select *, 'abcdef' kairosnode from DBORAOSS) t, (select *, 'abcdef' kairosnode from DBORAMISC) m where t.timestamp=m.timestamp and t.kairosnode=m.kairosnode)",
+                                            "table": "(select t.timestamp, statistic, value, avgelapsed from DBORAOSS as t, DBORAMISC as m where t.timestamp=m.timestamp and t.kairos_nodeid=m.kairos_nodeid) as foo",
                                             "projection": "statistic",
                                             "restriction": "statistic in ('USER_TIME','SYS_TIME')",
                                             "value": "value*1.0/100/avgelapsed"
@@ -90,13 +90,13 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select t.timestamp, statistic, value, avgelapsed from (select *, 'abcdef' kairosnode from DBORAOSS) t, (select *, 'abcdef' kairosnode from DBORAMISC) m where t.timestamp=m.timestamp and t.kairosnode=m.kairosnode)",
+                                            "table": "(select t.timestamp, statistic, value, avgelapsed from DBORAOSS as t, DBORAMISC as m where t.timestamp=m.timestamp and t.kairos_nodeid=m.kairos_nodeid) as foo",
                                             "projection": "statistic",
                                             "restriction": "statistic in ('OS_CPU_WAIT_TIME')",
                                             "value": "value*1.0/100/avgelapsed"
                                         },
                                         {
-                                            "table": "(select t.timestamp, statistic, value, avgelapsed from (select *, 'abcdef' kairosnode from DBORAOSS) t, (select *, 'abcdef' kairosnode from DBORAMISC) m where t.timestamp=m.timestamp and t.kairosnode=m.kairosnode)",
+                                            "table": "(select t.timestamp, statistic, value, avgelapsed from DBORAOSS as t, DBORAMISC as m where t.timestamp=m.timestamp and t.kairos_nodeid=m.kairos_nodeid) as foo",
                                             "projection": "statistic",
                                             "restriction": "statistic in ('LOAD')",
                                             "value": "value"
@@ -135,7 +135,7 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select t.timestamp, statistic, value, avgelapsed from (select *, 'abcdef' kairosnode from DBORAOSS) t, (select *, 'abcdef' kairosnode from DBORAMISC) m where t.timestamp=m.timestamp and t.kairosnode=m.kairosnode)",
+                                            "table": "(select t.timestamp, statistic, value, avgelapsed from DBORAOSS as t, DBORAMISC as m where t.timestamp=m.timestamp and t.kairos_nodeid=m.kairos_nodeid) as foo",
                                             "projection": "statistic",
                                             "restriction": "statistic in ('IOWAIT_TIME')",
                                             "value": "value*1.0/100/avgelapsed"

@@ -23,7 +23,7 @@ class UserObject(dict):
                                         "DBORASTA"
                                     ],
                                     "userfunctions": [
-                                        "match"
+                                        "meet"
                                     ],
                                     "filterable": false,
                                     "nocache": false,
@@ -31,7 +31,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORASTA",
                                             "projection": "statistic",
-                                            "restriction": "match(statistic, '(bytes)')",
+                                            "restriction": "meet(statistic, '(bytes)')",
                                             "value": "value / 1024.0"
                                         }
                                     ]
@@ -56,7 +56,7 @@ class UserObject(dict):
                                         "DBORASTA"
                                     ],
                                     "userfunctions": [
-                                        "match"
+                                        "meet"
                                     ],
                                     "filterable": false,
                                     "nocache": false,
@@ -64,7 +64,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORASTA",
                                             "projection": "statistic",
-                                            "restriction": "match(statistic, '(SQL.*Net roundtrips)')",
+                                            "restriction": "meet(statistic, '(SQL.*Net roundtrips)')",
                                             "value": "value"
                                         }
                                     ]

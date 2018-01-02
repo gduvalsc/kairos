@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "DBORAFILCHOICE",
             "collections": ["DBORAFIL"],
-            "request": "select distinct file label from DBORAFIL order by label"
+            "request": "select distinct file as label from DBORAFIL order by label"
         }
         super(UserObject, s).__init__(**object)

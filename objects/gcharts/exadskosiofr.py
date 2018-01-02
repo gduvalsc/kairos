@@ -57,9 +57,9 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EXATOPDSKOSIO",
-                                            "projection": "'Flash device maximum capacity'",
+                                            "projection": "'Flash device maximum capacity'::text",
                                             "restriction": "",
-                                            "value": "8929.0"
+                                            "value": "8929.0::real"
                                         }
                                     ]
                                 }

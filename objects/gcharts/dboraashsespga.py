@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'PGA allocated'",
+                                    "projection": "'PGA allocated'::text",
                                     "collections": [
                                         "ORAHAS"
                                     ],
@@ -34,7 +34,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "ORAHAS",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "session_id||' - '||program = '%(DBORAASHSESPGA)s'",
                                             "value": "pga_allocated"
                                         }

@@ -60,7 +60,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASQR",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "reads"
                                         }

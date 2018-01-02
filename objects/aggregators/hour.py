@@ -4,11 +4,10 @@ class UserObject(dict):
             "type": "aggregator",
             "id": "$hour",
             "name": "average_per_hour",
-            "numparameters": 1,
-            "function": s.fhour
+            "function": """
+                CREATE OR REPLACE FUNCTION average_per_hour(x text) RETURNS text AS $$
+	                return x[0:10] + "0000000"
+                $$ language plpythonu;
+            """
         }
         super(UserObject, s).__init__(**object)
-    def fhour(s, x):
-        return x[0:10] + "0000000"
-    def __hash__(s):
-        return hash("average_per_hour")

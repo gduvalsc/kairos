@@ -23,7 +23,7 @@ class UserObject(dict):
                                         "DBORASTA"
                                     ],
                                     "userfunctions": [
-                                        "match"
+                                        "meet"
                                     ],
                                     "filterable": false,
                                     "nocache": false,
@@ -31,7 +31,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORASTA",
                                             "projection": "statistic",
-                                            "restriction": "match(statistic, '(sort.*memory|sort.*disk)')",
+                                            "restriction": "meet(statistic, '(sort.*memory|sort.*disk)')",
                                             "value": "value"
                                         }
                                     ]
@@ -56,7 +56,7 @@ class UserObject(dict):
                                         "DBORASTA"
                                     ],
                                     "userfunctions": [
-                                        "match"
+                                        "meet"
                                     ],
                                     "filterable": false,
                                     "nocache": false,
@@ -64,7 +64,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORASTA",
                                             "projection": "statistic",
-                                            "restriction": "match(statistic, '(sort.*rows)')",
+                                            "restriction": "meet(statistic, '(sort.*rows)')",
                                             "value": "value"
                                         }
                                     ]

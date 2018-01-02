@@ -1,16 +1,15 @@
 class UserObject(dict):
     def __init__(s):
-        s.dict = {}
         object = {
             "type": "function",
             "id": "specavg",
             "name": "specavg",
-            "numparameters": 3,
-            "function": s.specavg,
-            "accumulator": s.dict
+            "function": """
+                CREATE OR REPLACE FUNCTION specavg(x real, y text, z text, t jsonb) RETURNS real AS $$
+                    import json
+                    d = json.loads(t)
+                    return None if x == None else x / d[y+z]
+                $$ language plpythonu;
+            """
         }
         super(UserObject, s).__init__(**object)
-    def specavg(s, x, y, z):
-        return None if x == None else x / s.dict[y+z]
-    def __hash__(s):
-        return hash("specavg")

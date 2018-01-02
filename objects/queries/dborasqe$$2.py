@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORASQE"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Captured SQLs' label, sum(value) value from (select timestamp, 'xxx' label, elapsed value from DBORASQE) group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Captured SQLs' as label , sum(value) as value from (select timestamp, 'xxx'::text as label, elapsed as value from DBORASQE) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

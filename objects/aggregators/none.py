@@ -4,11 +4,10 @@ class UserObject(dict):
             "type": "aggregator",
             "id": "$none",
             "name": "no_average",
-            "numparameters": 1,
-            "function": s.fnone
+            "function": """
+                CREATE OR REPLACE FUNCTION no_average(x text) RETURNS text AS $$
+	                return x
+                $$ language plpythonu;
+            """
         }
         super(UserObject, s).__init__(**object)
-    def fnone(s, x):
-        return x
-    def __hash__(s):
-        return hash("no_average")

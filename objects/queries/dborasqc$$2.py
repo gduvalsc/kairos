@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORASQC"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Captured SQLs' label, sum(value) value from (select timestamp, 'xxx' label, cpu value from DBORASQC) group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Captured SQLs' as label , sum(value) as value from (select timestamp, 'xxx'::text as label, cpu as value from DBORASQC) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

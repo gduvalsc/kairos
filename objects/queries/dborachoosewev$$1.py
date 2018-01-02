@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORAWEV"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'average time (ms)' label, avg(value) value from (select timestamp, event label, 1000.0 * time / count value from DBORAWEV where event='%(DBORAWEV)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'average time (ms)' as label , avg(value) as value from (select timestamp, event as label, 1000.0 * time / count as value from DBORAWEV where event='%(DBORAWEV)s') as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": false
         }

@@ -1,4 +1,13 @@
 class UserObject(dict):
+    
+# Oracle foreign data wrapper
+
+# create extension oracle_fdw;
+# CREATE SERVER orcl FOREIGN DATA WRAPPER oracle_fdw  OPTIONS (dbserver '//orcl/orcl');
+# GRANT USAGE ON FOREIGN SERVER orcl TO agensgraph;
+# CREATE USER MAPPING FOR agensgraph SERVER orcl OPTIONS (user 'system', password 'manager');
+# CREATE FOREIGN TABLE sysdate (sysdate timestamp) SERVER orcl OPTIONS (table '(select sysdate from dual)');
+
     CONNECTSTRING = "system/manager@oracle12c/orcl"
     DEFS = {
         "iname": "iname as (select 'orcl' name from dual)",

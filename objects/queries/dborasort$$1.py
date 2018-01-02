@@ -7,9 +7,9 @@ class UserObject(dict):
                 "DBORASTA"
             ],
             "userfunctions": [
-                "match"
+                "meet"
             ],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, statistic label, value value from DBORASTA where match(statistic, '(sort.*memory|sort.*disk)')) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, statistic as label, value as value from DBORASTA where meet(statistic, '(sort.*memory|sort.*disk)')) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

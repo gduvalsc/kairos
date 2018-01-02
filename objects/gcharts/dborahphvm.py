@@ -48,7 +48,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Captured PHVs'",
+                                    "projection": "'Captured PHVs'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -60,7 +60,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "ORAHQS",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "sharable_mem"
                                         }

@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORAWEB"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, event label, 1000.0 * time / count value from DBORAWEB where event='log file parallel write') group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, event as label, 1000.0 * time / count as value from DBORAWEB where event='log file parallel write') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

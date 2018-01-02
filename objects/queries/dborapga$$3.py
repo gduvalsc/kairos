@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORAPGA"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Memory allocated' label, sum(value) value from (select timestamp, 'xxx' label, memalloc value from DBORAPGA) group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Memory allocated'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, memalloc as value from DBORAPGA) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

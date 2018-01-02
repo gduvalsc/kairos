@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "DBORAWEVCHOICE",
             "collections": ["DBORAWEV"],
-            "request": "select distinct event label from DBORAWEV order by label"
+            "request": "select distinct event as label from DBORAWEV order by label"
         }
         super(UserObject, s).__init__(**object)

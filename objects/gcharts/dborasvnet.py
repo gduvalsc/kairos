@@ -41,7 +41,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'wait events'",
+                                    "projection": "'wait events'::text",
                                     "collections": [
                                         "DBORAWEC"
                                     ],
@@ -51,7 +51,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAWEC",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "eclass != 'DB CPU'",
                                             "value": "time"
                                         }

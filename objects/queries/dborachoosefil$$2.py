@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORAFIL"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'number of reads per sec' label, sum(value) value from (select timestamp, 'xxx' label, reads value from DBORAFIL where file='%(DBORAFIL)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'number of reads per sec'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, reads as value from DBORAFIL where file='%(DBORAFIL)s') as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "DBORAASHWEVCHOICE",
             "collections": ["ORAHAS"],
-            "request": "select distinct event label from ORAHAS where session_state = 'WAITING' order by label"
+            "request": "select distinct event as label from ORAHAS where session_state = 'WAITING' order by label"
         }
         super(UserObject, s).__init__(**object)

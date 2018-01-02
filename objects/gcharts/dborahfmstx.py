@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Application'",
+                                    "projection": "'Application'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -31,16 +31,16 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(apwait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(apwait_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
-                                            "value": ""
+                                            "value": "value"
                                         }
                                     ]
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Concurrency'",
+                                    "projection": "'Concurrency'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -51,16 +51,16 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(ccwait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(ccwait_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
-                                            "value": ""
+                                            "value": "value"
                                         }
                                     ]
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'User I/O'",
+                                    "projection": "'User I/O'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -71,16 +71,16 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(iowait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(iowait_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
-                                            "value": ""
+                                            "value": "value"
                                         }
                                     ]
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Cluster'",
+                                    "projection": "'Cluster'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -91,16 +91,16 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(clwait_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(clwait_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
-                                            "value": ""
+                                            "value": "value"
                                         }
                                     ]
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Cpu'",
+                                    "projection": "'Cpu'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -111,10 +111,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(cpu_time_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(cpu_time_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
-                                            "value": ""
+                                            "value": "value"
                                         }
                                     ]
                                 }
@@ -125,7 +125,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Elapsed'",
+                                    "projection": "'Elapsed'::text",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -136,10 +136,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "(select timestamp, sum(elapsed_time_delta) / 1000000.0 / (case when sum(executions_delta) = 0 then 1 else sum(executions_delta) end) value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select timestamp, sum(elapsed_time_delta::real) / 1000000.0 / (case when sum(executions_delta::real) = 0 then 1 else sum(executions_delta::real) end) as value from ORAHQS where force_matching_signature = '%(DBORAHFMSTX)s' group by timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
-                                            "value": ""
+                                            "value": "value"
                                         }
                                     ]
                                 }

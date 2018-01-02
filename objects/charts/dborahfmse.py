@@ -24,8 +24,8 @@ class UserObject(dict):
                                     "label": "label",
                                     "value": "value",
                                     "info": {
-                                        "query": "DBORAHHELPF",
-                                        "variable": "DBORAHELPF"
+                                        "variable": "DBORAHELPF",
+                                        "query": "DBORAHHELPF"
                                     }
                                 }
                             ]

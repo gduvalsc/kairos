@@ -35,7 +35,7 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select h.timestamp timestamp, sql_id, iowait_delta / 1000000.0 / m.elapsed value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp)",
+                                            "table": "(select h.timestamp as timestamp, sql_id, coalesce(iowait_delta,0)::real / 1000000.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp) as foo",
                                             "projection": "sql_id",
                                             "restriction": "",
                                             "value": "value"
@@ -49,7 +49,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Captured SQLs'",
+                                    "projection": "'Captured SQLs'::text",
                                     "collections": [
                                         "ORAHQS",
                                         "DBORAMISC"
@@ -61,8 +61,8 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select h.timestamp timestamp, sql_id, iowait_delta / 1000000.0 / m.elapsed value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select h.timestamp as timestamp, sql_id, coalesce(iowait_delta,0)::real / 1000000.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

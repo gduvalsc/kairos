@@ -22,7 +22,11 @@ class UserObject(dict):
                                     "query": "DBORAASHOPN$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value"
+                                    "value": "value",
+                                    "info": {
+                                        "variable": "DBORAHELP",
+                                        "query": "DBORAHHELP"
+                                    }
                                 }
                             ]
                         }

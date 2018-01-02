@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORASTA"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, statistic label, value value from DBORASTA where statistic in ('gc current blocks received')) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, statistic as label, value as value from DBORASTA where statistic in ('gc current blocks received')) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

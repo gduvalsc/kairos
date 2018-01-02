@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'on cpu'",
+                                    "projection": "'on cpu'::text",
                                     "collections": [
                                         "ORAHAS"
                                     ],
@@ -34,7 +34,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "ORAHAS",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "session_type = 'FOREGROUND' and session_state = 'ON CPU'",
                                             "value": "kairos_count * 1.0 /ashcoeff()"
                                         }
@@ -42,7 +42,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'waiting'",
+                                    "projection": "'waiting'::text",
                                     "collections": [
                                         "ORAHAS"
                                     ],
@@ -56,7 +56,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "ORAHAS",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "session_type = 'FOREGROUND' and session_state = 'WAITING'",
                                             "value": "kairos_count * 1.0 /ashcoeff()"
                                         }

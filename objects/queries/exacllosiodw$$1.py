@@ -7,7 +7,7 @@ class UserObject(dict):
                 "EXATOPCLLOSIOL"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, type || ' - ' || cell label, wtime value from EXATOPCLLOSIOL where type like 'H/%') group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, type || ' - ' || cell as label, wtime as value from EXATOPCLLOSIOL where type like 'H/%') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

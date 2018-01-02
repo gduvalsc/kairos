@@ -7,9 +7,9 @@ class UserObject(dict):
                 "DBORATMS"
             ],
             "userfunctions": [
-                "match"
+                "meet"
             ],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, statistic label, time value from DBORATMS where match(statistic, '^.*elapsed')) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, statistic as label, time as value from DBORATMS where meet(statistic, '^.*elapsed')) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

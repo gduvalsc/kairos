@@ -4,12 +4,11 @@ class UserObject(dict):
             "type": "aggregator",
             "id": "$30minutes",
             "name": "average_per_30minutes",
-            "numparameters": 1,
-            "function": s.f30minutes
+            "function": """
+                CREATE OR REPLACE FUNCTION average_per_30minutes(x text) RETURNS text AS $$
+                    m = ["00", "30"][int(int(x[10:12]) / 30)]
+                    return x[0:10] + m + "00000"
+                $$ language plpythonu;
+            """
         }
         super(UserObject, s).__init__(**object)
-    def f30minutes(s, x):
-        m = ["00", "30"][int(int(x[10:12]) / 30)]
-        return x[0:10] + m + "00000"
-    def __hash__(s):
-        return hash("average_per_30minutes")

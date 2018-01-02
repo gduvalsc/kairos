@@ -739,13 +739,13 @@ class UserObject(dict):
                     blocks = tof(y['CurrentBlocksReceived']) / a.dur
                     a.emit('DBORASGCBR', d, dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, blocks=blocks))
             if x == 'Exadata OS CPU Statistics - Top Cells':
-                d = dict(timestamp='text', cell='text', cpu='real', user='real', sys='real')
+                d = dict(timestamp='text', cell='text', cpu='real', usr='real', sys='real')
                 for y in a.collected[x]:
                     cell = y['CellName']
                     cpu = tof(y['%CPU'])
-                    user = tof(y['%User'])
+                    usr = tof(y['%User'])
                     sys = tof(y['%Sys'])
-                    a.emit('EXACPU', d, dict(timestamp=a.date, cell=cell, cpu=cpu, user=user, sys=sys))
+                    a.emit('EXACPU', d, dict(timestamp=a.date, cell=cell, cpu=cpu, usr=usr, sys=sys))
             if x == 'Top Databases by IO Requests':
                 d = dict(timestamp='text', dbname='text', dbid='text', ptotal='real', totalr='real', flashr='real', diskr='real', totalv='real', flashv='real', diskv='real')
                 for y in a.collected[x]:

@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "DBORAHFMSCHOICE",
             "collections": ["ORAHQS"],
-            "request": "select distinct force_matching_signature label from ORAHQS order by label"
+            "request": "select distinct force_matching_signature as label from ORAHQS order by label"
         }
         super(UserObject, s).__init__(**object)

@@ -19,7 +19,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Workarea (Manual + Auto) allocated'",
+                                    "projection": "'Workarea (Manual + Auto) allocated'::text",
                                     "collections": [
                                         "DBORAPGA"
                                     ],
@@ -29,7 +29,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAPGA",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "memused"
                                         }
@@ -37,7 +37,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Memory other allocated'",
+                                    "projection": "'Memory other allocated'::text",
                                     "collections": [
                                         "DBORAPGA"
                                     ],
@@ -47,7 +47,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAPGA",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "memalloc - memused"
                                         }
@@ -60,7 +60,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Memory allocated'",
+                                    "projection": "'Memory allocated'::text",
                                     "collections": [
                                         "DBORAPGA"
                                     ],
@@ -70,7 +70,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAPGA",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "memalloc"
                                         }
@@ -78,7 +78,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'PGA aggregate target'",
+                                    "projection": "'PGA aggregate target'::text",
                                     "collections": [
                                         "DBORAPGA"
                                     ],
@@ -88,7 +88,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAPGA",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "aggrtarget"
                                         }
@@ -117,7 +117,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'One pass execs'",
+                                    "projection": "'One pass execs'::text",
                                     "collections": [
                                         "DBORAPGC"
                                     ],
@@ -126,8 +126,8 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select c.timestamp timestamp, execs1 * elapsed value from DBORAPGC c, DBORAMISC m where c.timestamp = m.timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select c.timestamp as timestamp, execs1 * elapsed as value from DBORAPGC c, DBORAMISC m where c.timestamp = m.timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -135,7 +135,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Multi pass execs'",
+                                    "projection": "'Multi pass execs'::text",
                                     "collections": [
                                         "DBORAPGC"
                                     ],
@@ -144,8 +144,8 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select c.timestamp timestamp, execs2 * elapsed value from DBORAPGC c, DBORAMISC m where c.timestamp = m.timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select c.timestamp as timestamp, execs2 * elapsed as value from DBORAPGC c, DBORAMISC m where c.timestamp = m.timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

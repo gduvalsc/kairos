@@ -4,11 +4,10 @@ class UserObject(dict):
             "type": "aggregator",
             "id": "$day",
             "name": "average_per_day",
-            "numparameters": 1,
-            "function": s.fday
+            "function": """
+                CREATE OR REPLACE FUNCTION average_per_day(x text) RETURNS text AS $$
+	                return x[0:8] + "000000000"
+                $$ language plpythonu;
+            """
         }
         super(UserObject, s).__init__(**object)
-    def fday(s, x):
-        return x[0:8] + "000000000"
-    def __hash__(s):
-        return hash("average_per_day")

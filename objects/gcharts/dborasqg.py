@@ -48,7 +48,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Captured SQLs'",
+                                    "projection": "'Captured SQLs'::text",
                                     "collections": [
                                         "DBORASQG"
                                     ],
@@ -60,7 +60,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASQG",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "gets"
                                         }

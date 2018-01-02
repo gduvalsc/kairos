@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORASTA"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, statistic label, cast(value as real) / 100.0 value from DBORASTA where statistic in ('CPU used by this session', 'recursive cpu usage', 'parse time cpu')) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, statistic as label, cast(value as real) / 100.0 as value from DBORASTA where statistic in ('CPU used by this session', 'recursive cpu usage', 'parse time cpu')) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

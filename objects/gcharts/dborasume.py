@@ -23,7 +23,7 @@ class UserObject(dict):
                                         "DBORATMS"
                                     ],
                                     "userfunctions": [
-                                        "match"
+                                        "meet"
                                     ],
                                     "filterable": false,
                                     "nocache": false,
@@ -31,7 +31,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORATMS",
                                             "projection": "statistic",
-                                            "restriction": "match(statistic, '^.*elapsed')",
+                                            "restriction": "meet(statistic, '^.*elapsed')",
                                             "value": "time"
                                         }
                                     ]

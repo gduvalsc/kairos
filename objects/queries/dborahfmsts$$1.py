@@ -8,7 +8,7 @@ class UserObject(dict):
                 "DBORAMISC"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Application' label, sum(value) value from (select timestamp, 'xxx' label, value value from (select h.timestamp timestamp, apwait_delta / 1000000.0 / m.elapsed value from ORAHQS h, DBORAMISC m where force_matching_signature='%(DBORAHFMSTS)s' and h.timestamp=m.timestamp)) group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Application'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, value as value from (select h.timestamp as timestamp, coalesce(apwait_delta,0)::real / 1000000.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where force_matching_signature='%(DBORAHFMSTS)s' and h.timestamp=m.timestamp) as foo) as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": false
         }

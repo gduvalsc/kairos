@@ -1,27 +1,5 @@
 #!/usr/bin/python3
 import argparse, json, os, getpass, sys, syslog, aiohttp, asyncio, magic
-parser = argparse.ArgumentParser()
-parser.add_argument('--version', action = 'version', version='KAIROS V4.0')
-parser.add_argument('-a', action = 'store', dest='authname', default='', help='KAIROS user name to be authentified')
-parser.add_argument('-p', action = 'store', dest='password', default='', help='KAIROS user password')
-parser.add_argument('-s', action = 'store', dest='service', default='', help='Service to be executed')
-parser.add_argument('--user', action = 'store', dest='user', default='', help='User name')
-parser.add_argument('--role', action = 'store', dest='role', default='', help='Role name')
-parser.add_argument('--password', action = 'store', dest='newpassword', default='', help='New password to be set')
-parser.add_argument('--nodesdb', action = 'store', dest='nodesdb', default='', help='Nodes database')
-parser.add_argument('--systemdb', action = 'store', dest='systemdb', default='', help='System database')
-parser.add_argument('--id', action = 'store', dest='id', default='', help='Object id')
-parser.add_argument('--type', action = 'store', dest='type', default='', help='Object type')
-parser.add_argument('--database', action = 'store', dest='database', default='', help='Database where object is stored into')
-parser.add_argument('--file', action = 'store', dest='file', default='', help='File to be used')
-parser.add_argument('--events', action = 'store', dest='events', default='', help='Events received')
-parser.add_argument('--from', action = 'store', dest='efrom', default='', help='Node emitting event')
-parser.add_argument('--to', action = 'store', dest='eto', default='', help='Node receiving event')
-args = parser.parse_args()
-isadmin = False
-def wlog(m):
-    print(m) 
-    syslog.syslog(m)
 
 global result
 async def post(client, url, data):
@@ -37,116 +15,209 @@ async def main(loop, method, url, params):
         global result
         result = await post(client, url, params) if method == 'post' else await get(client, url, params)
 
-if not args.service:
-    wlog('*** KAIROS service is mandatory!')
-    exit(1)
-if not args.authname and args.service not in ['uploadnode','createsystem', 'listobjects', 'uploadobject']:
-    wlog('*** KAIROS user is mandatory!')
-    exit(1)
-if not args.password and args.service not in ['uploadnode','createsystem', 'listobjects', 'uploadobject']:
-    wlog('*** KAIROS password is mandatory!')
-    exit(1)
-if args.service not in ['uploadnode','createsystem', 'listobjects', 'uploadobject']:
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main(loop, 'post', 'https://localhost/checkuserpassword', [('user', args.authname), ('password', args.password)]))
-    if not result['success']:
-        wlog('*** ' + result['message'])
+class Parameter:
+    def __init__(s, n, t):
+        s.name = n
+        s.target = t
+
+PA = Parameter('-a', 'authname')
+PP = Parameter('-p', 'password')
+PS = Parameter('-s', 'service')
+PUS = Parameter('--user', 'user')
+PRO = Parameter('--role', 'role')
+PPA = Parameter('--password', 'newpassword')
+PNE = Parameter('--new', 'newname')
+PNO = Parameter('--nodesdb', 'nodesdb')
+PSY = Parameter('--systemdb', 'systemdb')
+PTP = Parameter('--top', 'top')
+PCL = Parameter('--collection', 'collection')
+PCO = Parameter('--colors', 'colors')
+PKE = Parameter('--keycode', 'keycode')
+PLG = Parameter('--logging', 'logging')
+PLO = Parameter('--loglines', 'loglines')
+PTE = Parameter('--template', 'template')
+PWA = Parameter('--wallpaper', 'wallpaper')
+PAR = Parameter('--arrayinsert', 'arrayinsert')
+PPL = Parameter('--plotorientation', 'plotorientation')
+PID = Parameter('--id', 'id')
+PTY = Parameter('--type', 'type')
+PDA = Parameter('--database', 'database')
+PFI = Parameter('--file', 'file')
+PEV = Parameter('--events', 'events')
+PFR = Parameter('--from', 'efrom')
+PTO = Parameter('--to', 'eto')
+PPN = Parameter('--pattern', 'pattern')
+
+def get_parameters(parser, args, service):
+
+    handled_services = ['buildallcollectioncaches', 'buildcollectioncache', 'changepassword', 'checkserverconfig', 'clearcollectioncache', 'creategrant', 'createnode', 'createrole', 'createuser', 'createsystem', 'deletegrant', 'deletenode', 'deleteobject', 'deleterole', 'deleteuser', 'displaycollection', 'dropcollectioncache', 'emptytrash', 'getcollections', 'getid', 'getmenus', 'getnode', 'getobject', 'getsettings', 'listdatabases', 'listgrants', 'listobjects', 'listnodesdb', 'listroles', 'listsystemdb', 'listusers', 'renamenode', 'updatesettings', 'uploadnode', 'uploadobject']
+    admin_services = ['listusers', 'createuser', 'deleteuser', 'listroles', 'createrole', 'deleterole', 'listgrants', 'creategrant', 'deletegrant']
+
+    if service not in handled_services:
+        message = '*** Service: ' + service + ' is not handled!'
+        syslog.syslog(message)
+        parser.error(message)
         exit(1)
-    isadmin = result['data']['adminrights']
-if args.service not in ['createsystem','listusers', 'getsettings', 'createuser', 'deleteuser', 'changepassword', 'listroles', 'createrole', 'deleterole', 'listgrants', 'creategrant', 'deletegrant', 'listdatabases', 'listnodesdb', 'listsystemdb', 'getmenus', 'listobjects', 'deleteobject', 'uploadobject', 'uploadnode']:
-    wlog("*** " + args.service + " service is not handled!")
-    exit(1)
-if not isadmin and args.service in ['listusers', 'createuser', 'deleteuser', 'listroles', 'createrole', 'deleterole', 'listgrants', 'creategrant', 'deletegrant']:
-    wlog("*** " + args.service + " service must be executed with admin rights!")
-    exit(1)
-parameters =dict()
-method = 'get'
-if args.service in ['getsettings', 'listnodesdb']:
-    parameters = dict(user=args.authname)
-elif args.service in ['createuser', 'deleteuser']:
-    if not args.user:
-        wlog("*** --user option must be specified!")
+
+    mandatory = []
+
+    if service == 'buildallcollectioncaches': mandatory = [PA, PP, PNO, PSY, PAR, PID]
+    if service == 'buildcollectioncache': mandatory = [PA, PP, PNO, PSY, PAR, PID, PCL]
+    if service == 'changepassword': mandatory = [PA, PP, PPA]
+    if service == 'clearcollectioncache': mandatory = [PA, PP, PNO, PSY, PID]
+    if service == 'creategrant': mandatory = [PA, PP, PUS, PRO]
+    if service == 'createnode': mandatory = [PA, PP, PNO, PID]
+    if service == 'createrole': mandatory = [PA, PP, PRO]
+    if service == 'createuser': mandatory = [PA, PP, PUS]
+    if service == 'deletegrant': mandatory = [PA, PP, PUS, PRO]
+    if service == 'deletenode': mandatory = [PA, PP, PNO, PID]
+    if service == 'deleteobject': mandatory = [PA, PP, PID, PTY, PDA]
+    if service == 'deleterole': mandatory = [PA, PP, PRO]
+    if service == 'deleteuser': mandatory = [PA, PP, PUS]
+    if service == 'displaycollection': mandatory = [PA, PP, PNO, PSY, PAR, PID, PCL]
+    if service == 'dropcollectioncache': mandatory = [PA, PP, PNO, PSY, PID, PCL]
+    if service == 'emptytrash': mandatory = [PA, PP, PNO]
+    if service == 'getcollections': mandatory = [PA, PP, PNO, PID]
+    if service == 'getid': mandatory = [PA, PP, PNO, PPN]
+    if service == 'getmenus': mandatory = [PA, PP, PNO, PSY]
+    if service == 'getnode': mandatory = [PA, PP, PNO, PID]
+    if service == 'getobject': mandatory = [PA, PP, PID, PTY, PDA]
+    if service == 'getsettings': mandatory = [PA, PP]
+    if service == 'listdatabases': mandatory = [PA, PP]
+    if service == 'listgrants': mandatory = [PA, PP]
+    if service == 'listnodesdb': mandatory = [PA, PP]
+    if service == 'listobjects': mandatory = [PNO, PSY]
+    if service == 'listroles': mandatory = [PA, PP]
+    if service == 'listsystemdb': mandatory = [PA, PP]
+    if service == 'listusers': mandatory = [PA, PP]
+    if service == 'renamenode': mandatory = [PA, PP, PNO, PID, PNE]
+    if service == 'updatesettings': mandatory = [PA, PP, PNO, PSY, PLO, PLG, PAR, PTE, PCO, PWA, PTP, PKE, PPL]
+    if service == 'uploadnode': mandatory = [PA, PP, PNO, PFI, PID, PSY]
+    if service == 'uploadobject': mandatory = [PNO, PFI]
+
+    for m in mandatory:
+        if not vars(args)[m.target]:
+            message = '*** Parameter: ' + m.name + ' is mandatory with service: ' + service + '!'
+            syslog.syslog(message)
+            parser.error(message)
+            exit(1)
+    
+    isadmin = False
+    for m in mandatory:
+        if m.target == PA.target:
+            loop = asyncio.get_event_loop()
+            loop.run_until_complete(main(loop, 'post', 'https://localhost/checkuserpassword', [('user', vars(args)[PA.target]), ('password', vars(args)[PP.target])]))
+            if not result['success']:
+                message = '*** ' + result['message']
+                print(message)
+                syslog.syslog(message)
+                exit(1)
+            isadmin = result['data']['adminrights']
+    
+    if not isadmin and service in admin_services:
+        message = "*** " + service + " service must be executed with admin rights!"
+        print(message)
+        syslog.syslog(message)
         exit(1)
-    parameters = dict(user=args.user)
-elif args.service in ['createrole', 'deleterole']:
-    if not args.role:
-        wlog("*** --role option must be specified!")
-        exit(1)
-    parameters = dict(role=args.role)
-elif args.service in ['creategrant', 'deletegrant']:
-    if not args.role:
-        wlog("*** --role option must be specified!")
-        exit(1)
-    if not args.user:
-        wlog("*** --user option must be specified!")
-        exit(1)
-    parameters = dict(role=args.role, user=args.user)
-elif args.service in ['getmenus', 'listobjects']:
-    if not args.nodesdb:
-        wlog("*** --nodesdb option must be specified!")
-        exit(1)
-    if not args.systemdb:
-        wlog("*** --systemdb option must be specified!")
-        exit(1)
-    parameters = dict(nodesdb=args.nodesdb, systemdb=args.systemdb)
-elif args.service in ['uploadobject', 'uploadnode']:
-    method='post'
-    if not args.nodesdb:
-        wlog("*** --nodesdb option must be specified!")
-        exit(1)
-    if not args.file:
-        wlog("*** --file option must be specified!")
-        exit(1)
-    data = aiohttp.FormData()
-    data.add_field('nodesdb', args.nodesdb)
-    data.add_field('systemdb', 'kairos_system_system')
-    data.add_field('file', open(args.file, 'rb'), filename=os.path.basename(args.file), content_type=magic.from_file(args.file, mime=True))
-elif args.service in ['deleteobject']:
-    if not args.id:
-        wlog("*** --id option must be specified!")
-        exit(1)
-    if not args.type:
-        wlog("*** --type option must be specified!")
-        exit(1)
-    if not args.database:
-        wlog("*** --database option must be specified!")
-        exit(1)
-    parameters = dict(id=args.id, type=args.type, database=args.database)
-elif args.service in ['changepassword']:
-    method='post'
-    if not args.newpassword:
-        wlog("*** --password option must be specified!")
-        exit(1)
-    parameters = dict(user=args.authname, password=args.password, new=args.newpassword)
-else: parameters = dict()
+
+    if service == 'buildallcollectioncaches': parameters = dict(id=vars(args)[PID.target], arrayinsert=vars(args)[PAR.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
+    if service == 'buildcollectioncache': parameters = dict(id=vars(args)[PID.target], collection=vars(args)[PCL.target], arrayinsert=vars(args)[PAR.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
+    if service == 'changepassword':
+        parameters = aiohttp.FormData()
+        parameters.add_field('user', vars(args)[PA.target])
+        parameters.add_field('password', vars(args)[PP.target])
+        parameters.add_field('new', vars(args)[PPA.target])
+    if service == 'checkserverconfig': parameters = dict()
+    if service == 'clearcollectioncache': parameters = dict(id=vars(args)[PID.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
+    if service == 'createsystem': parameters = dict()
+    if service == 'creategrant': parameters = dict(role=vars(args)[PRO.target], user=vars(args)[PUS.target])
+    if service == 'createnode': parameters = dict(nodesdb=vars(args)[PNO.target], id=vars(args)[PID.target])
+    if service == 'createrole': parameters = dict(role=vars(args)[PRO.target])
+    if service == 'createuser': parameters = dict(user=vars(args)[PUS.target])
+    if service == 'deletegrant': parameters = dict(role=vars(args)[PRO.target], user=vars(args)[PUS.target])
+    if service == 'deletenode': parameters = dict(nodesdb=vars(args)[PNO.target], id=vars(args)[PID.target])
+    if service == 'deleteobject': parameters = dict(id=vars(args)[PID.target], type=vars(args)[PTY.target], database=vars(args)[PDA.target])
+    if service == 'deleterole': parameters = dict(role=vars(args)[PRO.target])
+    if service == 'deleteuser': parameters = dict(user=vars(args)[PUS.target])
+    if service == 'displaycollection': parameters = dict(id=vars(args)[PID.target], collection=vars(args)[PCL.target], arrayinsert=vars(args)[PAR.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
+    if service == 'dropcollectioncache': parameters = dict(id=vars(args)[PID.target], collection=vars(args)[PCL.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
+    if service == 'emptytrash': parameters = dict(nodesdb=vars(args)[PNO.target])
+    if service == 'getcollections': parameters = dict(nodesdb=vars(args)[PNO.target], id=vars(args)[PID.target])
+    if service == 'getid': parameters = dict(nodesdb=vars(args)[PNO.target], pattern=vars(args)[PPN.target])
+    if service == 'getmenus': parameters = dict(nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
+    if service == 'getnode': parameters = dict(id=vars(args)[PID.target], nodesdb=vars(args)[PNO.target])
+    if service == 'getobject': parameters = dict(id=vars(args)[PID.target], type=vars(args)[PTY.target], database=vars(args)[PDA.target])
+    if service == 'getsettings': parameters = dict(user=vars(args)[PA.target])
+    if service == 'listdatabases': parameters = dict()
+    if service == 'listgrants': parameters = dict()
+    if service == 'listobjects': parameters = dict(nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
+    if service == 'listnodesdb': parameters = dict(user=vars(args)[PA.target])
+    if service == 'listroles': parameters = dict()
+    if service == 'listsystemdb': parameters = dict()
+    if service == 'listusers': parameters = dict()
+    if service == 'renamenode': parameters = dict(nodesdb=vars(args)[PNO.target], id=vars(args)[PID.target], new=vars(args)[PNE.target])
+    if service == 'updatesettings': parameters = dict(user=vars(args)[PA.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target], loglines=vars(args)[PLO.target], arrayinsert=vars(args)[PAR.target], template=args.template, colors=vars(args)[PCO.target], wallpaper=vars(args)[PWA.target], top=vars(args)[PTP.target], keycode=vars(args)[PKE.target], plotorientation=vars(args)[PPL.target], logging=vars(args)[PLG.target])
+    if service == 'uploadnode':
+        parameters = aiohttp.FormData()
+        parameters.add_field('nodesdb', vars(args)[PNO.target])
+        parameters.add_field('id', vars(args)[PID.target])
+        parameters.add_field('systemdb', vars(args)[PSY.target])
+        parameters.add_field('file', open(vars(args)[PFI.target], 'rb'), filename=os.path.basename(vars(args)[PFI.target]), content_type=magic.from_file(vars(args)[PFI.target], mime=True))
+    if service == 'uploadobject':
+        parameters = aiohttp.FormData()
+        parameters.add_field('nodesdb', vars(args)[PNO.target])
+        parameters.add_field('systemdb', 'kairos_system_system')
+        parameters.add_field('file', open(vars(args)[PFI.target], 'rb'), filename=os.path.basename(vars(args)[PFI.target]), content_type=magic.from_file(vars(args)[PFI.target], mime=True))
+
+    return parameters
+
+def get_method(service):
+    post = ['changepassword', 'uploadnode', 'uploadobject']
+    return 'post' if service in post else 'get'
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--version', action = 'version', version='KAIROS V4.0')
+parser.add_argument(PA.name, action = 'store', dest=PA.target, default='', help='KAIROS user name to be authentified')
+parser.add_argument(PP.name, action = 'store', dest=PP.target, default='', help='KAIROS user password')
+parser.add_argument(PS.name, action = 'store', dest=PS.target, required=True, help='Service to be executed')
+parser.add_argument(PUS.name, action = 'store', dest=PUS.target, default='', help='User name')
+parser.add_argument(PRO.name, action = 'store', dest=PRO.target, default='', help='Role name')
+parser.add_argument(PPA.name, action = 'store', dest=PPA.target, default='', help='New password to be set')
+parser.add_argument(PNE.name, action = 'store', dest=PNE.target, default='', help='New name')
+parser.add_argument(PNO.name, action = 'store', dest=PNO.target, default='', help='Nodes database')
+parser.add_argument(PSY.name, action = 'store', dest=PSY.target, default='', help='System database')
+parser.add_argument(PTP.name, action = 'store', dest=PTP.target, default='', help='Limit number of row to return')
+parser.add_argument(PCL.name, action = 'store', dest=PCL.target, default='', help='Collection name')
+parser.add_argument(PCO.name, action = 'store', dest=PCO.target, default='', help='Object redifining colors')
+parser.add_argument(PKE.name, action = 'store', dest=PKE.target, default='', help='Kairos key function code')
+parser.add_argument(PLG.name, action = 'store', dest=PLG.target, default='', help='Kairos logging')
+parser.add_argument(PLO.name, action = 'store', dest=PLO.target, default='', help='Kairos log length to display')
+parser.add_argument(PTE.name, action = 'store', dest=PTE.target, default='', help='Kairos template to be used')
+parser.add_argument(PWA.name, action = 'store', dest=PWA.target, default='', help='Kairos wallpaper to be used')
+parser.add_argument(PAR.name, action = 'store', dest=PAR.target, default='', help='Kairos buffer length')
+parser.add_argument(PPL.name, action = 'store', dest=PPL.target, default='', help='Kairos plot orientation')
+parser.add_argument(PID.name, action = 'store', dest=PID.target, default='', help='Object id')
+parser.add_argument(PTY.name, action = 'store', dest=PTY.target, default='', help='Object type')
+parser.add_argument(PDA.name, action = 'store', dest=PDA.target, default='', help='Database where object is stored into')
+parser.add_argument(PFI.name, action = 'store', dest=PFI.target, default='', help='File to be used')
+parser.add_argument(PEV.name, action = 'store', dest=PEV.target, default='', help='Events received')
+parser.add_argument(PFR.name, action = 'store', dest=PFR.target, default='', help='Node emitting event')
+parser.add_argument(PTO.name, action = 'store', dest=PTO.target, default='', help='Node receiving event')
+parser.add_argument(PPN.name, action = 'store', dest=PPN.target, default='', help='Pattern to find a node id')
+args = parser.parse_args()
+
+parameters = get_parameters(parser, args, args.service)
+method = get_method(args.service)
 loop = asyncio.get_event_loop()
-params = list(parameters.items()) if method == 'get' else data
+params = list(parameters.items()) if method == 'get' else parameters
 loop.run_until_complete(main(loop, method, 'https://localhost/' + args.service, params))
 
 if not result['success']:
-    wlog('*** ' + result['message'])
+    message = json.dumps(result, indent=4, sort_keys=True)
+    print(message)
+    syslog.syslog(message)
     exit(1)
-if args.service in ['listusers']:
-    for user in result['data']:
-        wlog('id: ' + str(user['_id']) + ', user: ' + str(user['user']))
-elif args.service in ['listroles']:
-    for role in result['data']:
-        wlog('id: ' + str(role['_id']) + ', role: ' + str(role['role']))
-elif args.service in ['listgrants']:
-    for grant in result['data']:
-        wlog('id: ' + str(grant['_id']) + ', user: ' + str(grant['user']) + ', role: ' + str(grant['role']))
-elif args.service in ['listdatabases']:
-    for database in result['data']:
-        wlog('name: ' + str(database['name']) + ', size: ' + str(database['size']))
-elif args.service in ['listnodesdb', 'listsystemdb']:
-    for database in result['data']:
-        wlog('name: ' + str(database['name']))
-elif args.service in ['listobjects']:
-    for object in result['data']:
-        wlog('id: ' + str(object['id']) + ', type: ' + str(object['type']) + ', created: ' + str(object['created']) + ', origin: ' + str(object['origin']))
-elif args.service in ['createuser', 'deleteuser', 'changepassword', 'createrole', 'deleterole', 'creategrant', 'deletegrant', 'deleteobject']:
-    wlog(result['data']['msg'])
-elif args.service in ['uploadobject', 'uploadnode']:
-    pass
-else: wlog(str(result))
-exit(0)
+else: 
+    message = json.dumps(result, indent=4, sort_keys=True)
+    print(message)
+    exit(0)

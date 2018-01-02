@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORAWEB"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'number of operations/sec' label, sum(value) value from (select timestamp, event label, count value from DBORAWEB where event='%(DBORAWEB)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'number of operations/sec' as label , sum(value) as value from (select timestamp, event as label, count as value from DBORAWEB where event='%(DBORAWEB)s') as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": false
         }

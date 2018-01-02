@@ -23,9 +23,9 @@ class UserObject(dict):
                                     "label": "label",
                                     "value": "value",
                                     "onclick": {
-                                        "variable": "DBORAWEV",
                                         "action": "dispchart",
-                                        "chart": "DBORACHOOSEWEV"
+                                        "chart": "DBORACHOOSEWEV",
+                                        "variable": "DBORAWEV"
                                     }
                                 }
                             ]

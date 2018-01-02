@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORASGRLW"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, owner||' '||objtype||' '||object||' '||subobject label, waits value from DBORASGRLW) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, owner||' '||objtype||' '||object||' '||subobject as label, waits as value from DBORASGRLW) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

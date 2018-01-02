@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORAPGC"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'One pass execs' label, sum(value) value from (select timestamp, 'xxx' label, value value from (select c.timestamp timestamp, execs1 * elapsed value from DBORAPGC c, DBORAMISC m where c.timestamp = m.timestamp)) group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'One pass execs'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, value as value from (select c.timestamp as timestamp, execs1 * elapsed as value from DBORAPGC c, DBORAMISC m where c.timestamp = m.timestamp) as foo) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

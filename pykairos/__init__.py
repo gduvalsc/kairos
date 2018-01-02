@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
-import string, random, ssl, logging, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, jpype, psycopg2, psycopg2.extras, psycopg2.extensions
+import string, random, ssl, logging, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, psycopg2, psycopg2.extras, psycopg2.extensions
 from collections import *
 from datetime import datetime
 from aiohttp import web, WSCloseCode, WSMsgType, MultiDict
@@ -74,6 +74,7 @@ def trace_call(func):
     def wrapper(*args, **kwargs):
         logging.debug('>>> Entering %s ...' % func.__name__)
         response = func(*args, **kwargs)
+        logging.debug('<<< Leaving %s ...' % func.__name__)
         return response
     return wrapper
 
@@ -119,53 +120,32 @@ class Buffer:
             if x['length'] == s.size: s.flush(c)
         else:
             s.collections[c]=dict(buffer=[], length=0, context=Object())
-            s.init(s.collections[c]['context'], c, d)
+            s.init(c, d)
             s.push(c, d, v, n)
     def flush(s, c):
-        s.action(s.collections[c]['context'], s.collections[c]['buffer'])
+        if s.collections[c]['length'] > 0 : s.action(c, s.collections[c]['buffer'])
         s.collections[c]['buffer'] = []
         s.collections[c]['length'] = 0
     def close(s):
         for c in s.collections: s.flush(c)
 
 class Cache:
-    def __init__(s,file=None):
-        def dict_factory(cursor, row):
-            d = dict()
-            for idx,col in enumerate(cursor.description):
-                d[col[0]] = row[idx]
-            return d
-        s.sqlite = sqlite3.connect(file,check_same_thread=False)
-        s.sqlite.row_factory = dict_factory
-        s.execute("pragma page_size=65536")
-        s.execute("pragma journal_mode=OFF")
-    def create_function(s,*a):
-        s.sqlite.create_function(*a)
+    def __init__(s,database=None, autocommit=False, objects=False, schema=None):
+            agensstr = "host='localhost' user='agensgraph' dbname='" + database + "'" if database != None else "host='localhost' user='agensgraph'"
+            s.agens = psycopg2.connect(agensstr)
+            s.autocommit = autocommit
+            s.schema = schema
+            if autocommit: s.agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+            if schema: s.execute("set search_path = " + schema)
+            if objects: s.execute("set graph_path = kairos")       
     def execute(s,*req):
         logging.debug('Executing request: ' + req[0])
-        c=s.sqlite.cursor()
+        c = s.agens.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         c.execute(*req)
         return c
-    def executemany(s,*req):
-        logging.debug('Executing request: ' + req[0])
-        c=s.sqlite.cursor()
-        c.executemany(*req)
-        return c
-    def desc(s,source=None,table=None):
-        d=OrderedDict()
-        if table:
-            if not source: c=s.execute("pragma table_info("+table+")")
-            else: c=s.execute("pragma "+source+".table_info("+table+")")
-            for x in c: d[x['name']]=x['type'].lower()
-        else:
-            if not source: c=s.execute("select name,sql from sqlite_master where type='table'")
-            else: c=s.execute("select name,sql from "+source+".sqlite_master where type='table'")
-            for x in c: d[x['name']]=x['sql']
-        return d
-    def commit(s):
-        s.sqlite.commit()
     def disconnect(s):
-        s.sqlite.close()
+        if not s.autocommit: s.agens.commit()
+        s.agens.close()
 
 class LiveCache:
     def __init__(s,file=None, liveobject=None):
@@ -473,27 +453,19 @@ class KairosNotifier:
     
 class KairosWorker:
     def __init__(s, jpypeflag=True):
-        #s.admin = 'root'
-        #s.name = 'kairos'
-        #s.host = 'localhost'
-        #s.orientport = 2424
-        #s.odb = pyorient.OrientDB(s.host, s.orientport)
-        s.odbroot=False
-        s.odbdatabase = None
-        s.odbuser = None
         
-        if jpypeflag:
-            jarpath = os.environ['CLASSPATH']
-            jvm = jpype.getDefaultJVMPath()
-            jpype.startJVM(jvm, '-Djava.class.path=' + jarpath)
+        # if jpypeflag:
+        #     jarpath = os.environ['CLASSPATH']
+        #     jvm = jpype.getDefaultJVMPath()
+        #     jpype.startJVM(jvm, '-Djava.class.path=' + jarpath)
 
         app = web.Application()
         app['websockets'] = []
 
         @trace_call
-        async def on_shutdown(app):
+        def on_shutdown(app):
             for ws in app['websockets']:
-                await ws.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
+                ws.close(code=WSCloseCode.GOING_AWAY, message='Server shutdown')
 
         app.on_shutdown.append(on_shutdown)
 
@@ -567,6 +539,7 @@ class KairosWorker:
         app.router.add_get('/applyliveobject', s.applyliveobject)
         app.router.add_get('/uploadnode', s.uploadnode)
         app.router.add_get('/uploadobject', s.uploadobject)
+        app.router.add_get('/getid', s.getid)
         app.router.add_post('/changepassword', s.changepassword)
         app.router.add_post('/uploadobject', s.uploadobject)
         app.router.add_post('/setobject', s.setobject)
@@ -610,48 +583,6 @@ class KairosWorker:
 
     def file_client(s, request):
         return web.Response(content_type='application/octet-stream', text=open('/kairos/client.js').read())
-    
-    # @trace_call
-    # def odbreload(s):
-    #     return s.odb.db_reload()
-    
-    # @trace_call
-    # def odbget(s, root=False, database=None, user=None, password=None):
-    #     if root:
-    #         if not s.odbroot:
-    #             logging.debug("Connecting to OrientDB through root ...")
-    #             s.odb.connect('root', 'root')
-    #             s.odbroot = True
-    #             s.odbdatabase = None
-    #             s.odbuser = None
-    #         return None
-    #     if database and not user:
-    #         if database != s.odbdatabase:
-    #             s.odbroot = False
-    #             s.odbdatabase = database
-    #             s.odbuser = None
-    #             logging.debug("Connecting to database: '" + database + "' with: '" + s.name + "' ...")
-    #             x = s.odb.db_open(database, s.name, s.admin)
-    #             s.odbx = x
-    #         return s.odbx
-    #     if user and database:
-    #         s.odbroot = False
-    #         s.odbdatabase = False
-    #         logging.debug("Connecting to database: '" + database + "' with: '" + user + "' ...")
-    #         x = s.odb.db_open(database, user, password)
-    #         s.odbx = x
-    #         return s.odbx
-        
-    # @trace_call
-    # def odbrun(s, command):
-    #     logging.debug(command)
-    #     return s.odb.command(command)
-        
-    # @trace_call
-    # def odbquery(s, request, limit=-1):
-    #     logging.debug(str(request))
-    #     r = s.odb.query(request, limit)
-    #     return r
         
     @trace_call
     def ideletecollection(s, nid, collection=None, nodesdb=None):
@@ -660,65 +591,52 @@ class KairosWorker:
             rid = cache.rid
             collections = cache.collections
             if collection in collections:
-                hcache = Cache(cache.name)
+                hcache = Cache(cache.database, schema=cache.name)
                 hcache.execute("drop table if exists " + collection)
                 hcache.disconnect()
                 del collections[collection]
-                s.odbget(database=nodesdb)
-                s.odbrun("update caches set collections = '" + json.dumps(collections) + "' where @rid = " + rid)
+                ncache = Cache(nodesdb, objects=True)
+                ncache.execute("match (c:caches) where id(c) = '" + rid + "' set c.collections = '" + json.dumps(collections) + "'")
+                ncache.disconnect()
         
     @trace_call
     def ideletecache(s, nid, nodesdb=None):
-        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = 'kairos'")
-        cursor.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' return id(c) as cid")
-        cids = [row['cid'] for row in cursor.fetchall()]
+        ncache = Cache(nodesdb, autocommit=True, objects=True)
+        x = ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' return id(c) as cid")
+        cids = [row['cid'] for row in x.fetchall()]
         if len(cids):
             cid = cids[0]
-            cursor.execute("match (c:caches) where id(c) = '" + cid + "' return c.name as name")
-            dbname = [row['name'] for row in cursor.fetchall()][0]
-            cursor.execute("drop database " + dbname)
-            cursor.execute("match (c:caches) where id(c) = '" + cid + "' detach delete c")
-        cursor.close()
-        agens.close()
+            y = ncache.execute("match (c:caches) where id(c) = '" + cid + "' return c.name as name")
+            schname = [row['name'] for row in y.fetchall()][0]
+            ncache.execute("drop schema " + schname + " cascade")
+            ncache.execute("match (c:caches) where id(c) = '" + cid + "' detach delete c")
+        ncache.disconnect()
         
     @trace_call
     def ideletesource(s, nid, nodesdb=None):
-        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = 'kairos'")
-        cursor.execute("match (n:nodes)-[:node_has_source]->(s:sources) where id(n) = '" + nid + "' return id(s) as sid")
-        sids = [row['sid'] for row in cursor.fetchall()]
+        ncache = Cache(nodesdb, objects=True)
+        x = ncache.execute("match (n:nodes)-[:node_has_source]->(s:sources) where id(n) = '" + nid + "' return id(s) as sid")
+        sids = [row['sid'] for row in x.fetchall()]
         if len(sids):
             sid = sids[0]
-            cursor.execute("match (s:sources) where id(s) = '" + sid + "' return s.location as location")
-            location = [row['location'] for row in cursor.fetchall()][0]
+            y = ncache.execute("match (s:sources) where id(s) = '" + sid + "' return s.location as location")
+            location = [row['location'] for row in y.fetchall()][0]
             try: os.unlink(location)
             except: pass
-            cursor.execute("match (s:sources) where id(s) = '" + sid + "' detach delete s")
-        cursor.close()
-        agens.close()
+            ncache.execute("match (s:sources) where id(s) = '" + sid + "' detach delete s")
+        ncache.disconnect()
 
     @trace_call
     def icreatecache(s, nid, nodesdb=None):
-        s.odbget(database=nodesdb)
-        tabx = s.odbquery("select sequence('fileseq').next() as seq")
-        for rx in tabx: fileseq = rx.oRecordData['seq']
-        dbname = '/orientdb/files/' + nodesdb + '/' + str(fileseq) + '.sq3'
-        cacheid = s.odbrun("create vertex caches set name='" + dbname + "', created=sysdate(), collections='" + json.dumps(dict()) + "', queries='" + json.dumps(dict()) + "'")[0]._rid
-        s.odbrun("create edge node_has_cache from " + nid + " to " + cacheid)
+        ncache = Cache(nodesdb, autocommit=True, objects=True)
+        schname = 'cache_' + nid.replace('.', '_')
+        ncache.execute("create schema " + schname)
+        ncache.execute("match (n:nodes) where id(n) = '" + nid + "' create ((n)-[:node_has_cache]->(c:caches {created:now(), database:'" + nodesdb + "', name:'" + schname + "', queries:'" + json.dumps(dict()) + "', collections:'" + json.dumps(dict()) + "'}))")
+        ncache.disconnect()
         
     @trace_call
     def icreatesource(s, nid, nodesdb=None, systemdb=None, stream=None, filename=None):
-        s.odbget(database=nodesdb)
-        tabx = s.odbquery("select sequence('fileseq').next() as seq")
-        for rx in tabx: fileseq = rx.oRecordData['seq']
-        filepath = '/orientdb/files/' + nodesdb + '/' + str(fileseq) + '.zip'
+        filepath = '/files/' + nodesdb + '/' + nid + '.zip'
         infile = Arcfile(stream, 'r')
         ziparchive = Arcfile(filepath, 'w:zip')
         for m in infile.list(): ziparchive.write(m, infile.read(m))
@@ -736,106 +654,93 @@ class KairosWorker:
             logging.info('Analyzing member: ' + member + '...')
             analyzer.analyze(ziparchive.read(member), member)
         ziparchive.close()
-        s.odbget(database=nodesdb)
-        sourceid = s.odbrun("create vertex sources set name='" + filename + "', created=sysdate(), location ='" + filepath + "', collections='" + json.dumps(collections) + "'")[0]._rid
-        s.odbrun("create edge node_has_source from " + nid + " to " + sourceid)
-        s.odbrun("update nodes set icon='B', type='B' where @rid = " + nid)
+        ncache = Cache(nodesdb, objects=True)        
+        ncache.execute("match (n:nodes) where id(n) = '" + nid + "' create ((n)-[:node_has_source]->(s:sources {created:now(), location: '" + filepath+ "', collections:'" + json.dumps(collections) + "'}))")
+        ncache.execute("match (n:nodes) where id(n) = '" + nid + "' set n.type=to_json('B'::text), n.icon=to_json('B'::text)")
+        ncache.disconnect()
         
     @trace_call
     def igetcache(s, nid, nodesdb=None):
-        s.odbget(database=nodesdb)
+        ncache = Cache(nodesdb, objects=True)
+        x = ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' return id(c) as rid, c.database as database, c.name as name, c.queries as queries, to_char(cast(c.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, c.collections as collections")
         r = Object()
-        tabx = s.odbquery("select @rid, name, created.format('yyyy-MM-dd HH:mm:ss.SSS') as created, collections, queries from caches where @rid in (select in from node_has_cache where out = " + nid + ")", -1)
-        for rx in tabx:
-            r.rid = str(rx.oRecordData['rid'])
-            r.name = rx.oRecordData['name']
-            r.created = rx.oRecordData['created']
-            r.collections = json.loads(rx.oRecordData['collections'])
-            r.queries = json.loads(rx.oRecordData['queries'])
+        for rx in x.fetchall():
+            r.rid = rx['rid']
+            r.database = rx['database']
+            r.name = rx['name']
+            r.queries = json.loads(rx['queries'])
+            r.created = rx['created']
+            r.collections = json.loads(rx['collections'])
+        ncache.disconnect()
         return r
         
     @trace_call
     def igetsource(s, nid, nodesdb=None):
-        s.odbget(database=nodesdb)
+        ncache = Cache(nodesdb, objects=True)        
+        x = ncache.execute("match (n:nodes)-[:node_has_source]->(s:sources) where id(n) = '" + nid + "' return id(s) as rid, s.location as location, to_char(cast(s.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, s.collections as collections")
         r = Object()
-        tabx = s.odbquery("select @rid, name, location, created.format('yyyy-MM-dd HH:mm:ss.SSS') as created, collections from sources where @rid in (select in from node_has_source where out = " + nid + ")", -1)
-        for rx in tabx:
-            r.rid = str(rx.oRecordData['rid'])
-            r.name = rx.oRecordData['name']
-            r.location = rx.oRecordData['location']
-            r.created = rx.oRecordData['created']
-            r.collections = json.loads(rx.oRecordData['collections'])
+        for rx in x.fetchall():
+            r.rid = rx['rid']
+            r.location = rx['location']
+            r.created = rx['created']
+            r.collections = json.loads(rx['collections'])
+        ncache.disconnect()
         return r
 
     @trace_call
     def icreatesystem(s):
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("select datname from pg_database")
-        databases = [row['datname'] for row in cursor.fetchall()]
+        ncache = Cache(None, autocommit=True)        
+        x = ncache.execute("select datname from pg_database")
+        databases = [row['datname'] for row in x.fetchall()]
         if 'kairos_system_system' in databases:
-            cursor.close()
-            agens.close()
+            ncache.disconnect()
             return
         logging.info("Creating a new kairos_system_system database...")
-        cursor.execute("create database kairos_system_system")
-        cursor.close()
-        agens.close()
-
+        ncache.execute("create database kairos_system_system with encoding 'utf8'")
+        ncache.disconnect()
         ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'agens -d kairos_system_system < /usr/local/src/kairos_system_system.sql'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if  ag.returncode: 
             logging.error('Error when trying to import data in kairos_system_system!')
-            agensstr = "host='localhost' dbname='kairos_system_system' user='agensgraph'"
-            agens = psycopg2.connect(agensstr)
-            agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-            cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            cursor.execute("create graph kairos")
-            cursor.execute("create vlabel objects")
-            cursor.close()
-            agens.close()
+            ncache = Cache('kairos_system_system')        
+            ncache.execute("create graph kairos")
+            ncache.execute("create vlabel objects")
+            ncache.disconnect()
             logging.info("kairos_system_system database created.")
         else: logging.info("kairos_system_system database created and populated.")
 
     @trace_call
     def icreaterole(s, role=None):
         curdatabase = "kairos_group_" + role
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("select datname from pg_database")
-        databases = [row['datname'] for row in cursor.fetchall()]
+        ncache = Cache(None, autocommit=True)        
+        x = ncache.execute("select datname from pg_database")
+        databases = [row['datname'] for row in x.fetchall()]
         if curdatabase in databases: return dict(success=False, message=user + ' role already exists!')
         logging.info("Creating a new " + curdatabase + " database ...")
-        cursor.execute("create database kairos_group_" + role)
+        ncache.execute("create database kairos_group_" + role + " with encoding 'utf8'")
         logging.info(curdatabase + " database created.")
-        cursor.execute("create role " + role)
+        ncache.execute("create role " + role)
         logging.info(role + " role created.")
-        cursor.close()
-        agens.close()
-        agensstr = "host='localhost' dbname='kairos_group_" + role + "' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("create graph kairos")
-        cursor.execute("create vlabel objects")
-        cursor.execute("create vlabel nodes")
-        cursor.execute("create (:nodes {name:'/', type:'N', created:now(), status:'ACTIVE', icon:'N'})")
-        cursor.execute("create (:nodes {name:'Trash', type:'T', created:now(), status:'DELETED', icon:'T'})")
-        cursor.execute("create elabel node_has_children")
-        cursor.execute("match (r:nodes {name:'/'}), (t:nodes {name:'Trash'}) create ((r)-[:node_has_children]->(t))") 
-        cursor.execute("create elabel node_has_source")
-        cursor.execute("create elabel node_has_cache")
-        cursor.execute("create vlabel sources")
-        cursor.execute("create vlabel caches")
-        #s.odbrun("create sequence fileseq type ordered")
-        #try: shutil.rmtree('/orientdb/files/kairos_user_' + user)
-        #except: pass
-        try: shutil.rmtree('/autoupload/kairos_group_' + role)
+        ncache.disconnect()
+        ncache = Cache("kairos_group_" + role)        
+        ncache.execute("create language plpythonu")
+        ncache.execute("create extension oracle_fdw")
+        ncache.execute("create graph kairos")
+        ncache.execute("create vlabel objects")
+        ncache.execute("create vlabel nodes")
+        ncache.execute("create (:nodes {name:'/', type:'N', created:now(), status:'ACTIVE', icon:'N'})")
+        ncache.execute("create (:nodes {name:'Trash', type:'T', created:now(), status:'DELETED', icon:'T'})")
+        ncache.execute("create elabel node_has_children")
+        ncache.execute("match (r:nodes {name:'/'}), (t:nodes {name:'Trash'}) create ((r)-[:node_has_children]->(t))") 
+        ncache.execute("create elabel node_has_source")
+        ncache.execute("create elabel node_has_cache")
+        ncache.execute("create vlabel sources")
+        ncache.execute("create vlabel caches")
+        ncache.disconnect()        
+        try: shutil.rmtree('/files/' + curdatabase)
         except: pass
-        #os.mkdir('/orientdb/files/' + curdatabase)
+        try: shutil.rmtree('/autoupload/' + curdatabase)
+        except: pass
+        os.mkdir('/files/' + curdatabase)
         os.mkdir('/autoupload/' + curdatabase)
         logging.info(curdatabase + " database created.")
         return dict(success=True, data=dict(msg=role + " role has been successfully created!"))
@@ -843,87 +748,74 @@ class KairosWorker:
     @trace_call
     def icreateuser(s, user=None):
         curdatabase = "kairos_user_" + user
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("select datname from pg_database")
-        databases = [row['datname'] for row in cursor.fetchall()]
+        ncache = Cache(None, autocommit=True)
+        x = ncache.execute("select datname from pg_database")
+        databases = [row['datname'] for row in x.fetchall()]
         if curdatabase in databases: return dict(success=False, message=user + ' user already exists!')
         logging.info("Creating a new " + curdatabase + " database ...")
-        cursor.execute("create database kairos_user_" + user)
+        ncache.execute("create database kairos_user_" + user + " with encoding 'utf8'")
         logging.info(curdatabase + " database created.")
-        cursor.execute("create user " + user + " password '" + user + "'")
+        ncache.execute("create user " + user + " password '" + user + "'")
         logging.info(user + " user created.")
-        cursor.close()
-        agens.close()
-        agensstr = "host='localhost' dbname='kairos_user_" + user + "' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("create graph kairos")
-        cursor.execute("create vlabel settings")
-        cursor.execute("create (:settings {colors:'COLORS', keycode:0, logging:'info', loglines:100, arrayinsert:100, nodesdb:'kairos_user_" + user + "', plotorientation:'horizontal', systemdb:'kairos_system_system', template:'DEFAULT', top:15, wallpaper:'DEFAULT'})")
-        cursor.execute("create vlabel objects")
-        cursor.execute("create vlabel nodes")
-        cursor.execute("create (:nodes {name:'/', type:'N', created:now(), status:'ACTIVE', icon:'N'})")
-        cursor.execute("create (:nodes {name:'Trash', type:'T', created:now(), status:'DELETED', icon:'T'})")
-        cursor.execute("create elabel node_has_children")
-        cursor.execute("match (r:nodes {name:'/'}), (t:nodes {name:'Trash'}) create ((r)-[:node_has_children]->(t))") 
-        cursor.execute("create elabel node_has_source")
-        cursor.execute("create elabel node_has_cache")
-        cursor.execute("create vlabel sources")
-        cursor.execute("create vlabel caches")
-        #s.odbrun("create sequence fileseq type ordered")
-        #try: shutil.rmtree('/orientdb/files/kairos_user_' + user)
-        #except: pass
-        try: shutil.rmtree('/autoupload/kairos_user_' + user)
+        ncache.disconnect()
+        ncache = Cache("kairos_user_" + user)
+        ncache.execute("create language plpythonu")
+        ncache.execute("create extension oracle_fdw")
+        ncache.execute("create graph kairos")
+        ncache.execute("create vlabel settings")
+        ncache.execute("create (:settings {colors:'COLORS', keycode:0, logging:'info', loglines:100, arrayinsert:100, nodesdb:'kairos_user_" + user + "', plotorientation:'horizontal', systemdb:'kairos_system_system', template:'DEFAULT', top:15, wallpaper:'DEFAULT'})")
+        ncache.execute("create vlabel objects")
+        ncache.execute("create vlabel nodes")
+        ncache.execute("create (:nodes {name:'/', type:'N', created:now(), status:'ACTIVE', icon:'N'})")
+        ncache.execute("create (:nodes {name:'Trash', type:'T', created:now(), status:'DELETED', icon:'T'})")
+        ncache.execute("create elabel node_has_children")
+        ncache.execute("match (r:nodes {name:'/'}), (t:nodes {name:'Trash'}) create ((r)-[:node_has_children]->(t))") 
+        ncache.execute("create elabel node_has_source")
+        ncache.execute("create elabel node_has_cache")
+        ncache.execute("create vlabel sources")
+        ncache.execute("create vlabel caches")
+        ncache.disconnect()        
+        try: shutil.rmtree('/files/' + curdatabase)
         except: pass
-        #os.mkdir('/orientdb/files/' + curdatabase)
+        try: shutil.rmtree('/autoupload/' + curdatabase)
+        except: pass
+        os.mkdir('/files/' + curdatabase)
         os.mkdir('/autoupload/' + curdatabase)
+        logging.info(curdatabase + " database created.")
         return dict(success=True, data=dict(msg=user + " user has been successfully created!"))
 
     @trace_call
     def icreategrant(s, user=None, role=None):
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("select datname from pg_database")
-        databases = [row['datname'] for row in cursor.fetchall()]
+        ncache = Cache(None)
+        x = ncache.execute("select datname from pg_database")
+        databases = [row['datname'] for row in x.fetchall()]
         dbgroup = "kairos_group_" + role
         dbuser = "kairos_user_" + user
         if dbgroup not in databases:
-            cursor.close()
-            agens.close()
+            ncache.disconnect()        
             return dict(success=False, message=role + " role doesn't exist!")
         if dbuser not in databases: 
-            cursor.close()
-            agens.close()
+            ncache.disconnect()        
             return dict(success=False, message=user + " user doesn't exist!")
-        cursor.execute("select groname,usename from pg_group,pg_user where usesysid = any(grolist) and groname='" + role + "' and usename='" + user + "'")
-        if len([row for row in cursor.fetchall()]) > 0:
-            cursor.close()
-            agens.close()
+        x = ncache.execute("select groname,usename from pg_group,pg_user where usesysid = any(grolist) and groname='" + role + "' and usename='" + user + "'")
+        if len([row for row in x.fetchall()]) > 0:
+            ncache.disconnect()        
             return dict(success=False, message=user + " user is already granted with " + role + " role!")
-        for row in cursor.fetchall():
+        for row in x.fetchall():
             data.append(dict(_id=row['usename'] + ':' + row['groname'], user=row['usename'], role=row['groname']))
-        cursor.execute("grant " + role + " to " + user)
-        cursor.close()
-        agens.close()
+        ncache.execute("grant " + role + " to " + user)
+        ncache.disconnect()        
         return dict(success=True, data=dict(msg=role + " role has been successfully granted to " + user + " user!"))
 
     @trace_call
     def ideleterole(s, role=None):
         dbgroup = "kairos_group_" + role
         logging.info("Dropping " + dbgroup + " database...")
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("drop database " + dbgroup)
-        cursor.execute("drop role " + role)
-        #shutil.rmtree('/orientdb/files/' + dbgroup)
+        ncache = Cache(None, autocommit=True)
+        ncache.execute("drop database " + dbgroup)
+        ncache.execute("drop role " + role)
+        ncache.disconnect()              
+        shutil.rmtree('/files/' + dbgroup)
         logging.info(dbgroup + " database removed.")
         return dict(success=True, data=dict(msg=role + " role has been successfully removed!"))
 
@@ -932,13 +824,10 @@ class KairosWorker:
         if user=='admin': return dict(success=False, message='admin user cannot be removed!')
         dbuser = "kairos_user_" + user
         logging.info("Dropping " + dbuser + " database...")
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("drop database " + dbuser)
-        cursor.execute("drop user " + user)
-        #shutil.rmtree('/orientdb/files/' + dbuser)
+        ncache = Cache(None, autocommit=True)
+        ncache.execute("drop database " + dbuser)
+        ncache.execute("drop user " + user)
+        shutil.rmtree('/files/' + dbuser)
         logging.info(dbuser + " database removed.")
         return dict(success=True, data=dict(msg=user + " user has been successfully removed!"))
 
@@ -947,55 +836,40 @@ class KairosWorker:
         if user=='admin': return dict(success=False, message='admin password cannot be reset!')
         dbuser = "kairos_user_" + user
         logging.info("Resetting " + user + " password...")
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("alter user " + user + " password '" + user + "'")
-        cursor.close()
-        agens.close()
+        ncache = Cache(None)
+        ncache.execute("alter user " + user + " password '" + user + "'")
+        ncache.disconnect()              
         logging.info(user + " password reset.")
         return dict(success=True, data=dict(msg=user + " password has been successfully reset!"))
 
     @trace_call
     def ideletegrant(s, role=None, user=None):
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("revoke " + role + " from " + user)
-        cursor.close()
-        agens.close()
+        ncache = Cache(None)
+        ncache.execute("revoke " + role + " from " + user)
+        ncache.disconnect()              
         return dict(success=True, data=dict(msg=user + " user has been successfully revoked from " + role + " role!"))
 
     @trace_call
     def ilistobjects(s, systemdb=None, nodesdb=None, where=''):
         data = []
         for db in [nodesdb, systemdb]:
-            agensstr = "host='localhost' user='agensgraph' dbname='" + db + "'"
-            agens = psycopg2.connect(agensstr)
-            cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            cursor.execute("set graph_path = 'kairos'")
-            cursor.execute("match (o:objects " + where + ") return id(o) as rid, o.id, o.type, to_char(cast(o.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created")
-            for row in cursor.fetchall():
+            ncache = Cache(db, objects=True)
+            y = ncache.execute("match (o:objects " + where + ") return id(o) as rid, o.id, o.type, to_char(cast(o.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created")
+            for row in y.fetchall():
                 item = dict()
                 for x in row.keys(): item[x] = row[x]
                 item['origin'] = db
                 data.append(item)
-            cursor.close()
-            agens.close()
+            ncache.disconnect()              
         return data
 
     @trace_call
     def igetobjects(s, systemdb=None, nodesdb=None, where='', evalobject=True):
         data = []
         for db in [nodesdb, systemdb]:
-            agensstr = "host='localhost' user='agensgraph' dbname='" + db + "'"
-            agens = psycopg2.connect(agensstr)
-            cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            cursor.execute("set graph_path = 'kairos'")
-            cursor.execute("match (o:objects " + where + ") return o.filename, o.content, to_char(cast(o.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created")
-            for row in cursor.fetchall():
+            ncache = Cache(db, objects=True)
+            x = ncache.execute("match (o:objects " + where + ") return o.filename, o.content, to_char(cast(o.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created")
+            for row in x.fetchall():
                 source = binascii.a2b_base64(row['content'])
                 filename = row['filename']
                 created = row['created']
@@ -1011,23 +885,19 @@ class KairosWorker:
                 obj['created'] = created
                 if evalobject: obj = replaceeval(obj)
                 data.append(obj)
-            cursor.close()
-            agens.close()
+            ncache.disconnect()              
         return data
 
     @trace_call
     def igetnodes(s, nodesdb=None, id=None, name=None, parent=None, root=False, child=None, countchildren=False, getsource=False, getcache=False):
-        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
-        agens = psycopg2.connect(agensstr)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = 'kairos'")
+        ncache = Cache(nodesdb, objects=True)
         selector = "id(n) as rid, n.type, n.name, n.icon, n.status, to_char(cast(n.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, n.liveobject, n.aggregatorselector, n.aggregatorsort, n.aggregatortake, n.aggregatorskip, n.aggregatormethod, n.aggregatortimefilter, to_char(cast(n.aggregated as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as aggregated, n.producers"
-        if root: cursor.execute("match (n:nodes {name:'/'})-[:node_has_children]->(t:nodes {name:'Trash',status:'DELETED'}) return " + selector)
-        if name and parent: cursor.execute("match (p:nodes)-[:node_has_children]->(n:nodes {name:'" + name + "'}) where id(p)='" + parent + "' return " + selector)
-        if not name and parent: cursor.execute("match (p:nodes)-[:node_has_children]->(n:nodes) where id(p)='" + parent + "' return " + selector)
-        if not name and child: cursor.execute("match (n:nodes)-[:node_has_children]->(c:nodes) where id(c)='" + child + "' return " + selector)
-        if id: cursor.execute("match (n:nodes) where id(n)='" + id + "' return " + selector)
-        selectednodes = [row for row in cursor.fetchall()]
+        if root: x = ncache.execute("match (n:nodes {name:'/'})-[:node_has_children]->(t:nodes {name:'Trash',status:'DELETED'}) return " + selector)
+        if name and parent: x = ncache.execute("match (p:nodes)-[:node_has_children]->(n:nodes {name:'" + name + "'}) where id(p)='" + parent + "' return " + selector)
+        if not name and parent: x = ncache.execute("match (p:nodes)-[:node_has_children]->(n:nodes) where id(p)='" + parent + "' return " + selector)
+        if not name and child: x = ncache.execute("match (n:nodes)-[:node_has_children]->(c:nodes) where id(c)='" + child + "' return " + selector)
+        if id: x = ncache.execute("match (n:nodes) where id(n)='" + id + "' return " + selector)
+        selectednodes = [row for row in x.fetchall()]
         nodes=[]
         for row in selectednodes:
             node = dict(datasource=dict(cache=dict()))
@@ -1055,8 +925,8 @@ class KairosWorker:
                 except: pass
                 node['datasource']['collections'] = d
             if countchildren:
-                cursor.execute("select count(*) as count from (match (n:nodes)-[:node_has_children]->(c:nodes) where id(n)='" + node['id'] + "' return c) foo")
-                for r in cursor.fetchall():
+                x = ncache.execute("select count(*) as count from (match (n:nodes)-[:node_has_children]->(c:nodes) where id(n)='" + node['id'] + "' return c) as foo")
+                for r in x.fetchall():
                     node['kids'] = r['count']
             if getsource:
                 if row['type'] == 'B':
@@ -1076,10 +946,10 @@ class KairosWorker:
                     if hasattr(cache, 'rid'):
                         node['datasource']['cache']['collections'] = cache.collections
                         node['datasource']['cache']['queries'] = cache.queries
-                        node['datasource']['cache']['dbname'] = cache.name
+                        node['datasource']['cache']['name'] = cache.name
+                        node['datasource']['cache']['database'] = cache.database
             nodes.append(node)
-        cursor.close()
-        agens.close
+        ncache.disconnect()              
         return nodes
     
     @trace_call
@@ -1089,19 +959,14 @@ class KairosWorker:
 
     @trace_call
     def icreatenode(s, nodesdb=None, id=None, name=None):
-        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = 'kairos'")
+        ncache = Cache(nodesdb, objects=True)
         if not name:
-            cursor.execute("select to_char(now(), 'YYYY-MM-DD HH24:MI:SS.MS') as name")
-            for row in cursor.fetchall(): name = row['name']
-        cursor.execute("match (p:nodes) where id(p)='" + id + "' create (p)-[:node_has_children]->(n:nodes {name:'" + name + "', type:'N', created:now(), status:'ACTIVE', icon:'N'}) return id(n) as rid") 
-        for row in cursor.fetchall():
+            x = ncache.execute("select to_char(now(), 'YYYY-MM-DD HH24:MI:SS.MS') as name")
+            for row in x.fetchall(): name = row['name']
+        x = ncache.execute("match (p:nodes) where id(p)='" + id + "' create (p)-[:node_has_children]->(n:nodes {name:'" + name + "', type:'N', created:now(), status:'ACTIVE', icon:'N'}) return id(n) as rid") 
+        for row in x.fetchall():
             rid = row['rid']
-        cursor.close()
-        agens.close()
+        ncache.disconnect()              
         return rid
 
     @trace_call
@@ -1111,28 +976,23 @@ class KairosWorker:
         trash = s.igetnodes(nodesdb=nodesdb, parent=root['id'], name='Trash')[0]
         if root['id'] == node['id']: return 'Root node cannot be removed!'
         if node['datasource']['type'] == 'T': return 'A trash cannot be removed!'
-        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = 'kairos'")
+        ncache = Cache(nodesdb, objects=True)
         if node['status'] == 'DELETED':
-            cursor.execute("match (n:nodes)-[:node_has_children*]->(d:nodes) where id(n) = '" + id + "' return id(d) as rid")
-            listnodes = [row['rid'] for row in cursor.fetchall()]
+            x = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes) where id(n) = '" + id + "' return id(d) as rid")
+            listnodes = [row['rid'] for row in x.fetchall()]
             listnodes.append(id)
             for rid in listnodes:
                 s.ideletesource(rid, nodesdb=nodesdb)
                 s.ideletecache(rid, nodesdb=nodesdb)
-                cursor.execute("match (n:nodes) where id(n) = '" + rid + "' detach delete n") 
+                ncache.execute("match (n:nodes) where id(n) = '" + rid + "' detach delete n") 
         else:
-            cursor.execute("match (p:nodes)-[l:node_has_children]->(n:nodes) where id(n) = '" + id + "' detach delete l") 
-            cursor.execute("match (t:nodes {name:'Trash'}), (n:nodes) where id(n) = '" + id + "' create (t)-[:node_has_children]->(n)") 
-            cursor.execute("match (n:nodes)-[:node_has_children*]->(d:nodes) where id(n) = '" + id + "' return id(d) as rid") 
-            listnodes = [row['rid'] for row in cursor.fetchall()]
-            for rid in listnodes: cursor.execute("match (n:nodes) where id(n) = '" + rid + "' set n.status='" + json.dumps('DELETED') + "'")
-            cursor.execute("match (n:nodes) where id(n) = '" + id + "' set n.status='" + json.dumps('DELETED') + "'")
-        cursor.close()
-        agens.close()
+            ncache.execute("match (p:nodes)-[l:node_has_children]->(n:nodes) where id(n) = '" + id + "' detach delete l") 
+            ncache.execute("match (t:nodes {name:'Trash'}), (n:nodes) where id(n) = '" + id + "' create (t)-[:node_has_children]->(n)") 
+            x = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes) where id(n) = '" + id + "' return id(d) as rid") 
+            listnodes = [row['rid'] for row in x.fetchall()]
+            for rid in listnodes: ncache.execute("match (n:nodes) where id(n) = '" + rid + "' set n.status=to_json('DELETED'::text)")
+            ncache.execute("match (n:nodes) where id(n) = '" + id + "' set n.status=to_json('DELETED'::text)")
+        ncache.disconnect()              
         return None
     
     @trace_call
@@ -1162,10 +1022,11 @@ class KairosWorker:
             mapproducers[collection] = dict(deleted=dict(), created=dict(), updated=dict(), unchanged=dict())
             datepart[collection] = dict()
             for part in cache.collections[collection]: mapproducers[collection]['deleted'][part] = dict(id=part)
-        node = s.igetnodes(nodesdb=nodesdb, id=node['id'])[0]
+        node = s.igetnodes(nodesdb=nodesdb, id=nid)[0]
         producers = s.iexpand(pattern=node['datasource']['aggregatorselector'], nodesdb=nodesdb, sort=node['datasource']['aggregatorsort'], skip=node['datasource']['aggregatorskip'], take=node['datasource']['aggregatortake'])
-        s.odbget(database=nodesdb)
-        s.odbrun("update nodes set aggregated=sysdate(), producers = '" + json.dumps(producers) + "' where @rid = " + node['id'])
+        ncache = Cache(nodesdb, objects=True)
+        ncache.execute("match (n:nodes) where id(n) = '" + nid + "' set n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now())")
+        ncache.disconnect()              
         for producer in node['datasource']['producers']:
             pid = producer['id']
             for collection in collections:        
@@ -1216,7 +1077,7 @@ class KairosWorker:
             todo[collection] = False
             analyzername = node ['datasource']['collections'][collection]['analyzer']
             analyzer = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + analyzername + "', type:'analyzer'}")[0]
-            datepart = cache.collections[collection][nid] if nid in cache.collections[collection] else None
+            datepart = cache.collections[collection][nid] if collection in cache.collections and nid in cache.collections[collection] else None
             todo[collection] = True if datepart == None else todo[collection]
             todo[collection] = True if datepart != None and node['datasource']['uploaded'] > datepart else todo[collection]
             todo[collection] = True if datepart != None and analyzer['created'] > datepart else todo[collection]
@@ -1239,24 +1100,23 @@ class KairosWorker:
     @trace_call
     def idropcolcachetypeA(s, node, cache=None, collection=None, mapproducers=None):
         exclude = [str(x) for x in mapproducers[collection]['unchanged'].keys()]
-        hcache = Cache(cache.name)
+        hcache = Cache(cache.database, schema=cache.name)
         if len(exclude) == 0: hcache.execute("drop table if exists " + collection)
         if len(exclude) == 1: hcache.execute("delete from " + collection + " where kairos_nodeid not in ('" + exclude[0] + "')")
         if len(exclude) > 1: hcache.execute("delete from " + collection + " where kairos_nodeid not in " + str(tuple(exclude)))
-        hcache.commit()
         hcache.disconnect()
         for x in mapproducers[collection]['deleted'] : del cache.collections[collection][x]
 
     @trace_call
     def idropcolcachetypeB(s, node, cache=None, collection=None):
-        hcache = Cache(cache.name)
+        hcache = Cache(cache.database, schema=cache.name)
         hcache.execute("drop table if exists " + collection)
         hcache.disconnect()
 
     @trace_call
     def idropcolcachetypeD(s, node, cache=None, collection=None):
         generator = lambda x=16, y=string.ascii_uppercase: ''.join(random.choice(y) for _ in range(x))
-        hcache = Cache(cache.name)
+        hcache = Cache(cache.database, schema=cache.name)
         tbname = "TO_BE_DELETED_" + generator()
         hcache.execute("alter table " + collection + " rename to " + tbname)
         hcache.execute("create table " + collection + " as select * from " + tbname + " limit 0")
@@ -1266,96 +1126,102 @@ class KairosWorker:
     def idropcollectioncache(s, node, collection=None, nodesdb=None):
         nid = node['id']
         cache = s.igetcache(nid, nodesdb=nodesdb)
-        hcache = Cache(cache.name)
+        hcache = Cache(cache.database, schema=cache.name)
         hcache.execute("drop table if exists " + collection)
         hcache.disconnect()
         del cache.collections[collection]
-        s.odbget(database=nodesdb)
-        s.odbrun("update caches set collections = '" + json.dumps(cache.collections) + "' where @rid = " + cache.rid)
+        ncache = Cache(nodesdb, objects=True)
+        ncache.execute("match (c:caches) where id(c) = '" + cache.rid + "' set c.collections='" + json.dumps(cache.collections) + "'")
+        ncache.disconnect()
 
     @trace_call
     def ibuildcolcachetypeA(s, node, cache=None, collection=None, mapproducers=None, nodesdb=None, systemdb=None):
         nid = node['id']
         ntype = node['datasource']['type']
         logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
-        hcache = Cache(cache.name)
+        hcache = Cache(cache.database, schema=cache.name)
         function = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['aggregatormethod'] + "', type:'aggregator'}")[0]
-        hcache.create_function(function["name"], function["numparameters"], function["function"])
-        hcache.create_function("match",2,lambda x,r: True if re.match(r,x) else False)
+        meet = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id: 'meet', type: 'function'}")[0]
+        specavg = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'specavg', type:'function'}")[0]
+        hcache.execute(function["function"])
+        hcache.execute(meet["function"])
+        hcache.execute(specavg["function"])
+        hcache.execute("drop table if exists aggregator")
+        hcache.execute("create table aggregator as select '" + node['datasource']['aggregatormethod'] + "'::text as method")
         producers = list(mapproducers[collection]['updated'].keys())
         producers.extend(list(mapproducers[collection]['created'].keys()))
         for producer in producers:
             logging.info("Node: " + nid + ", Type: " + ntype + ", building partition for producer: '" + producer + "' ...")
-            specavg = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'specavg', type:'function'}")[0]
-            hcache.create_function(specavg["name"], specavg["numparameters"], specavg["function"])
             pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]
-            indbname = pnode['datasource']['cache']['dbname']
-            hcache.execute("attach database '" + indbname + "' as dbin")
-            tabledesc = hcache.desc(table=collection, source='dbin')
-            if len(tabledesc) == 0:
-                hcache.execute("detach dbin")
-                continue
-            if collection not in hcache.desc():
-                request = 'create table ' + collection + '('
-                l = sorted(tabledesc.keys())
-                for k in l: request += k + ' ' + tabledesc[k] + ', '
-                request = request[:-2] + ')'
-                hcache.execute(request)
+            inschname = pnode['datasource']['cache']['name']
+            x = hcache.execute("select distinct table_name from information_schema.columns where table_schema='" + cache.name + "'")
+            schdesc = [row['table_name'] for row in x.fetchall()]
+            x = hcache.execute("select distinct table_name from information_schema.columns where table_schema='" + inschname + "'")
+            inschdesc = [row['table_name'] for row in x.fetchall()]
+            if collection.lower() not in inschdesc: continue
+            if collection.lower() not in schdesc: hcache.execute("create table " + collection.lower() + " as select * from " + inschname + "." + collection.lower() + " limit 0")
+            tabledesc = OrderedDict()
+            x = hcache.execute("select column_name, data_type from information_schema.columns where table_name = '" + collection.lower() + "' and table_schema = '" + cache.name + "'")
+            for row in x.fetchall(): tabledesc[row['column_name']] = row['data_type']
             lgby = []
             lavg = []
             lsum = []
             where = ' '
             for k in tabledesc:
                 if tabledesc[k]=='text': lgby.append(k)
-                if tabledesc[k]=='int': lsum.append(k)
+                if tabledesc[k]=='integer': lsum.append(k)
+                if tabledesc[k]=='bigint': lsum.append(k)
                 if tabledesc[k]=='real': lavg.append(k)
             listf = []
             for x in lgby: listf.append(x)
             for x in lavg: listf.append(x)
             for x in lsum: listf.append(x)
             timestamp = True if 'timestamp' in lgby else False
+            oops = dict()
             if timestamp:
-                where = " where match(timestamp,'" + node['datasource']['aggregatortimefilter'] + "') or timestamp='00000000000000000'"
-                workrequest = 'select ' + function["name"] + '(timestamp) timestamp, kairos_nodeid, count(*) num from (select distinct timestamp, kairos_nodeid from dbin.' + collection + where +') group by ' + function["name"] + '(timestamp), kairos_nodeid'
-                for x in hcache.execute(workrequest): specavg["accumulator"][x['timestamp'] + x['kairos_nodeid']] = x['num']
-            subrequest = 'select ' + ','.join(listf) + ' from dbin.' + collection + where
-            request = 'insert into ' + collection + '(' + ','.join(listf) + ') select '
+                where = " where " + cache.name + ".meet(timestamp,'" + node['datasource']['aggregatortimefilter'] + "') or timestamp='00000000000000000'"
+                workrequest = "select " + cache.name + "." + function["name"] + "(timestamp) as timestamp, kairos_nodeid, count(*) as num from (select distinct timestamp, kairos_nodeid from " + inschname + "." + collection + where +') as foo group by ' + function["name"] + '(timestamp), kairos_nodeid'
+                #for x in hcache.execute(workrequest): specavg["accumulator"][x['timestamp'] + x['kairos_nodeid']] = x['num']
+                for row in hcache.execute(workrequest): oops[row['timestamp'] + row['kairos_nodeid']] = row['num']
+            jsonoops = json.dumps(oops)
+            subrequest = "select " + ",".join(listf) + " from " + inschname + "." + collection.lower() + where
+            request = 'insert into ' + collection.lower() + '(' + ','.join(listf) + ') select '
             for x in lgby:
-                if x=='timestamp': request += function["name"] + '(timestamp) timestamp, '
+                if x=='timestamp': request += function["name"] + '(timestamp) as timestamp, '
                 else: request += x + ', '
             for x in lavg:
-                request += 'specavg(sum(' + x + '),' + function["name"] + '(timestamp), kairos_nodeid) ' + x + ', '
+                request += cache.name + ".specavg(sum(" + x + "::real)," + function["name"] + "(timestamp), kairos_nodeid, " + jsonoops + ") as " + x + ", "
             for x in lsum:
-                request += 'sum(' + x + ') ' + x + ', '
-            request = request[:-2] + ' from (' + subrequest + ') group by '
+                request += 'sum(' + x + ') as ' + x + ', '
+            request = request[:-2] + ' from (' + subrequest + ') as foo group by '
             for x in lgby: request = request + function["name"] + '(timestamp), ' if x == 'timestamp' else request + x + ', '
             request = request[:-2]
             hcache.execute(request)
-            hcache.execute("detach dbin")
             cache.collections[collection][pnode['id']] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
-        hcache.commit()
         hcache.disconnect()
 
     @trace_call
     def ibuildcolcachetypeB(s, node, cache=None, arrayinsert=100, collections=None, analyzers=None):
         nid = node['id']
-        hcache = Cache(cache.name)
+        hcache = Cache(cache.database, schema=cache.name)
 
-        def init(context, collection, description):
+        def init(collection, description):
             description['kairos_nodeid'] = 'text'
             request = 'create table ' + collection + '('
             l = sorted(description.keys())
             for k in l: request += k + ' ' + description[k] +  ', '
             request = request[:-2] + ')'
             hcache.execute(request)
-            context.patterninsert = 'insert into ' + collection + ' values('
-            for k in l: context.patterninsert += '?,'
-            context.patterninsert = context.patterninsert[:-1] + ')'
         
-        def action(context, buff):
+        def action(collection, buff):
             parameter = []
-            for e in buff: parameter.append(tuple([e[k] for k in sorted(e.keys())]))
-            hcache.executemany(context.patterninsert, parameter)
+            n = len(buff)
+            p = len(buff[0].keys())
+            for e in buff:
+                for k in sorted(e.keys()):
+                    parameter.append(None if e[k] == '' else e[k])
+            patterninsert = 'insert into ' + collection + ' values {}'.format(', '.join([''.join(['(',', '.join(['%s']*p),')'])] *n))
+            hcache.execute(patterninsert, parameter)
             
         buff = Buffer(init=init, size=arrayinsert, action=action)
         def listener(col, d, v, n):
@@ -1376,11 +1242,10 @@ class KairosWorker:
                 analyzer.analyze(archive.read(member), member)
                 curanalyzer = members[member]
         buff.close()
-        hcache.commit()
         hcache.disconnect()
         archive.close()
         for collection in collections:
-            cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+            cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')            
 
     @trace_call
     def ibuildcolcachetypeD(s, node, cache=None, collection=None, liveobject=None):
@@ -1393,7 +1258,6 @@ class KairosWorker:
         listf = ','.join(tabledesc.keys())
         request = "insert into " + collection + "(" + listf + ") select " + listf + " from virtual_" + collection
         lcache.execute(request)
-        lcache.commit()
         lcache.disconnect()
         cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
@@ -1421,8 +1285,8 @@ class KairosWorker:
     def ibuildcollectioncache(s, node, collections=None, arrayinsert=100, nodesdb=None, systemdb=None):
         nid = node['id']
         ntype = node['datasource']['type']
-        ncache = node['datasource']['cache']
-        if 'dbname' not in ncache: s.icreatecache(nid, nodesdb=nodesdb)
+        nodecache = node['datasource']['cache']
+        if 'name' not in nodecache: s.icreatecache(nid, nodesdb=nodesdb)
         cache = s.igetcache(nid, nodesdb=nodesdb)
         if '*' in collections: collections = {k for k in node['datasource']['collections']}
         (todo, mapproducers, analyzers) = s.icheckcollectioncache(node, cache=cache, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
@@ -1442,8 +1306,9 @@ class KairosWorker:
                     s.ibuildcolcachetypeD(node, cache=cache, collection=collection, liveobject=liveobject)
             if ntype in ['B']: s.ibuildcolcachetypeB(node, cache=cache, arrayinsert=arrayinsert, collections=tcollections, analyzers=analyzers)
             logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with collections info: '" + str(tcollections) + "' ...")
-            s.odbget(database=nodesdb)
-            s.odbrun("update caches set collections = '" + json.dumps(cache.collections) + "' where @rid = " + cache.rid)
+            ncache = Cache(nodesdb, objects=True)
+            ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' set c.collections = '" + json.dumps(cache.collections) + "'")
+            ncache.disconnect()
         return todo
     
     @trace_call
@@ -1451,7 +1316,6 @@ class KairosWorker:
         nid = node['id']
         qid = query['id']
         ntype = node['datasource']['type']
-        ncache = node['datasource']['cache']
         logging.info("Node: " + nid + ", Type: " + ntype + ", checking query cache: '" + qid + "' ...")
         cache = s.igetcache(nid, nodesdb=nodesdb)
         message = None
@@ -1467,7 +1331,7 @@ class KairosWorker:
                 for part in cache.collections[collection]:
                     todo = True if qid in cache.queries and cache.queries[qid] < cache.collections[collection][part] else todo
             if todo:
-                hcache = Cache(cache.name)
+                hcache = Cache(cache.database, schema=cache.name)
                 table = qid
                 logging.info("Node: " + nid + ", Type: " + ntype + ", removing old query cache: '" + qid + "' ...")
                 hcache.execute("drop table if exists " + table)
@@ -1475,10 +1339,10 @@ class KairosWorker:
                 if 'userfunctions' in query:
                     for ufn in query['userfunctions']:
                         uf = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + ufn + "', type:'function'}")[0]
-                        hcache.create_function(uf["name"], uf["numparameters"], uf["function"])
+                        hcache.execute(uf["function"])
                 global kairos
                 kairos['node'] = node
-                try: hcache.execute("create table " + table + " as select * from (" + query['request'] + ")")
+                try: hcache.execute("create table " + table + " as select * from (" + query['request'] + ") as foo")
                 except:
                     tb = sys.exc_info()
                     message = str(tb[1])
@@ -1486,8 +1350,9 @@ class KairosWorker:
                 cache.queries[qid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
                 hcache.disconnect()
                 logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with query info: '" + qid + "' ...")
-                s.odbget(database=nodesdb)
-                s.odbrun("update caches set queries = '" + json.dumps(cache.queries) + "' where @rid = " + cache.rid)
+                ncache = Cache(nodesdb, objects=True)
+                ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' set c.queries = '" + json.dumps(cache.queries) + "'")
+                ncache.disconnect()
             else:
                 logging.info("Node: " + nid + ", Type: " + ntype + ", nothing to do for query cache: '" + qid + "' ...")
             return message
@@ -1506,18 +1371,21 @@ class KairosWorker:
                 if ntype in ['L']: result = s.iqueryexecute(pnode, query=query, nodesdb=nodesdb, limit=limit)
                 else: result.append(s.iqueryexecute(pnode, query=query, nodesdb=nodesdb, limit=limit))
         else:
-            hcache = Cache(cache.name)
+            hcache = Cache(cache.database, schema=cache.name)
             table = qid
             if 'filterable' in query and query['filterable']:
-                for x in hcache.execute("select * from " + table + " where label in (select label from (select label, sum(value) weight from " + table + " group by label order by weight desc limit " + str(limit) + "))"):
+                for x in hcache.execute("select * from " + table + " where label in (select label from (select label, sum(value) weight from " + table + " group by label order by weight desc limit " + str(limit) + ") as foo)"):
                     result.append(x)
             else:
                 for x in hcache.execute("select * from " + table):
                     result.append(x)
+            hcache.disconnect()
         return result
   
     @trace_call
     def iexpand(s, pattern=None, sort=None, nodesdb=None, skip=0, take=1):
+        skip=int(skip)
+        take=int(take)
         d=dict()
         for i in pattern.split('|'):
             nodes = s.igetnodes(nodesdb=nodesdb, root=True)
@@ -1532,6 +1400,15 @@ class KairosWorker:
         result = [dict(path=k, id=d[k]) for k in sorted(d.keys())] if sort != 'desc' else [dict(path=k, id=d[k]) for k in sorted(d.keys(), reverse=True)]
         return result[skip:skip+take]
                 
+    @intercept_logging_and_internal_error
+    @trace_call
+    def getid(s, request):
+        params = parse_qs(request.query_string)
+        nodesdb = params['nodesdb'][0]
+        pattern = params['pattern'][0]
+        result = s.iexpand(pattern=pattern, nodesdb=nodesdb)
+        return web.json_response(dict(success=True, data=result))
+    
     @intercept_logging_and_internal_error
     @trace_call
     def checkserverconfig(s, request):
@@ -1582,15 +1459,10 @@ class KairosWorker:
             id = obj['id']
             filename = id.lower() + '.py'
             content = binascii.b2a_base64(source.encode())
-            agensstr = "host='localhost' user='agensgraph' dbname='" + database + "'"
-            agens = psycopg2.connect(agensstr)
-            cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-            cursor.execute("set graph_path = 'kairos'")
-            cursor.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
-            cursor.execute("create (:objects {id:'" + id + "', type:'" + typeobj + "', created: now(), filename:'" + filename + "', content:'" + content.decode() + "'})")
-            cursor.close()
-            agens.commit()
-            agens.close()
+            ncache = Cache(database, objects=True)
+            ncache.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
+            ncache.execute("create (:objects {id:'" + id + "', type:'" + typeobj + "', created: now(), filename:'" + filename + "', content:'" + content.decode() + "'})")
+            ncache.disconnect()
             return web.json_response(dict(success=True, data=dict(msg='Object: ' + id + ' of type: ' + typeobj + ' has been successfully saved!')))
         except:
             tb = sys.exc_info()
@@ -1605,16 +1477,12 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         user = params['user'][0]
         db = 'kairos_user_' + user
-        agensstr = "host='localhost' user='agensgraph' dbname='" + db + "'"
-        agens = psycopg2.connect(agensstr)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = 'kairos'")
-        cursor.execute("match (s:settings) return cast(s.top as int) as top, s.colors, cast(s.keycode as int) as keycode, s.logging, s.nodesdb, cast(s.loglines as int) as loglines, s.systemdb, s.template, s.wallpaper, cast(s.arrayinsert as int) as arrayinsert, s.plotorientation")
+        ncache = Cache(db, objects=True)
+        y = ncache.execute("match (s:settings) return cast(s.top as int) as top, s.colors, cast(s.keycode as int) as keycode, s.logging, s.nodesdb, cast(s.loglines as int) as loglines, s.systemdb, s.template, s.wallpaper, cast(s.arrayinsert as int) as arrayinsert, s.plotorientation")
         settings = dict()
-        for row in cursor.fetchall():
+        for row in y.fetchall():
             for x in row.keys(): settings[x] = row[x]
-        cursor.close()
-        agens.close()
+        ncache.disconnect()
         return web.json_response(dict(success=True, data=dict(settings=settings)))
 
     @intercept_logging_and_internal_error
@@ -1629,40 +1497,34 @@ class KairosWorker:
     @intercept_logging_and_internal_error
     @trace_call
     def listdatabases(s, request):
-        s.odbget(root=True)
+        ncache = Cache()
         params = parse_qs(request.query_string)
         user = params['user'][0]
         adminrights = True if params['admin'][0] == "true" else False
         data = []
-        for k in s.odb.db_list().oRecordData['databases'].keys():
-            s.odbget(database=k)
+        x = ncache.execute("select datname, pg_database_size(datname) as size from pg_database where datname like 'kairos_%'")
+        databases = {row['datname']:row['size'] for row in x.fetchall()}
+        x = ncache.execute("select groname from pg_group,pg_user where usesysid = any(grolist) and usename='" + user + "'")
+        groups = ['kairos_group_' + row['groname'] for row in x.fetchall()]
+        ncache.disconnect()
+        for k in databases:
             if adminrights:
-                logging.debug("Getting size of " + k + " database...")
-                data.append(dict(name=k, size=s.odb.db_size() * 1.0 / 1024))
+                data.append(dict(name=k, size=databases[k] * 1.0 / 1024 / 1024))
             else:
                 if k == 'kairos_user_' + user:
-                    logging.debug("Getting size of " + k + " database...")
-                    data.append(dict(name=k, size=s.odb.db_size() * 1.0 / 1024))
+                    data.append(dict(name=k, size=databases[k] * 1.0 / 1024 / 1024))
                 if 'kairos_group_' in k:
-                    s.odbget(database=k)
-                    tabx = s.odbquery("select name from ouser where name <> '" + s.name + "'")
-                    users = [rx.oRecordData['name'] for rx in tabx]
-                    if user in users:
-                        logging.debug("Getting size of " + k + " database...")
-                        data.append(dict(name=k, size=s.odb.db_size() * 1.0 / 1024))
+                    if k in groups:
+                        data.append(dict(name=k, size=databases[k] * 1.0 / 1024 / 1024))
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
     @trace_call
     def listsystemdb(s, request):
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("select datname from pg_database")
-        databases = [row['datname'] for row in cursor.fetchall()]
-        cursor.close()
-        agens.close()
+        ncache = Cache()
+        x = ncache.execute("select datname from pg_database")
+        databases = [row['datname'] for row in x.fetchall()]
+        ncache.disconnect()
         data = []
         for k in databases:
             if 'kairos_system_' in k: data.append(dict(name=k))
@@ -1673,16 +1535,12 @@ class KairosWorker:
     def listnodesdb(s, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("select datname from pg_database")
-        databases = [row['datname'] for row in cursor.fetchall()]
-        cursor.execute("select groname from pg_group,pg_user where usesysid = any(grolist) and usename='" + user + "'")
-        groupdb = ['kairos_group_' + row['groname'] for row in cursor.fetchall()]
-        cursor.close()
-        agens.close()
+        ncache = Cache()
+        x = ncache.execute("select datname from pg_database")
+        databases = [row['datname'] for row in x.fetchall()]
+        x = ncache.execute("select groname from pg_group,pg_user where usesysid = any(grolist) and usename='" + user + "'")
+        groupdb = ['kairos_group_' + row['groname'] for row in x.fetchall()]
+        ncache.disconnect()
         data = []
         for k in databases:
             if k == 'kairos_user_' + user: data.append(dict(name=k))
@@ -1750,16 +1608,12 @@ class KairosWorker:
         database = params['database'][0]
         objtype = params['type'][0]
         objid = params['id'][0]
-        agensstr = "host='localhost' user='agensgraph' dbname='" + database + "'"
-        agens = psycopg2.connect(agensstr)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = 'kairos'")
-        cursor.execute("match (o:objects {id:'" + objid + "', type:'" + objtype + "'}) return o.content")
+        ncache = Cache(database, objects=True)
+        y = ncache.execute("match (o:objects {id:'" + objid + "', type:'" + objtype + "'}) return o.content")
         result = dict()
-        for row in cursor.fetchall():
+        for row in y.fetchall():
             for x in row.keys(): result[x] = row[x]
-        cursor.close()
-        agens.close()
+        ncache.disconnect()
         source = binascii.a2b_base64(result['content'])
         return web.json_response(dict(success=True, data=source.decode()))
 
@@ -1780,13 +1634,10 @@ class KairosWorker:
         plotorientation = params['plotorientation'][0]
         logging = params['logging'][0]
         db = "kairos_user_" + user
-        agensstr = "host='localhost' user='agensgraph' dbname='" + db + "'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = 'kairos'")
-        cursor.execute("match (s:settings) detach delete (s)")
-        cursor.execute("create (:settings {colors:'" + colors + "', keycode:" + keycode + ", logging:'" + logging + "', loglines:" + loglines + ", arrayinsert:" + arrayinsert + ", nodesdb:'" + nodesdb + "', plotorientation:'" + plotorientation + "', systemdb:'" + systemdb + "', template:'" + template + "', top:" + top + ", wallpaper:'" + wallpaper + "'})")
+        ncache = Cache(db, objects=True)       
+        ncache.execute("match (s:settings) detach delete (s)")
+        ncache.execute("create (:settings {colors:'" + colors + "', keycode:" + keycode + ", logging:'" + logging + "', loglines:" + loglines + ", arrayinsert:" + arrayinsert + ", nodesdb:'" + nodesdb + "', plotorientation:'" + plotorientation + "', systemdb:'" + systemdb + "', template:'" + template + "', top:" + top + ", wallpaper:'" + wallpaper + "'})")
+        ncache.disconnect()
         return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
@@ -1817,15 +1668,10 @@ class KairosWorker:
             typeobj = obj['type']
             id = obj['id']
         content = binascii.b2a_base64(content)
-        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
-        agens = psycopg2.connect(agensstr)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = 'kairos'")
-        cursor.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
-        cursor.execute("create (:objects {id:'" + id + "', type:'" + typeobj + "', created: now(), filename:'" + filename + "', content:'" + content.decode() + "'})")
-        cursor.close()
-        agens.commit()
-        agens.close()
+        ncache = Cache(nodesdb, objects=True)
+        ncache.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
+        ncache.execute("create (:objects {id:'" + id + "', type:'" + typeobj + "', created: now(), filename:'" + filename + "', content:'" + content.decode() + "'})")
+        ncache.disconnect()
         return web.json_response(dict(success=True, state=True, name=filename))
 
     @intercept_logging_and_internal_error
@@ -1841,39 +1687,30 @@ class KairosWorker:
         nodesdb = multipart['nodesdb'] if 'nodesdb' in multipart else params['nodesdb'][0]
         systemdb = multipart['systemdb'] if 'systemdb' in multipart else params['systemdb'][0]
         id = multipart['id'] if 'id' in multipart else params['id'][0] if 'id' in params else None
-        logging.debug(id)
-
         filename = urllib.parse.unquote(upload.filename)
         node = s.igetnodes(nodesdb=nodesdb, root=True)[0] if id == None else s.igetnodes(nodesdb=nodesdb, id=id)[0]
         (base, ext) = os.path.splitext(filename)
         while ext != '': (base, ext) = os.path.splitext(base)
         nodes = base.split('_')
         for d in nodes:
-            logging.debug(d)
             lnode = s.igetnodes(nodesdb=nodesdb, parent=node['id'], name=d)
             if len(lnode) == 0:
-                child = s.icreatenode(nodesdb, id=node['id'])
-                # s.odbget(database=nodesdb)
-                # s.odbrun("update nodes set name ='" + d + "' where @rid = " + child )
+                child = s.icreatenode(nodesdb, id=node['id'], name=d)
                 node = s.igetnodes(nodesdb=nodesdb, id=child)[0]
             else:
                 node = lnode[0]
         id = node['id']
         s.ideletesource(id, nodesdb=nodesdb)
-        # s.icreatesource(id, nodesdb=nodesdb, systemdb=systemdb, stream=upload.file, filename=filename)
+        s.icreatesource(id, nodesdb=nodesdb, systemdb=systemdb, stream=upload.file)
         return web.json_response(dict(success=True, state=True, name=filename))
 
     @intercept_logging_and_internal_error
     @trace_call
     def listroles(s, request):
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("select datname from pg_database")
-        databases = [row['datname'] for row in cursor.fetchall()]
-        cursor.close()
-        agens.close()
+        ncache = Cache()
+        x = ncache.execute("select datname from pg_database")
+        databases = [row['datname'] for row in x.fetchall()]
+        ncache.disconnect()
         data = []
         for k in databases:
             if 'kairos_group_' in k:
@@ -1884,14 +1721,10 @@ class KairosWorker:
     @intercept_logging_and_internal_error
     @trace_call
     def listusers(s, request):
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("select datname from pg_database")
-        databases = [row['datname'] for row in cursor.fetchall()]
-        cursor.close()
-        agens.close()
+        ncache = Cache()
+        x = ncache.execute("select datname from pg_database")
+        databases = [row['datname'] for row in x.fetchall()]
+        ncache.disconnect()
         data = []
         for k in databases:
             if 'kairos_user_' in k:
@@ -1902,16 +1735,12 @@ class KairosWorker:
     @intercept_logging_and_internal_error
     @trace_call
     def listgrants(s, request):
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("select groname,usename from pg_group,pg_user where usesysid = any(grolist)")
+        ncache = Cache()
+        x = ncache.execute("select groname,usename from pg_group,pg_user where usesysid = any(grolist)")
         data = []
-        for row in cursor.fetchall():
+        for row in x.fetchall():
             data.append(dict(_id=row['usename'] + ':' + row['groname'], user=row['usename'], role=row['groname']))
-        cursor.close()
-        agens.close()
+        ncache.disconnect()
         return web.json_response(dict(success=True, data=data))
 
     @intercept_logging_and_internal_error
@@ -1984,18 +1813,13 @@ class KairosWorker:
         try: 
             agens = psycopg2.connect(agensstr)
             agens.close()
-            logging.debug('Old password is valid.')
         except:
             message = "Invalid password!"
             logging.warning(message)
             return web.json_response(dict(success=False, message=message))
-        agensstr = "host='localhost' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("alter user " + user + " password '" + new + "'")
-        cursor.close()
-        agens.close()
+        ncache = Cache()
+        ncache.execute("alter user " + user + " password '" + new + "'")
+        ncache.disconnect()
         return web.json_response(dict(success=True, data=dict(msg='Password has been successfully updated!')))
 
     @intercept_logging_and_internal_error
@@ -2008,14 +1832,9 @@ class KairosWorker:
             return web.json_response(dict(success=False, status='error', message=message))
         id = params['id'][0]
         typeobj = params['type'][0]
-        agensstr = "host='localhost' dbname='" + database + "' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = kairos")
-        cursor.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
-        cursor.close()
-        agens.close()
+        ncache = Cache(database, objects=True)
+        ncache.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
+        ncache.disconnect()
         return web.json_response(dict(success=True, data=dict(msg=id + ' ' + typeobj + ' object has been successfully removed!')))
 
     @intercept_logging_and_internal_error
@@ -2025,16 +1844,12 @@ class KairosWorker:
         database = params['database'][0]
         id = params['id'][0]
         typeobj = params['type'][0]
-        agensstr = "host='localhost' dbname='" + database + "' user='agensgraph'"
-        agens = psycopg2.connect(agensstr)
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = kairos")
-        cursor.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) return o.filename, o.content")
+        ncache = Cache(database, objects=True)
+        y = ncache.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) return o.filename, o.content")
         result = dict()
-        for row in cursor.fetchall():
+        for row in y.fetchall():
             for x in row.keys(): result[x] = row[x]
-        cursor.close()
-        agens.close()
+        ncache.disconnect()
         stream = binascii.a2b_base64(result['content'])
         return web.Response(headers=MultiDict({'Content-Disposition': 'Attachment;filename="' + result['filename'] + '"'}), body=stream)
 
@@ -2056,13 +1871,11 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0]
-        s.odbget(database=nodesdb)
         node = s.igetnodes(nodesdb=nodesdb, id=id)[0]
         list = []
-        tabx = s.odbquery("select @rid, type from (traverse out('node_has_children') from " + id + ")", -1)
-        for rx in tabx:
-            rid = str(rx.oRecordData['rid'])
-            if rx.oRecordData['type'] == 'B': list.append(rid)
+        ncache = Cache(nodesdb, objects=True)
+        x = ncache.execute("match (n:nodes)-[:node_has_children]->(c:nodes {type: to_json('B')}) where id(n) = '" + id + "' return id(c) as rid")
+        list = [row['rid'] for row in x.fetchall()]
         return web.json_response(dict(success=True, data=list))
 
     @intercept_logging_and_internal_error
@@ -2172,22 +1985,16 @@ class KairosWorker:
         if node['datasource']['type'] == 'T':
             message = 'A trash cannot be renamed!'
             return web.json_response(dict(success=False, status='error', message=message))
-        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = 'kairos'")
-        cursor.execute("match (p:nodes)-[:node_has_children]->(n:nodes) where id(n) = '" + id + "' return id(p) as pid")
-        parent=[row['pid'] for row in cursor.fetchall()][0]
+        ncache = Cache(nodesdb, objects=True)
+        x = ncache.execute("match (p:nodes)-[:node_has_children]->(n:nodes) where id(n) = '" + id + "' return id(p) as pid")
+        parent=[row['pid'] for row in x.fetchall()][0]
         x = s.igetnodes(nodesdb=nodesdb, parent=parent, name=new)
         if len(x):
             message = new + " name already exists for parent: " + x[0]['name']
-            cursor.close()
-            agens.close()
+            ncache.disconnect()
             return web.json_response(dict(success=False, status='error', message=message))
-        cursor.execute("match (n:nodes) where id(n) = '" + id + "' set n.name = '" + json.dumps(new) + "'")
-        cursor.close()
-        agens.close()
+        ncache.execute("match (n:nodes) where id(n) = '" + id + "' set n.name=to_json('" + new + "'::text)")
+        ncache.disconnect()
         node = s.igetnodes(nodesdb=nodesdb, id=id)[0]
         return web.json_response(dict(success=True, data=node))
 
@@ -2208,19 +2015,14 @@ class KairosWorker:
         nodesdb = params['nodesdb'][0]
         root = s.igetnodes(nodesdb=nodesdb, root=True)[0]
         trash = s.igetnodes(nodesdb=nodesdb, parent=root['id'], name='Trash')[0]
-        agensstr = "host='localhost' user='agensgraph' dbname='" + nodesdb + "'"
-        agens = psycopg2.connect(agensstr)
-        agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)       
-        cursor = agens.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("set graph_path = 'kairos'")
-        cursor.execute("match (t:nodes)-[:node_has_children*]->(d:nodes) where id(t) = '" + trash['id'] + "' return id(d) as rid")
-        listnodes = [row['rid'] for row in cursor.fetchall()]
+        ncache = Cache(nodesdb, objects=True)
+        x = ncache.execute("match (t:nodes)-[:node_has_children*]->(d:nodes) where id(t) = '" + trash['id'] + "' return id(d) as rid")
+        listnodes = [row['rid'] for row in x.fetchall()]
         for rid in listnodes:
             s.ideletesource(rid, nodesdb=nodesdb)
             s.ideletecache(rid, nodesdb=nodesdb)
-            cursor.execute("match (n:nodes) where id(n) = '" + rid + "' detach delete n") 
-        cursor.close()
-        agens.close()
+            ncache.execute("match (n:nodes) where id(n) = '" + rid + "' detach delete n") 
+        ncache.disconnect()
         return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
@@ -2236,13 +2038,13 @@ class KairosWorker:
             message = 'A trash cannot be moved!'
             return web.json_response(dict(success=False, status='error', message=message))
         tonode = s.igetnodes(nodesdb=targetdb, id=pto)[0]
-        s.odbget(database=targetdb)
-        s.odbrun("delete edge node_has_children to " + pfrom )
-        s.odbrun("create edge node_has_children from " + pto + " to " + pfrom)
-        tabx = s.odbquery("select @rid from (traverse out('node_has_children') from " + pfrom + ")", -1)
-        for rx in tabx:
-            rid = str(rx.oRecordData['rid'])
-            s.odbrun("update nodes set status='" + tonode['status'] +"' where @rid = " + rid)
+        ncache = Cache(targetdb, objects=True)
+        ncache.execute("match (a:nodes)-[r:node_has_children]->(f:nodes) where id(f) = '" + pfrom + "' detach delete r") 
+        ncache.execute("match (t:nodes), (f:nodes) where id(f) = '" + pfrom + "' and id(t) = '" + pto + "' create ((t)-[:node_has_children]->(f))")
+        x = ncache.execute("match (n:nodes) where id(n) = '" + pto+ "' return n.status as status")
+        status = [row['status'] for row in x.fetchall()][0]
+        ncache.execute("match (t:nodes)-[:node_has_children*]->(d:nodes) where id(t) = '" + pfrom + "' set d.status=to_json('" + status + "'::text)")
+        ncache.disconnect()
         node = s.igetnodes(nodesdb=targetdb, id=pfrom)[0]
         return web.json_response(dict(success=True, data=node))
 
@@ -2442,8 +2244,9 @@ class KairosWorker:
             return web.json_response(dict(success=False, status='error', message=message))
         producers = tnode['datasource']['producers']
         producers.append(dict(path=s.igetpath(nodesdb=origindb, id=fromid), id=fromid))
-        s.odbget(database=targetdb)
-        s.odbrun("update nodes set type='C', icon='C', producers = '" + json.dumps(producers) + "' where @rid = " + toid)
+        ncache = Cache(targetdb, objects=True)
+        ncache.execute("match (n:nodes) where id(n) = '" + toid+ "' set n.type=to_json('C'::text), n.icon=to_json('C'::text), n.producers = '" + json.dumps(producers) + "'")
+        ncache.disconnect()
         tnode = s.igetnodes(nodesdb=targetdb, id=toid, getsource=True)[0]
         return web.json_response(dict(success=True, data=tnode))
     
@@ -2465,11 +2268,12 @@ class KairosWorker:
             return web.json_response(dict(success=False, status='error', message=message))
         producers = tnode['datasource']['producers']
         producers.append(dict(path=s.igetpath(nodesdb=origindb, id=fromid), id=fromid))
-        s.odbget(database=targetdb)
+        ncache = Cache(targetdb, objects=True)
         if 'aggregatorselector' not in tnode['datasource']:
-            s.odbrun("update nodes set type='A', icon='A', aggregated=sysdate(), aggregatorselector='" + s.igetpath(nodesdb=origindb, id=fromid) + "$', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none', producers = '" + json.dumps(producers) + "' where @rid = " + toid)
+            ncache.execute("match (n:nodes) where id(n) = '" + toid+ "' set n.type=to_json('A'::text), n.icon=to_json('A'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + s.igetpath(nodesdb=origindb, id=fromid) + '$' + "'::text), n.aggregatortake=to_json(1), n.aggregatortimefilter=to_json('.'::text), n.aggregatorskip=to_json(0), n.aggregatorsort=to_json('desc'::text), n.aggregatormethod=to_json('$none'::text)")
         else:
-            s.odbrun("update nodes set aggregated=sysdate(), aggregatorselector='" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + "$', aggregatortake=" +  str(tnode['datasource']['aggregatortake'] +  1) + ", producers = '" + json.dumps(producers) + "' where @rid = " + toid)
+            ncache.execute("match (n:nodes) where id(n) = '" + toid+ "' set n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + '$' + "'::text), n.aggregatortake=to_json(" + str(tnode['datasource']['aggregatortake'] +  1) + "")            
+        ncache.disconnect()
         tnode = s.igetnodes(nodesdb=targetdb, id=toid, getsource=True)[0]
         return web.json_response(dict(success=True, data=tnode))
     
@@ -2492,13 +2296,15 @@ class KairosWorker:
                 s.ideletecache(id, nodesdb=nodesdb)
         if node['datasource']['type'] in ['A', 'N']:  
             producers = s.iexpand(pattern=aggregatorselector, nodesdb=nodesdb, sort=aggregatorsort, take=aggregatortake, skip=aggregatorskip)
-            s.odbget(database=nodesdb)
-            s.odbrun("update nodes set type='A', icon='A', aggregated=sysdate(), aggregatorselector='" + aggregatorselector + "', aggregatortake=" + str(aggregatortake) + ", aggregatortimefilter='" + aggregatortimefilter + "', aggregatorskip=" + str(aggregatorskip) + ", aggregatorsort='" + aggregatorsort + "', aggregatormethod='" + aggregatormethod + "', producers = '" + json.dumps(producers) + "' where @rid = " + id)
+            ncache = Cache(nodesdb, objects=True)
+            ncache.execute("match (n:nodes) where id(n) = '" + id+ "' set n.type=to_json('A'::text), n.icon=to_json('A'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'::text), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'::text), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'::text), n.aggregatormethod=to_json('" + aggregatormethod + "'::text)")
+            ncache.disconnect()
         if node['datasource']['type'] in ['L']:
             cproducers = dict()
             producers = s.iexpand(pattern=aggregatorselector, nodesdb=nodesdb, sort=aggregatorsort, take=aggregatortake, skip=aggregatorskip)
-            s.odbget(database=nodesdb)
-            s.odbrun("update nodes set aggregated=sysdate(), aggregatorselector='" + aggregatorselector + "', aggregatortake=" + str(aggregatortake) + ", aggregatortimefilter='" + aggregatortimefilter + "', aggregatorskip=" + str(aggregatorskip) + ", aggregatorsort='" + aggregatorsort + "', aggregatormethod='" + aggregatormethod + "', producers = '" + json.dumps(producers) + "' where @rid = " + id)
+            ncache = Cache(nodesdb, objects=True)
+            ncache.execute("match (n:nodes) where id(n) = '" + id+ "' set n.type=to_json('A'::text), n.icon=to_json('A'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'::text), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'::text), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'::text), n.aggregatormethod=to_json('" + aggregatormethod + "'::text)")
+            ncache.disconnect()
             for p in producers:
                 pchilds = s.igetnodes(nodesdb=nodesdb, parent=p['id'])
                 for child in pchilds:
@@ -2525,8 +2331,9 @@ class KairosWorker:
                         s.ideletecache(c['id'], nodesdb=nodesdb)
                 tpath = [x['path'] for x in cproducers[c['name']]]
                 aggregatorselector = '|'.join(tpath)
-                s.odbget(database=nodesdb)
-                s.odbrun("update nodes set type='A', icon='A', aggregated=sysdate(), aggregatorselector='" + aggregatorselector + "', aggregatormethod='" + aggregatormethod + "', aggregatortake=" +  str(aggregatortake) + ", aggregatorskip=" + str(aggregatorskip) + ", aggregatorsort='" + aggregatorsort + "', aggregatortimefilter='" + aggregatortimefilter + "', producers = '" + json.dumps(cproducers[c['name']]) + "' where @rid = " + c['id'])
+                ncache = Cache(nodesdb, objects=True)
+                ncache.execute("match (n:nodes) where id(n) = '" + id+ "' set n.type=to_json('A'::text), n.icon=to_json('A'::text), n.producers='" + json.dumps(cproducers[c['name']]) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'::text), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'::text), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'::text), n.aggregatormethod=to_json('" + aggregatormethod + "'::text)")
+                ncache.disconnect()
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True)[0]
         return web.json_response(dict(success=True, data=node))
      
@@ -2547,7 +2354,7 @@ class KairosWorker:
         cut = 10000
         done = s.ibuildcollectioncache(node, collections={'*'}, arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]        
-        hcache = Cache(node['datasource']['cache']['dbname'])
+        hcache = Cache(node['datasource']['cache']['database'], schema=node['datasource']['cache']['name'])
         for collection in node['datasource']['collections']:
             logging.info("Unloading collection: " + collection + " ...")
             d = dict(collection=collection, desc=dict(), data=[])
@@ -2600,11 +2407,12 @@ class KairosWorker:
             message = fpath + ': this node is already included in the list of producers!'
             return web.json_response(dict(success=False, status='error', message=message))   
         producers.append(dict(path=s.igetpath(nodesdb=origindb, id=fromid), id=fromid))
-        s.odbget(database=targetdb)
+        ncache = Cache(targetdb, objects=True)
         if 'aggregatorselector' not in tnode['datasource']:
-            s.odbrun("update nodes set type='L', icon='L', aggregated=sysdate(), aggregatorselector='" + s.igetpath(nodesdb=origindb, id=fromid) + "', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none', producers = '" + json.dumps(producers) + "' where @rid = " + toid)
+            ncache.execute("match (n:nodes) where id(n) = '" + toid + "' set n.type=to_json('L'::text), n.icon=to_json('L'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + s.igetpath(nodesdb=origindb, id=fromid) + "'::text), n.aggregatortake=to_json(1), n.aggregatortimefilter=to_json('.'::text), n.aggregatorskip=to_json(0), n.aggregatorsort=to_json('desc'::text), n.aggregatormethod=to_json('$none'::text)")
         else:
-            s.odbrun("update nodes set type='L', icon='L', aggregated=sysdate(), aggregatorselector='" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + "', aggregatortake=" +  str(tnode['datasource']['aggregatortake'] +  1) + ", producers = '" + json.dumps(producers) + "' where @rid = " + toid)
+            ncache.execute("match (n:nodes) where id(n) = '" + toid + "' set n.type=to_json('L'::text), n.icon=to_json('L'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + "'::text), n.aggregatortake=to_json(" + str(tnode['datasource']['aggregatortake'] +  1) + ")")
+        ncache.disconnect()
         tnode = s.igetnodes(nodesdb=targetdb, id=toid, getsource=True)[0]
         return web.json_response(dict(success=True, data=tnode))
 
@@ -2624,8 +2432,9 @@ class KairosWorker:
         s.icreatecache(id, nodesdb=nodesdb)
         cache = s.igetcache(id, nodesdb=nodesdb)
         (message, collections) = s.iapplyliveobject(id, livecache=cache.name, liveobject=liveobject)
-        s.odbget(database=nodesdb)
-        s.odbrun("update nodes set type='D', icon='D', aggregated=sysdate(), liveobject='" + loname + "' where @rid = " + id)
+        ncache = Cache(nodesdb, objects=True)
+        ncache.execute("match (n:nodes) where id(n) = '" + id+ "' set n.type=to_json('D'::text), n.icon=to_json('D'::text), n.aggregated=to_json(now()), n.liveobject=to_json('" + loname + "'::text)")
+        ncache.disconnect()
         node = s.igetnodes(nodesdb=nodesdb, id=id)[0]
         if message: return web.json_response(dict(success=False, message=message))
         else: return web.json_response(dict(success=True, data=node))

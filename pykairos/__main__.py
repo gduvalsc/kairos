@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
-import argparse, pykairos, logging, os, multiprocessing, signal, subprocess, time
+import argparse, pykairos, logging, os, multiprocessing, signal, subprocess, time, json
 from glob import glob
 
 def catchrun(*c):
@@ -67,13 +67,14 @@ if args.launcher:
     os.system('rm -fr /var/log/gunicorn.pid')
     catchrun(gunicorn, notifier)
 if args.bootstrap:
+    subprocess.run(['chown', 'agensgraph:agensgraph', '/home/agensgraph/data'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     print('A', end='', flush=True)
     logging.info("Trying to startup AgensGraph server ...")
     ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'ag_ctl start'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if  ag.returncode:
         logging.info("Trying to init AgensGraph server ...")
         print('i', end='', flush=True)
-        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'initdb; echo "local all agensgraph trust" > $PGDATA/pg_hba.conf;echo "host all agensgraph all trust" >> $PGDATA/pg_hba.conf;echo "host all all all md5" >> $PGDATA/pg_hba.conf  '], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        ag = subprocess.run(['su', '-', 'agensgraph', '-c', "initdb -E 'UTF8'; echo 'local all agensgraph trust' > /home/agensgraph/data/pg_hba.conf;echo 'host all agensgraph all trust' >> /home/agensgraph/data/pg_hba.conf;echo 'host all all all md5' >> /home/agensgraph/data/pg_hba.conf"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if ag.returncode:
             logging.error("Fatal error when trying to init AgensGraph!")
             exit(1)
@@ -88,7 +89,7 @@ if args.bootstrap:
                 logging.info("Trying to create agensgraph database ...")
                 while True:
                     print('c', end='', flush=True)
-                    ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'createdb'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    ag = subprocess.run(['su', '-', 'agensgraph', '-c', "createdb -E 'UTF8'"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     if not ag.returncode: break
                     time.sleep(1)
     while True:
@@ -113,9 +114,8 @@ if args.bootstrap:
         if not crs.returncode: break
     logging.info("System database created!")
     print('L', end='', flush=True)
-    obj = subprocess.run(['kairos', '-s', 'listobjects', '--nodesdb', 'kairos_system_system', '--systemdb', 'kairos_system_system'], stdout=subprocess.PIPE)
-    lines = obj.stdout.decode().split('\n')
-    if len(lines) - 1 == 0:
+    data = json.loads(subprocess.getoutput('kairos -s listobjects --nodesdb kairos_system_system --systemdb kairos_system_system'))['data']
+    if len(data) == 0:
         logging.info("Loading system database...")
         objects = []
         objects.extend(glob('/tmp/objects/*/*.py'))
@@ -123,18 +123,22 @@ if args.bootstrap:
         for o in objects:
             print('l', end='', flush=True)
             logging.info('Loading ' + o + " ...")
-            p = subprocess.run(['kairos', '-s', 'uploadobject', '--nodesdb', 'kairos_system_system', '--file', o])
-            if p.returncode: logging.error('Error during loading of: ' + o)
+            try: 
+                success = json.loads(subprocess.getoutput("kairos -s uploadobject --nodesdb kairos_system_system --file '" + o + "'"))['success']
+                if not success: logging.error('Error during loading of: ' + o)
+            except:
+                logging.error('Error during loading of: ' + o)
+                subprocess.run(['cat', '/var/log/kairos/kairos.log'])
+                raise
         print('', flush=True)
         logging.info(str(len(objects)) + ' found objects in /tmp/objects!')
-        obj = subprocess.run(['kairos', '-s', 'listobjects', '--nodesdb', 'kairos_system_system', '--systemdb', 'kairos_system_system'], stdout=subprocess.PIPE)
-        lines = obj.stdout.decode().split('\n')
-        logging.info("System database has " + str(int((len(lines) - 1) / 2)) + " objects.")
-        try:
-            assert len(objects) == int((len(lines) - 1) / 2)
-        except:
-             subprocess.run(['cat', '/var/log/kairos/kairos.log'])
-             subprocess.run(['cat', '/var/log/kairos/webserver.log'])
-             raise
+        data = json.loads(subprocess.getoutput('kairos -s listobjects --nodesdb kairos_system_system --systemdb kairos_system_system'))['data']
+        logging.info("System database has " + str(int((len(data)) / 2)) + " objects.")
+#        try:
+#            assert len(objects) == int((len(lines) - 1) / 2)
+#        except:
+#             subprocess.run(['cat', '/var/log/kairos/kairos.log'])
+#             subprocess.run(['cat', '/var/log/kairos/webserver.log'])
+#             raise
         subprocess.run(['rm', '-fr', '/tmp/objects'])
     catchrun(['bash'])

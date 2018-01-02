@@ -18,7 +18,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'User I/O wait time'",
+                                    "projection": "'User I/O wait time'::text",
                                     "collections": [
                                         "DBORASVW"
                                     ],
@@ -28,7 +28,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASVW",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "service = '%(DBORASV)s'",
                                             "value": "uiowaitt"
                                         }
@@ -36,7 +36,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Administrative wait time'",
+                                    "projection": "'Administrative wait time'::text",
                                     "collections": [
                                         "DBORASVW"
                                     ],
@@ -46,7 +46,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASVW",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "service = '%(DBORASV)s'",
                                             "value": "admwaitt"
                                         }
@@ -54,7 +54,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Concurrency wait time'",
+                                    "projection": "'Concurrency wait time'::text",
                                     "collections": [
                                         "DBORASVW"
                                     ],
@@ -64,7 +64,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASVW",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "service = '%(DBORASV)s'",
                                             "value": "conwaitt"
                                         }
@@ -72,7 +72,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Network wait time'",
+                                    "projection": "'Network wait time'::text",
                                     "collections": [
                                         "DBORASVW"
                                     ],
@@ -82,7 +82,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASVW",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "service = '%(DBORASV)s'",
                                             "value": "netwaitt"
                                         }
@@ -95,7 +95,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'DB Wait time'",
+                                    "projection": "'DB Wait time'::text",
                                     "collections": [
                                         "DBORASRV"
                                     ],
@@ -105,7 +105,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASRV",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "service = '%(DBORASV)s'",
                                             "value": "dbtime - cpu"
                                         }

@@ -35,7 +35,7 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select h.timestamp timestamp, force_matching_signature, loads_delta * 1.0 / m.elapsed value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp)",
+                                            "table": "(select h.timestamp as timestamp, force_matching_signature, coalesce(loads_delta,0)::real * 1.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp) as foo",
                                             "projection": "force_matching_signature",
                                             "restriction": "",
                                             "value": "value"
@@ -49,7 +49,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Captured FMSs'",
+                                    "projection": "'Captured FMSs'::text",
                                     "collections": [
                                         "ORAHQS",
                                         "DBORAMISC"
@@ -61,8 +61,8 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select h.timestamp timestamp, force_matching_signature, loads_delta * 1.0 / m.elapsed value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp)",
-                                            "projection": "'xxx'",
+                                            "table": "(select h.timestamp as timestamp, force_matching_signature, coalesce(loads_delta,0)::real * 1.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp) as foo",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

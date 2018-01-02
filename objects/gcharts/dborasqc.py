@@ -60,7 +60,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASQC",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "",
                                             "value": "cpu"
                                         }

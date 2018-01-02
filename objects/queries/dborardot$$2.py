@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORAWEV"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, event label, 1000.0 * time / count value from DBORAWEV where event='log file sync') group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, event as label, 1000.0 * time / count as value from DBORAWEV where event='log file sync') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

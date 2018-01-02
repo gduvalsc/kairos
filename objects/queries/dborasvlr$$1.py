@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORASRV"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, service label, 1024.0 * gets value from DBORASRV) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, service as label, 1024.0 * gets as value from DBORASRV) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

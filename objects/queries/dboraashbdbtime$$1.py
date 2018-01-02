@@ -9,7 +9,7 @@ class UserObject(dict):
             "userfunctions": [
                 "ashcoeff"
             ],
-            "request": "select timestamp, 'on cpu' label, sum(value) value from (select timestamp, 'xxx' label, kairos_count * 1.0 /ashcoeff() value from ORAHAS where session_type = 'BACKGROUND' and session_state = 'ON CPU') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'on cpu'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, kairos_count * 1.0 /ashcoeff() as value from ORAHAS where session_type = 'BACKGROUND' and session_state = 'ON CPU') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

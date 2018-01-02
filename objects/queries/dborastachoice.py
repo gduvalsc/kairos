@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "DBORASTACHOICE",
             "collections": ["DBORASTA"],
-            "request": "select distinct statistic label from DBORASTA order by label"
+            "request": "select distinct statistic as label from DBORASTA order by label"
         }
         super(UserObject, s).__init__(**object)

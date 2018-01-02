@@ -52,9 +52,9 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EXATOPCLLOSIO",
-                                            "projection": "'Hard disk maximum capacity for cell'",
+                                            "projection": "'Hard disk maximum capacity for cell'::text",
                                             "restriction": "",
-                                            "value": "2004.0"
+                                            "value": "2004.0::real"
                                         }
                                     ]
                                 }

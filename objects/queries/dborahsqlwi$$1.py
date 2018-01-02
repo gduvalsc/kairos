@@ -8,7 +8,7 @@ class UserObject(dict):
                 "DBORAMISC"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, sql_id label, value value from (select h.timestamp timestamp, sql_id, iowait_delta / 1000000.0 / m.elapsed value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp)) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, sql_id as label, value as value from (select h.timestamp as timestamp, sql_id, coalesce(iowait_delta,0)::real / 1000000.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp) as foo) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

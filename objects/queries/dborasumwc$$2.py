@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORATMS"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'DB CPU' label, sum(value) value from (select timestamp, statistic label, time value from DBORATMS where statistic='DB CPU') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'DB CPU' as label , sum(value) as value from (select timestamp, statistic as label, time as value from DBORATMS where statistic='DB CPU') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "DBORAHPHVCHOICE",
             "collections": ["ORAHQS"],
-            "request": "select distinct plan_hash_value label from ORAHQS order by label"
+            "request": "select distinct plan_hash_value as label from ORAHQS order by label"
         }
         super(UserObject, s).__init__(**object)

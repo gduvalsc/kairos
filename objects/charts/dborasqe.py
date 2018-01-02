@@ -37,15 +37,13 @@ class UserObject(dict):
                                     "query": "DBORASQE$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value",
-                                    "info": {}
+                                    "value": "value"
                                 },
                                 {
                                     "query": "DBORASQE$$3",
                                     "timestamp": "timestamp",
                                     "label": "label",
-                                    "value": "value",
-                                    "info": {}
+                                    "value": "value"
                                 }
                             ]
                         }

@@ -26,7 +26,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "avg",
-                                    "projection": "'average time (ms)'",
+                                    "projection": "'average time (ms)'::text",
                                     "collections": [
                                         "DBORAFIL"
                                     ],
@@ -38,7 +38,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAFIL",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "file='%(DBORAFIL)s'",
                                             "value": "readtime"
                                         }
@@ -67,7 +67,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'number of reads per sec'",
+                                    "projection": "'number of reads per sec'::text",
                                     "collections": [
                                         "DBORAFIL"
                                     ],
@@ -79,7 +79,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAFIL",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "file='%(DBORAFIL)s'",
                                             "value": "reads"
                                         }
@@ -101,7 +101,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'database blocks per read'",
+                                    "projection": "'database blocks per read'::text",
                                     "collections": [
                                         "DBORAFIL"
                                     ],
@@ -113,7 +113,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAFIL",
-                                            "projection": "'xxx'",
+                                            "projection": "'xxx'::text",
                                             "restriction": "file='%(DBORAFIL)s'",
                                             "value": "blocksperread"
                                         }

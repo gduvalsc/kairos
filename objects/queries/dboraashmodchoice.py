@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "DBORAASHMODCHOICE",
             "collections": ["ORAHAS"],
-            "request": "select distinct module label from ORAHAS where module != '' order by label"
+            "request": "select distinct module as label from ORAHAS where module != '' order by label"
         }
         super(UserObject, s).__init__(**object)

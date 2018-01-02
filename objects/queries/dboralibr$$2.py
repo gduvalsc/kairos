@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORALIB"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Reloads' label, sum(value) value from (select timestamp, 'xxx' label, reloads value from DBORALIB) group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Reloads'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, reloads as value from DBORALIB) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

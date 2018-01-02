@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORABUF"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'buffer busy waits' label, sum(value) value from (select timestamp, 'xxx' label, busywaits value from DBORABUF where bufpool='D') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'buffer busy waits' as label , sum(value) as value from (select timestamp, 'xxx'::text as label, busywaits as value from DBORABUF where bufpool='D') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }
