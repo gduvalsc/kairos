@@ -42,7 +42,7 @@ class UserObject(dict):
                                         {
                                             "table": "EBS12CM",
                                             "projection": "node_name",
-                                            "restriction": "prg_name = '%(EBSPRGNODR)s'",
+                                            "restriction": "prg_name = '%(EBSPRGNODR)s'::text",
                                             "value": "executecount * 1.0 / ebscoeff()"
                                         }
                                     ]
@@ -54,7 +54,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Running executions'",
+                                    "projection": "'Running executions'::text",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -68,8 +68,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'",
-                                            "restriction": "prg_name = '%(EBSPRGNODR)s'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "prg_name = '%(EBSPRGNODR)s'::text",
                                             "value": "executecount * 1.0 / ebscoeff()"
                                         }
                                     ]
@@ -98,7 +98,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Response time'",
+                                    "projection": "'Response time'::text",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -110,8 +110,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'",
-                                            "restriction": "prg_name = '%(EBSPRGNODR)s'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "prg_name = '%(EBSPRGNODR)s'::text",
                                             "value": "time * 60.0"
                                         }
                                     ]

@@ -12,11 +12,11 @@ class UserObject(dict):
                     "position": "LEFT",
                     "scaling": "LINEAR",
                     "properties": {
-                        "line": {
-                            "stroke": "red"
-                        },
                         "text": {
                             "fill": "red"
+                        },
+                        "line": {
+                            "stroke": "red"
                         }
                     },
                     "minvalue": null,
@@ -51,11 +51,11 @@ class UserObject(dict):
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {
-                        "line": {
-                            "stroke": "blue"
-                        },
                         "text": {
                             "fill": "blue"
+                        },
+                        "line": {
+                            "stroke": "blue"
                         }
                     },
                     "minvalue": null,

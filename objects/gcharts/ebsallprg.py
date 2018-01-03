@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Running programs'",
+                                    "projection": "'Running programs'::text",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -34,15 +34,15 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'",
-                                            "restriction": "prg_name not like 'FNDRS%'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "prg_name not like 'FNDRS%'::text",
                                             "value": "executecount * 1.0 / ebscoeff()"
                                         }
                                     ]
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Waiting programs'",
+                                    "projection": "'Waiting programs'::text",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -56,8 +56,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'",
-                                            "restriction": "prg_name not like 'FNDRS%'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "prg_name not like 'FNDRS%'::text",
                                             "value": "waitcount * 1.0 / ebscoeff()"
                                         }
                                     ]

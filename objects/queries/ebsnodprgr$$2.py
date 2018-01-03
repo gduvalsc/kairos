@@ -9,7 +9,7 @@ class UserObject(dict):
             "userfunctions": [
                 "ebscoeff"
             ],
-            "request": "select timestamp, 'Running executions' label, sum(value) value from (select timestamp, 'xxx' label, executecount * 1.0 / ebscoeff() value from EBS12CM where node_name = '%(EBSNODPRGR)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Running executions'::text as label, sum(value) as value from (select timestamp, 'xxx'::text as label, executecount * 1.0 / ebscoeff() as value from EBS12CM where node_name = '%(EBSNODPRGR)s'::text) as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

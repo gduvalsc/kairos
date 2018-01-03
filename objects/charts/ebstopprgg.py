@@ -2,7 +2,7 @@ class UserObject(dict):
     def __init__(s):
         object = {
             "id": "EBSTOPPRGG",
-            "title": "E-Business Suite - Programs exited with status 'G'",
+            "title": "E-Business Suite - Programs exited with status 'G'::text",
             "subtitle": "",
             "reftime": "EBSREFTIME",
             "type": "chart",

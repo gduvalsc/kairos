@@ -42,7 +42,7 @@ class UserObject(dict):
                                         {
                                             "table": "EBS12CM",
                                             "projection": "prg_name",
-                                            "restriction": "prg_name not like 'FNDRS%'",
+                                            "restriction": "prg_name not like 'FNDRS%'::text",
                                             "value": "waitcount * 1.0 / ebscoeff()"
                                         }
                                     ]
@@ -54,7 +54,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All programs'",
+                                    "projection": "'All programs'::text",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -68,8 +68,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'",
-                                            "restriction": "prg_name not like 'FNDRS%'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "prg_name not like 'FNDRS%'::text",
                                             "value": "waitcount * 1.0 / ebscoeff()"
                                         }
                                     ]

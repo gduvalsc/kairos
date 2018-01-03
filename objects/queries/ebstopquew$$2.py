@@ -9,7 +9,7 @@ class UserObject(dict):
             "userfunctions": [
                 "ebscoeff"
             ],
-            "request": "select timestamp, 'Waiting queues' label, sum(value) value from (select timestamp, 'xxx' label, waitcount * 1.0 / ebscoeff() value from EBS12CM where prg_name not like 'FNDRS%') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Waiting queues'::text as label, sum(value) as value from (select timestamp, 'xxx'::text as label, waitcount * 1.0 / ebscoeff() as value from EBS12CM where prg_name not like 'FNDRS%'::text) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

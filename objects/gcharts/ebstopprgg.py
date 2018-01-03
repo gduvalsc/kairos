@@ -2,7 +2,7 @@ class UserObject(dict):
     def __init__(s):
         object = {
             "id": "EBSTOPPRGG",
-            "title": "E-Business Suite - Programs exited with status 'G'",
+            "title": "E-Business Suite - Programs exited with status 'G'::text",
             "subtitle": "",
             "reftime": "EBSREFTIME",
             "type": "gchart",
@@ -42,7 +42,7 @@ class UserObject(dict):
                                         {
                                             "table": "EBS12CM",
                                             "projection": "prg_name",
-                                            "restriction": "status_code = 'G'",
+                                            "restriction": "status_code = 'G'::text",
                                             "value": "executecount * 1.0 / ebscoeff()"
                                         }
                                     ]
@@ -54,7 +54,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All programs with status G'",
+                                    "projection": "'All programs with status G'::text",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -68,8 +68,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'",
-                                            "restriction": "status_code = 'G'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "status_code = 'G'::text",
                                             "value": "executecount * 1.0 / ebscoeff()"
                                         }
                                     ]

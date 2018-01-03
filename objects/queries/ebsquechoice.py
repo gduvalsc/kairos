@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "EBSQUECHOICE",
             "collections": ["EBS12CM"],
-            "request": "select distinct queue_name label from EBS12CM order by label"
+            "request": "select distinct queue_name as label from EBS12CM order by label"
         }
         super(UserObject, s).__init__(**object)

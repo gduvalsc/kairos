@@ -7,7 +7,7 @@ class UserObject(dict):
                 "EBS12CM"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Response time' label, avg(value) value from (select timestamp, 'xxx' label, time * 60.0 value from EBS12CM where node_name = '%(EBSNODQUER)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Response time'::text as label, avg(value) as value from (select timestamp, 'xxx'::text as label, time * 60.0 as value from EBS12CM where node_name = '%(EBSNODQUER)s'::text) as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

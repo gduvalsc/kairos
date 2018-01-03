@@ -41,8 +41,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "request_id||' (duration: '||cast(time * 60.0 as text)||')'",
-                                            "restriction": "prg_name = '%(EBSPRGEXEW)s'",
+                                            "projection": "request_id||' (duration: '||cast(time * 60.0 as text)||')'::text",
+                                            "restriction": "prg_name = '%(EBSPRGEXEW)s'::text",
                                             "value": "waitcount * 1.0 / ebscoeff()"
                                         }
                                     ]
@@ -54,7 +54,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Waiting executions'",
+                                    "projection": "'Waiting executions'::text",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -68,8 +68,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'",
-                                            "restriction": "prg_name = '%(EBSPRGEXEW)s'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "prg_name = '%(EBSPRGEXEW)s'::text",
                                             "value": "waitcount * 1.0 / ebscoeff()"
                                         }
                                     ]
@@ -98,7 +98,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Wait time'",
+                                    "projection": "'Wait time'::text",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -110,8 +110,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'",
-                                            "restriction": "prg_name = '%(EBSPRGEXEW)s'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "prg_name = '%(EBSPRGEXEW)s'::text",
                                             "value": "wait * 60.0"
                                         }
                                     ]

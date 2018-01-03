@@ -35,8 +35,8 @@ class UserObject(dict):
         a.ftype = {}
 
     def end(s, a):
-        a.desctable["EBS12CM"]["executecount"] = 'int'
-        a.desctable["EBS12CM"]["waitcount"] = 'int'
+        a.desctable["EBS12CM"]["executecount"] = 'bigint'
+        a.desctable["EBS12CM"]["waitcount"] = 'bigint'
         a.bins = sorted(a.bins)
         vmin = a.bins[0]
         vmax = a.bins[-1]
@@ -128,11 +128,11 @@ class UserObject(dict):
             return v
         if tname not in a.transform:
             a.transform[tname] = dict(timestamp=noop, kairos_count=trint)
-            a.desctable[tname] = dict(timestamp='text', kairos_count='int')
+            a.desctable[tname] = dict(timestamp='text', kairos_count='bigint')
         f = trint if g(3) == 'int' else noop
         f = trnumber if g(3) == 'real' else f
         a.transform[tname][g(2)] = f
-        a.desctable[tname][g(2)] = g(3)
+        a.desctable[tname][g(2)] = g(3) if g(3) != 'int' else 'bigint'
 
     def astartdata(s, a, l ,g, m):
         tname = g(2)
@@ -147,7 +147,7 @@ class UserObject(dict):
             return v
         if tname not in a.transform:
             a.transform[tname] = dict(timestamp=noop, kairos_count=trint)
-            a.desctable[tname] = dict(timestamp='text', kairos_count='int')
+            a.desctable[tname] = dict(timestamp='text', kairos_count='bigint')
         d = dict()
         for p in g(3).split(a.sep1):
             [b,v] = p.split(a.sep2)

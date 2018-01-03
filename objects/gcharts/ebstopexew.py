@@ -35,7 +35,7 @@ class UserObject(dict):
                                         {
                                             "table": "EBS12CM",
                                             "projection": "prg_name||'-'||request_id",
-                                            "restriction": "prg_name not like 'FNDRS%'",
+                                            "restriction": "prg_name not like 'FNDRS%'::text",
                                             "value": "waitcount * 1.0 / ebscoeff()"
                                         }
                                     ]
