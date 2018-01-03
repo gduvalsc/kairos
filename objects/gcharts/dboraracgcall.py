@@ -35,13 +35,13 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORARACGCTS",
-                                            "projection": "'Current blocks'",
+                                            "projection": "'Current blocks'::text",
                                             "restriction": "",
                                             "value": "cublocks"
                                         },
                                         {
                                             "table": "DBORARACGCTS",
-                                            "projection": "'CR blocks'",
+                                            "projection": "'CR blocks'::text",
                                             "restriction": "",
                                             "value": "crblocks"
                                         }

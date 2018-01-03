@@ -33,7 +33,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORARACTTFE",
                                             "projection": "inum",
-                                            "restriction": "inum != 0 and event = '%(DBORARACFWES)s'",
+                                            "restriction": "inum::int != 0 and event = '%(DBORARACFWES)s'::text",
                                             "value": "timewaited"
                                         }
                                     ]
@@ -57,8 +57,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORARACTTFE",
-                                            "projection": "'All instances'",
-                                            "restriction": "inum = 0 and event = '%(DBORARACFWES)s'",
+                                            "projection": "'All instances'::text",
+                                            "restriction": "inum::int = 0 and event = '%(DBORARACFWES)s'::text",
                                             "value": "timewaited"
                                         }
                                     ]

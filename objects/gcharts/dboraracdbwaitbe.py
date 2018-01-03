@@ -36,7 +36,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORARACTTBE",
                                             "projection": "event",
-                                            "restriction": "inum = 0 and event != 'background cpu time'",
+                                            "restriction": "inum::int = 0 and event != 'background cpu time'::text",
                                             "value": "timewaited"
                                         }
                                     ]
@@ -58,8 +58,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORARACTTBE",
-                                            "projection": "'Wait events'",
-                                            "restriction": "inum = 0 and event != 'background cpu time'",
+                                            "projection": "'Wait events'::text",
+                                            "restriction": "inum::int = 0 and event != 'background cpu time'::text",
                                             "value": "timewaited"
                                         }
                                     ]

@@ -25,7 +25,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'wait events'",
+                                    "projection": "'wait events'::text",
                                     "collections": [
                                         "DBORARACTTFE"
                                     ],
@@ -35,9 +35,9 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORARACTTFE",
-                                            "projection": "'xxx'",
-                                            "restriction": "inum = 0 and event != 'DB CPU'",
-                                            "value": "timewaited"
+                                            "projection": "'xxx'::text",
+                                            "restriction": "inum::int = 0 and event != 'DB CPU'::text",
+                                            "value": "timewaited::real"
                                         }
                                     ]
                                 },
@@ -53,7 +53,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORARACTM",
-                                            "projection": "'DB CPU'",
+                                            "projection": "'DB CPU'::text",
                                             "restriction": "",
                                             "value": "dbcpu"
                                         }
@@ -76,7 +76,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORARACTM",
-                                            "projection": "'DB time'",
+                                            "projection": "'DB time'::text",
                                             "restriction": "",
                                             "value": "dbtime"
                                         }
@@ -115,7 +115,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORARACSTA",
                                             "projection": "statistic",
-                                            "restriction": "statistic='session logical reads'",
+                                            "restriction": "statistic='session logical reads'::text",
                                             "value": "value"
                                         }
                                     ]
@@ -153,7 +153,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORARACSTA",
                                             "projection": "statistic",
-                                            "restriction": "statistic='physical reads'",
+                                            "restriction": "statistic='physical reads'::text",
                                             "value": "value"
                                         }
                                     ]
@@ -191,7 +191,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORARACSTA",
                                             "projection": "statistic",
-                                            "restriction": "statistic='redo size'",
+                                            "restriction": "statistic='redo size'::text",
                                             "value": "value"
                                         }
                                     ]

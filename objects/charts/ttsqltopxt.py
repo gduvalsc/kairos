@@ -1,14 +1,14 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "id": "TTSQLTOPX",
-            "title": "Top SQL by executions",
+            "id": "TTSQLTOPXT",
+            "title": "Top SQL by execution time",
             "subtitle": "",
             "reftime": "TTREFTIME",
             "type": "chart",
             "yaxis": [
                 {
-                    "title": "# of executions per second",
+                    "title": "Duration in ms",
                     "position": "LEFT",
                     "scaling": "LINEAR",
                     "properties": {},
@@ -19,7 +19,7 @@ class UserObject(dict):
                             "type": "SC",
                             "datasets": [
                                 {
-                                    "query": "TTSQLTOPX$$1",
+                                    "query": "TTSQLTOPXT$$1",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"

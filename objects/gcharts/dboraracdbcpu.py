@@ -58,7 +58,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORARACTM",
-                                            "projection": "'DB CPU'",
+                                            "projection": "'DB CPU'::text",
                                             "restriction": "",
                                             "value": "dbcpu"
                                         }

@@ -58,7 +58,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORARACTM",
-                                            "projection": "'DB time'",
+                                            "projection": "'DB time'::text",
                                             "restriction": "",
                                             "value": "dbtime"
                                         }

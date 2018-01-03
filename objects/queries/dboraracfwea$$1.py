@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORARACTTFE"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, inum label, 1000.0 * timewaited / waits value from DBORARACTTFE where inum != 0 and event = '%(DBORARACFWES)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, inum as label, 1000.0 * timewaited / waits as value from DBORARACTTFE where inum::int != 0 and event = '%(DBORARACFWES)s'::text) as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

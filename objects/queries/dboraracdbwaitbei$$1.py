@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORARACTTBE"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, event||' / '||inum label, timewaited value from DBORARACTTBE where inum != 0 and event != 'background cpu time') group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, event||' / '||inum as label, timewaited as value from DBORARACTTBE where inum::int != 0 and event != 'background cpu time'::text) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

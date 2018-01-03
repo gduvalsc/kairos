@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORARACGCTS"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, 'Current blocks' label, cublocks value from DBORARACGCTS union all select timestamp, 'CR blocks' label, crblocks value from DBORARACGCTS) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'Current blocks'::text as label, cublocks as value from DBORARACGCTS union all select timestamp, 'CR blocks'::text as label, crblocks as value from DBORARACGCTS) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

@@ -1,40 +1,40 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "id": "DBORARACFWEA",
-            "title": "Display foreground event: %(DBORARACFWES)s - average per instance",
+            "id": "TTSQLTOPP",
+            "title": "Top SQL by prepares",
             "subtitle": "",
-            "reftime": "DBORARACREFTIME",
+            "reftime": "TTREFTIME",
             "type": "gchart",
             "yaxis": [
                 {
-                    "title": "# of seconds per second",
+                    "title": "# of prepares per second",
                     "position": "LEFT",
                     "scaling": "LINEAR",
                     "properties": {},
-                    "minvalue": null,
+                    "minvalue": 0,
                     "maxvalue": null,
                     "renderers": [
                         {
-                            "type": "L",
+                            "type": "SC",
                             "datasets": [
                                 {
                                     "groupby": "sum",
                                     "projection": "label",
                                     "collections": [
-                                        "DBORARACTTFE"
+                                        "TTSQLTOPP"
                                     ],
                                     "userfunctions": [],
                                     "info": null,
                                     "onclick": null,
                                     "filterable": true,
-                                    "nocache": true,
+                                    "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "DBORARACTTFE",
-                                            "projection": "inum",
-                                            "restriction": "inum::int != 0 and event = '%(DBORARACFWES)s'::text",
-                                            "value": "1000.0 * timewaited / waits"
+                                            "table": "TTSQLTOPP",
+                                            "projection": "hashid",
+                                            "restriction": "",
+                                            "value": "prepares"
                                         }
                                     ]
                                 }
