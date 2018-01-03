@@ -9,7 +9,7 @@ class UserObject(dict):
             "userfunctions": [
                 "bocoeff"
             ],
-            "request": "select timestamp, 'All reports' label, sum(value) value from (select timestamp, 'xxx' label, executecount * 1.0 / bocoeff() value from BO) group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'All reports'::text as label, sum(value) as value from (select timestamp, 'xxx'::text as label, executecount * 1.0 / bocoeff() as value from BO) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

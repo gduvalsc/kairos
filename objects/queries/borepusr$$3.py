@@ -7,7 +7,7 @@ class UserObject(dict):
                 "BO"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Response time' label, avg(value) value from (select timestamp, 'xxx' label, duration / 60.0 value from BO where report = '%(BOREPUSR)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'Response time'::text as label, avg(value) as value from (select timestamp, 'xxx'::text as label, duration::real / 60.0 as value from BO where report = '%(BOREPUSR)s'::text) as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

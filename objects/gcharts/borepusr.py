@@ -42,7 +42,7 @@ class UserObject(dict):
                                         {
                                             "table": "BO",
                                             "projection": "user_name",
-                                            "restriction": "report = '%(BOREPUSR)s'",
+                                            "restriction": "report = '%(BOREPUSR)s'::text",
                                             "value": "executecount * 1.0 / bocoeff()"
                                         }
                                     ]
@@ -54,7 +54,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All users'",
+                                    "projection": "'All users'::text",
                                     "collections": [
                                         "BO"
                                     ],
@@ -68,8 +68,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "BO",
-                                            "projection": "'xxx'",
-                                            "restriction": "report = '%(BOREPUSR)s'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "report = '%(BOREPUSR)s'::text",
                                             "value": "executecount * 1.0 / bocoeff()"
                                         }
                                     ]
@@ -98,7 +98,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Response time'",
+                                    "projection": "'Response time'::text",
                                     "collections": [
                                         "BO"
                                     ],
@@ -110,9 +110,9 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "BO",
-                                            "projection": "'xxx'",
-                                            "restriction": "report = '%(BOREPUSR)s'",
-                                            "value": "duration / 60.0"
+                                            "projection": "'xxx'::text",
+                                            "restriction": "report = '%(BOREPUSR)s'::text",
+                                            "value": "duration::real / 60.0"
                                         }
                                     ]
                                 }

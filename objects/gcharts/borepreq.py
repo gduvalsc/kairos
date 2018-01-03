@@ -41,8 +41,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "BO",
-                                            "projection": "report||' - '||event_id||' (duration: '||duration||')'",
-                                            "restriction": "report = '%(BOREPREQ)s'",
+                                            "projection": "report||' - '||event_id||' (duration: '||duration||')'::text",
+                                            "restriction": "report = '%(BOREPREQ)s'::text",
                                             "value": "executecount * 1.0 / bocoeff()"
                                         }
                                     ]
@@ -54,7 +54,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All requests'",
+                                    "projection": "'All requests'::text",
                                     "collections": [
                                         "BO"
                                     ],
@@ -68,8 +68,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "BO",
-                                            "projection": "'xxx'",
-                                            "restriction": "report = '%(BOREPREQ)s'",
+                                            "projection": "'xxx'::text",
+                                            "restriction": "report = '%(BOREPREQ)s'::text",
                                             "value": "executecount * 1.0 / bocoeff()"
                                         }
                                     ]
@@ -98,7 +98,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Response time'",
+                                    "projection": "'Response time'::text",
                                     "collections": [
                                         "BO"
                                     ],
@@ -110,9 +110,9 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "BO",
-                                            "projection": "'xxx'",
-                                            "restriction": "report = '%(BOREPREQ)s'",
-                                            "value": "duration / 60.0"
+                                            "projection": "'xxx'::text",
+                                            "restriction": "report = '%(BOREPREQ)s'::text",
+                                            "value": "duration::real / 60.0"
                                         }
                                     ]
                                 }
