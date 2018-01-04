@@ -153,7 +153,6 @@ class UserObject(dict):
 
     def aend(s, a, l ,g, m):
         a.fields = []
-        context = ''
         if len(a.scope) < 3:
             if a.scope.issubset({'DBORAWEV'}) and a.context == 'wev': a.setContext('BREAK')
             if a.scope.issubset({'DBORAWEC'}) and a.context == 'wec': a.setContext('BREAK')
@@ -196,6 +195,7 @@ class UserObject(dict):
             if a.scope.issubset({'DBORASQW'}) and a.context == 'sqw': a.setContext('BREAK')
             if a.scope.issubset({'DBORASQM'}) and a.context == 'sqm': a.setContext('BREAK')
             if a.scope.issubset({'DBORASQV'}) and a.context == 'sqv': a.setContext('BREAK')
+        if a.context != 'BREAK': a.setContext('')
 
     def genstate(s, c):
         def f(a, l ,g, m):

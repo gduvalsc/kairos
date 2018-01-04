@@ -16,11 +16,11 @@ class UserObject(dict):
                         { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait Classes", "action": "dispchart", "chart": "DBORASUMWC" },
                         { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait Classes (Percentage)", "action": "dispchart", "chart": "DBORASUMWCP" },
                         { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait Events", "action": "dispchart", "chart": "DBORASUMWE" },
-                        { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB Time Model", "action": "dispchart", "chart": "DBORASUME" },
+                        { "type": "menuitem", "label": "DB Time Model", "action": "dispchart", "chart": "DBORASUME" },
                     ]
                 },
-                { "type": "separator", "tablecondition": "DBORAAWR"},
-                { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "System statistics", "action": "dispchart", "chart": "DBORASYS", "keycode": 38 },
+                { "type": "separator"},
+                { "type": "menuitem", "label": "System statistics", "action": "dispchart", "chart": "DBORASYS", "keycode": 38 },
                 { "type": "separator"},
                 {
                     "type": "submenu",
@@ -87,8 +87,8 @@ class UserObject(dict):
                     "type": "submenu",
                     "label": "SQL requests",
                     "items": [
-                        { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "Top SQL by Elapsed time", "action": "dispchart", "chart": "DBORASQE" },
-                        { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "Top SQL by CPU time", "action": "dispchart", "chart": "DBORASQC" },
+                        { "type": "menuitem", "label": "Top SQL by Elapsed time", "action": "dispchart", "chart": "DBORASQE" },
+                        { "type": "menuitem", "label": "Top SQL by CPU time", "action": "dispchart", "chart": "DBORASQC" },
                         { "type": "menuitem", "label": "Top SQL by Gets", "action": "dispchart", "chart": "DBORASQG" },
                         { "type": "menuitem", "label": "Top SQL by Reads", "action": "dispchart", "chart": "DBORASQR" },
                         { "type": "menuitem", "label": "Top SQL by Executions", "action": "dispchart", "chart": "DBORASQX" },

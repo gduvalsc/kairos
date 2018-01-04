@@ -12,11 +12,11 @@ class UserObject(dict):
                     "position": "LEFT",
                     "scaling": "LINEAR",
                     "properties": {
-                        "line": {
-                            "stroke": "black"
-                        },
                         "text": {
                             "fill": "black"
+                        },
+                        "line": {
+                            "stroke": "black"
                         }
                     },
                     "renderers": [
@@ -48,17 +48,40 @@ class UserObject(dict):
                                     "groupby": "sum",
                                     "projection": "label",
                                     "collections": [
-                                        "DBORASTA"
+                                        "DBORATMS"
                                     ],
                                     "userfunctions": [],
                                     "filterable": false,
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "DBORASTA",
+                                            "table": "DBORATMS",
                                             "projection": "statistic",
-                                            "restriction": "statistic='CPU used by this session'",
-                                            "value": "value / 100.0"
+                                            "restriction": "statistic='DB CPU'",
+                                            "value": "time"
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "L",
+                            "datasets": [
+                                {
+                                    "groupby": "sum",
+                                    "projection": "label",
+                                    "collections": [
+                                        "DBORATMS"
+                                    ],
+                                    "userfunctions": [],
+                                    "filterable": false,
+                                    "nocache": false,
+                                    "pieces": [
+                                        {
+                                            "table": "DBORATMS",
+                                            "projection": "statistic",
+                                            "restriction": "statistic='DB time'",
+                                            "value": "time"
                                         }
                                     ]
                                 }
@@ -71,11 +94,11 @@ class UserObject(dict):
                     "position": "LEFT",
                     "scaling": "LINEAR",
                     "properties": {
-                        "line": {
-                            "stroke": "darkgreen"
-                        },
                         "text": {
                             "fill": "darkgreen"
+                        },
+                        "line": {
+                            "stroke": "darkgreen"
                         }
                     },
                     "renderers": [
@@ -109,11 +132,11 @@ class UserObject(dict):
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {
-                        "line": {
-                            "stroke": "red"
-                        },
                         "text": {
                             "fill": "red"
+                        },
+                        "line": {
+                            "stroke": "red"
                         }
                     },
                     "renderers": [
@@ -147,11 +170,11 @@ class UserObject(dict):
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {
-                        "line": {
-                            "stroke": "blue"
-                        },
                         "text": {
                             "fill": "blue"
+                        },
+                        "line": {
+                            "stroke": "blue"
                         }
                     },
                     "renderers": [

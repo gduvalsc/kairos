@@ -10,7 +10,7 @@ class UserObject(dict):
                 "idlewev",
                 "pxwev"
             ],
-            "request": "select timestamp, 'wait events' label, sum(value) value from (select timestamp, event label, time value from DBORAWEV where not idlewev(event) and not pxwev(event)) group by timestamp, label order by timestamp",
+            "request": "select timestamp, 'wait events' as label, sum(value) as value from (select timestamp, event as label, time as value from DBORAWEV where not idlewev(event) and not pxwev(event)) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

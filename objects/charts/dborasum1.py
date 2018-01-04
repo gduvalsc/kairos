@@ -12,11 +12,11 @@ class UserObject(dict):
                     "position": "LEFT",
                     "scaling": "LINEAR",
                     "properties": {
-                        "line": {
-                            "stroke": "black"
-                        },
                         "text": {
                             "fill": "black"
+                        },
+                        "line": {
+                            "stroke": "black"
                         }
                     },
                     "renderers": [
@@ -36,22 +36,7 @@ class UserObject(dict):
                                     "value": "value"
                                 }
                             ]
-                        }
-                    ]
-                },
-                {
-                    "title": "# of logical reads per second",
-                    "position": "LEFT",
-                    "scaling": "LINEAR",
-                    "properties": {
-                        "line": {
-                            "stroke": "darkgreen"
                         },
-                        "text": {
-                            "fill": "darkgreen"
-                        }
-                    },
-                    "renderers": [
                         {
                             "type": "L",
                             "datasets": [
@@ -66,15 +51,15 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "# of physical reads per second",
-                    "position": "RIGHT",
+                    "title": "# of logical reads per second",
+                    "position": "LEFT",
                     "scaling": "LINEAR",
                     "properties": {
-                        "line": {
-                            "stroke": "red"
-                        },
                         "text": {
-                            "fill": "red"
+                            "fill": "darkgreen"
+                        },
+                        "line": {
+                            "stroke": "darkgreen"
                         }
                     },
                     "renderers": [
@@ -92,15 +77,15 @@ class UserObject(dict):
                     ]
                 },
                 {
-                    "title": "# of redo bytes per second",
+                    "title": "# of physical reads per second",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
                     "properties": {
-                        "line": {
-                            "stroke": "blue"
-                        },
                         "text": {
-                            "fill": "blue"
+                            "fill": "red"
+                        },
+                        "line": {
+                            "stroke": "red"
                         }
                     },
                     "renderers": [
@@ -109,6 +94,32 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "query": "DBORASUM1$$5",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "title": "# of redo bytes per second",
+                    "position": "RIGHT",
+                    "scaling": "LINEAR",
+                    "properties": {
+                        "text": {
+                            "fill": "blue"
+                        },
+                        "line": {
+                            "stroke": "blue"
+                        }
+                    },
+                    "renderers": [
+                        {
+                            "type": "L",
+                            "datasets": [
+                                {
+                                    "query": "DBORASUM1$$6",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"

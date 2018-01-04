@@ -4,10 +4,10 @@ class UserObject(dict):
             "type": "query",
             "id": "DBORASUM1$$2",
             "collections": [
-                "DBORASTA"
+                "DBORATMS"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, statistic label, value / 100.0 value from DBORASTA where statistic='CPU used by this session') group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, statistic as label, time as value from DBORATMS where statistic='DB CPU') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }
