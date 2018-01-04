@@ -32,14 +32,14 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_disk_io_counters",
-                                            "projection": "'Average time per read'",
-                                            "restriction": "disk = '%(PGSYSDISK)s'",
+                                            "projection": "'Average time per read'::text",
+                                            "restriction": "disk = '%(PGSYSDISK)s'::text",
                                             "value": "(case when read_count = 0 then 0.0 else read_time * 1.0 / read_count end)"
                                         },
                                         {
                                             "table": "vpsutil_disk_io_counters",
-                                            "projection": "'Average time per write'",
-                                            "restriction": "disk = '%(PGSYSDISK)s'",
+                                            "projection": "'Average time per write'::text",
+                                            "restriction": "disk = '%(PGSYSDISK)s'::text",
                                             "value": "(case when write_count = 0 then 0.0 else write_time * 1.0 / write_count end)"
                                         }
                                     ]
@@ -73,14 +73,14 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_disk_io_counters",
-                                            "projection": "'Average volume per read'",
-                                            "restriction": "disk = '%(PGSYSDISK)s'",
+                                            "projection": "'Average volume per read'::text",
+                                            "restriction": "disk = '%(PGSYSDISK)s'::text",
                                             "value": "(case when read_count = 0 then 0.0 else read_bytes / read_count end)"
                                         },
                                         {
                                             "table": "vpsutil_disk_io_counters",
-                                            "projection": "'Average volume per write'",
-                                            "restriction": "disk = '%(PGSYSDISK)s'",
+                                            "projection": "'Average volume per write'::text",
+                                            "restriction": "disk = '%(PGSYSDISK)s'::text",
                                             "value": "(case when write_count = 0 then 0.0 else write_bytes / write_count end)"
                                         }
                                     ]
@@ -114,14 +114,14 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_disk_io_counters",
-                                            "projection": "'Average read volume per second'",
-                                            "restriction": "disk = '%(PGSYSDISK)s'",
+                                            "projection": "'Average read volume per second'::text",
+                                            "restriction": "disk = '%(PGSYSDISK)s'::text",
                                             "value": "read_bytes"
                                         },
                                         {
                                             "table": "vpsutil_disk_io_counters",
-                                            "projection": "'Average write volume per second'",
-                                            "restriction": "disk = '%(PGSYSDISK)s'",
+                                            "projection": "'Average write volume per second'::text",
+                                            "restriction": "disk = '%(PGSYSDISK)s'::text",
                                             "value": "write_bytes"
                                         }
                                     ]
@@ -155,14 +155,14 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_disk_io_counters",
-                                            "projection": "'Average read count per second'",
-                                            "restriction": "disk = '%(PGSYSDISK)s'",
+                                            "projection": "'Average read count per second'::text",
+                                            "restriction": "disk = '%(PGSYSDISK)s'::text",
                                             "value": "read_count"
                                         },
                                         {
                                             "table": "vpsutil_disk_io_counters",
-                                            "projection": "'Average write count per second'",
-                                            "restriction": "disk = '%(PGSYSDISK)s'",
+                                            "projection": "'Average write count per second'::text",
+                                            "restriction": "disk = '%(PGSYSDISK)s'::text",
                                             "value": "write_count"
                                         }
                                     ]
@@ -196,14 +196,14 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_disk_io_counters",
-                                            "projection": "'Average read time'",
-                                            "restriction": "disk = '%(PGSYSDISK)s'",
+                                            "projection": "'Average read time'::text",
+                                            "restriction": "disk = '%(PGSYSDISK)s'::text",
                                             "value": "read_time"
                                         },
                                         {
                                             "table": "vpsutil_disk_io_counters",
-                                            "projection": "'Average write time'",
-                                            "restriction": "disk = '%(PGSYSDISK)s'",
+                                            "projection": "'Average write time'::text",
+                                            "restriction": "disk = '%(PGSYSDISK)s'::text",
                                             "value": "write_time"
                                         }
                                     ]

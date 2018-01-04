@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "PGINTERFACECHOICE",
             "collections": ["vpsutil_net_io_counters"],
-            "request": "select distinct iface label from vpsutil_net_io_counters order by label"
+            "request": "select distinct iface as label from vpsutil_net_io_counters order by label"
         }
         super(UserObject, s).__init__(**object)

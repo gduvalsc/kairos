@@ -32,14 +32,14 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_processes",
-                                            "projection": "'USER_TIME'",
-                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'",
+                                            "projection": "'USER_TIME'::text",
+                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'::text",
                                             "value": "usr"
                                         },
                                         {
                                             "table": "vpsutil_processes",
-                                            "projection": "'SYS_TIME'",
-                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'",
+                                            "projection": "'SYS_TIME'::text",
+                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'::text",
                                             "value": "sys"
                                         }
                                     ]
@@ -73,32 +73,32 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_processes",
-                                            "projection": "'Resident size'",
-                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'",
+                                            "projection": "'Resident size'::text",
+                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'::text",
                                             "value": "rss"
                                         },
                                         {
                                             "table": "vpsutil_processes",
-                                            "projection": "'Virtual size'",
-                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'",
+                                            "projection": "'Virtual size'::text",
+                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'::text",
                                             "value": "vms"
                                         },
                                         {
                                             "table": "vpsutil_processes",
-                                            "projection": "'Text size'",
-                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'",
+                                            "projection": "'Text size'::text",
+                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'::text",
                                             "value": "texts"
                                         },
                                         {
                                             "table": "vpsutil_processes",
-                                            "projection": "'Shared size'",
-                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'",
+                                            "projection": "'Shared size'::text",
+                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'::text",
                                             "value": "shared"
                                         },
                                         {
                                             "table": "vpsutil_processes",
-                                            "projection": "'Data size'",
-                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'",
+                                            "projection": "'Data size'::text",
+                                            "restriction": "cmdline = '%(PGSYSFAMILY)s'::text",
                                             "value": "datas"
                                         }
                                     ]

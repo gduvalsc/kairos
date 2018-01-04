@@ -34,13 +34,13 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vkpg_stat_activity",
-                                            "projection": "'Active backends'",
+                                            "projection": "'Active backends'::text",
                                             "restriction": "datname = '%(PGDBSCBACKENDS)s' and state = 'active' ",
                                             "value": "1.0 / pgdbscoeff(cast(snap_frequency as integer))"
                                         },
                                         {
                                             "table": "vkpg_stat_activity",
-                                            "projection": "'All backends'",
+                                            "projection": "'All backends'::text",
                                             "restriction": "datname = '%(PGDBSCBACKENDS)s'",
                                             "value": "1.0 / pgdbscoeff(cast(snap_frequency as integer))"
                                         }

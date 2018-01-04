@@ -57,7 +57,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vkpg_stat_database",
-                                            "projection": "'all databases'",
+                                            "projection": "'all databases'::text",
                                             "restriction": "",
                                             "value": "blks_read"
                                         }

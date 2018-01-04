@@ -32,49 +32,49 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_virt_memory",
-                                            "projection": "'Total size'",
+                                            "projection": "'Total size'::text",
                                             "restriction": "",
                                             "value": "total"
                                         },
                                         {
                                             "table": "vpsutil_virt_memory",
-                                            "projection": "'Available size'",
+                                            "projection": "'Available size'::text",
                                             "restriction": "",
                                             "value": "available"
                                         },
                                         {
                                             "table": "vpsutil_virt_memory",
-                                            "projection": "'Used size'",
+                                            "projection": "'Used size'::text",
                                             "restriction": "",
                                             "value": "used"
                                         },
                                         {
                                             "table": "vpsutil_virt_memory",
-                                            "projection": "'Free size'",
+                                            "projection": "'Free size'::text",
                                             "restriction": "",
                                             "value": "free"
                                         },
                                         {
                                             "table": "vpsutil_virt_memory",
-                                            "projection": "'Active size'",
+                                            "projection": "'Active size'::text",
                                             "restriction": "",
                                             "value": "active"
                                         },
                                         {
                                             "table": "vpsutil_virt_memory",
-                                            "projection": "'Inactive size'",
+                                            "projection": "'Inactive size'::text",
                                             "restriction": "",
                                             "value": "inactive"
                                         },
                                         {
                                             "table": "vpsutil_virt_memory",
-                                            "projection": "'Buffers size'",
+                                            "projection": "'Buffers size'::text",
                                             "restriction": "",
                                             "value": "buffers"
                                         },
                                         {
                                             "table": "vpsutil_virt_memory",
-                                            "projection": "'Cached size'",
+                                            "projection": "'Cached size'::text",
                                             "restriction": "",
                                             "value": "cached"
                                         }

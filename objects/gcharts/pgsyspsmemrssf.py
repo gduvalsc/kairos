@@ -61,7 +61,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_processes",
-                                            "projection": "'All families'",
+                                            "projection": "'All families'::text",
                                             "restriction": "",
                                             "value": "rss"
                                         }

@@ -7,7 +7,7 @@ class UserObject(dict):
                 "vpsutil_disk_io_counters"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, disk label, write_count value from vpsutil_disk_io_counters) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, disk as label, write_count as value from vpsutil_disk_io_counters) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

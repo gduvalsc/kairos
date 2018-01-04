@@ -32,13 +32,13 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_swap_memory",
-                                            "projection": "'Total size'",
+                                            "projection": "'Total size'::text",
                                             "restriction": "",
                                             "value": "total"
                                         },
                                         {
                                             "table": "vpsutil_swap_memory",
-                                            "projection": "'Used size'",
+                                            "projection": "'Used size'::text",
                                             "restriction": "",
                                             "value": "used"
                                         }
@@ -73,13 +73,13 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_swap_memory",
-                                            "projection": "'Swap in'",
+                                            "projection": "'Swap in'::text",
                                             "restriction": "",
                                             "value": "sin"
                                         },
                                         {
                                             "table": "vpsutil_swap_memory",
-                                            "projection": "'Swap out'",
+                                            "projection": "'Swap out'::text",
                                             "restriction": "",
                                             "value": "sout"
                                         }

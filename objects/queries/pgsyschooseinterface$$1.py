@@ -7,7 +7,7 @@ class UserObject(dict):
                 "vpsutil_net_io_counters"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, avg(value) value from (select timestamp, 'Average volume per received packet' label, (case when packets_recv = 0 then 0.0 else bytes_recv / packets_recv end) value from vpsutil_net_io_counters where iface = '%(PGSYSINTERFACE)s' union all select timestamp, 'Average volume per sent packet' label, (case when packets_sent = 0 then 0.0 else bytes_sent / packets_sent end) value from vpsutil_net_io_counters where iface = '%(PGSYSINTERFACE)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, avg(value) as value from (select timestamp, 'Average volume per received packet'::text as label, (case when packets_recv = 0 then 0.0 else bytes_recv / packets_recv end) as value from vpsutil_net_io_counters where iface = '%(PGSYSINTERFACE)s'::text union all select timestamp, 'Average volume per sent packet'::text as label, (case when packets_sent = 0 then 0.0 else bytes_sent / packets_sent end) as value from vpsutil_net_io_counters where iface = '%(PGSYSINTERFACE)s'::text) as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": false
         }

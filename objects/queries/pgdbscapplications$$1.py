@@ -9,7 +9,7 @@ class UserObject(dict):
             "userfunctions": [
                 "pgdbscoeff"
             ],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, application_name label, 1.0 / pgdbscoeff(cast(snap_frequency as integer)) value from vkpg_stat_activity where datname = '%(PGDBSCAPPLICATIONS)s' and state = 'active' ) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, application_name as label, 1.0 / pgdbscoeff(cast(snap_frequency as integer)) as value from vkpg_stat_activity where datname = '%(PGDBSCAPPLICATIONS)s' and state = 'active' ) as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

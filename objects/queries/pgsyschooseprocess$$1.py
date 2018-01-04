@@ -7,7 +7,7 @@ class UserObject(dict):
                 "vpsutil_processes"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, 'USER_TIME' label, usr value from vpsutil_processes where pname||' - '||pid||' - '||create_time = '%(PGSYSPROCESS)s' union all select timestamp, 'SYS_TIME' label, sys value from vpsutil_processes where pname||' - '||pid||' - '||create_time = '%(PGSYSPROCESS)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'USER_TIME'::text as label, usr as value from vpsutil_processes where pname||' - '||pid||' - '||create_time = '%(PGSYSPROCESS)s'::text union all select timestamp, 'SYS_TIME'::text as label, sys as value from vpsutil_processes where pname||' - '||pid||' - '||create_time = '%(PGSYSPROCESS)s'::text) as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": false
         }

@@ -61,7 +61,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_processes",
-                                            "projection": "'All commands'",
+                                            "projection": "'All commands'::text",
                                             "restriction": "",
                                             "value": "usr + sys"
                                         }

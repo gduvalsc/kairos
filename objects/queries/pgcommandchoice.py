@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "PGCOMMANDCHOICE",
             "collections": ["vpsutil_processes"],
-            "request": "select distinct pname label from vpsutil_processes order by label"
+            "request": "select distinct pname as label from vpsutil_processes order by label"
         }
         super(UserObject, s).__init__(**object)

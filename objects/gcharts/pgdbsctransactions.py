@@ -35,7 +35,7 @@ class UserObject(dict):
                                         {
                                             "table": "vkpg_stat_activity",
                                             "projection": "backend_xid || ' - ' || xact_start",
-                                            "restriction": "datname = '%(PGDBSCTRANSACTIONS)s'",
+                                            "restriction": "datname = '%(PGDBSCTRANSACTIONS)s'::text",
                                             "value": "1.0 / pgdbscoeff(cast(snap_frequency as integer))"
                                         }
                                     ]
@@ -61,8 +61,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vkpg_stat_activity",
-                                            "projection": "'All backends'",
-                                            "restriction": "datname = '%(PGDBSCTRANSACTIONS)s'",
+                                            "projection": "'All backends'::text",
+                                            "restriction": "datname = '%(PGDBSCTRANSACTIONS)s'::text",
                                             "value": "1.0 / pgdbscoeff(cast(snap_frequency as integer))"
                                         }
                                     ]

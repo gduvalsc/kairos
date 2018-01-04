@@ -61,7 +61,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_disk_io_counters",
-                                            "projection": "'All disks'",
+                                            "projection": "'All disks'::text",
                                             "restriction": "",
                                             "value": "read_count"
                                         }

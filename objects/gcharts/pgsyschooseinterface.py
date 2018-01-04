@@ -32,14 +32,14 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_net_io_counters",
-                                            "projection": "'Average volume per received packet'",
-                                            "restriction": "iface = '%(PGSYSINTERFACE)s'",
+                                            "projection": "'Average volume per received packet'::text",
+                                            "restriction": "iface = '%(PGSYSINTERFACE)s'::text",
                                             "value": "(case when packets_recv = 0 then 0.0 else bytes_recv / packets_recv end)"
                                         },
                                         {
                                             "table": "vpsutil_net_io_counters",
-                                            "projection": "'Average volume per sent packet'",
-                                            "restriction": "iface = '%(PGSYSINTERFACE)s'",
+                                            "projection": "'Average volume per sent packet'::text",
+                                            "restriction": "iface = '%(PGSYSINTERFACE)s'::text",
                                             "value": "(case when packets_sent = 0 then 0.0 else bytes_sent / packets_sent end)"
                                         }
                                     ]
@@ -73,14 +73,14 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_net_io_counters",
-                                            "projection": "'Average received volume per second'",
-                                            "restriction": "iface = '%(PGSYSINTERFACE)s'",
+                                            "projection": "'Average received volume per second'::text",
+                                            "restriction": "iface = '%(PGSYSINTERFACE)s'::text",
                                             "value": "bytes_recv"
                                         },
                                         {
                                             "table": "vpsutil_net_io_counters",
-                                            "projection": "'Average sent volume per second'",
-                                            "restriction": "iface = '%(PGSYSINTERFACE)s'",
+                                            "projection": "'Average sent volume per second'::text",
+                                            "restriction": "iface = '%(PGSYSINTERFACE)s'::text",
                                             "value": "bytes_sent"
                                         }
                                     ]
@@ -114,14 +114,14 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_net_io_counters",
-                                            "projection": "'Average received packets per second'",
-                                            "restriction": "iface = '%(PGSYSINTERFACE)s'",
+                                            "projection": "'Average received packets per second'::text",
+                                            "restriction": "iface = '%(PGSYSINTERFACE)s'::text",
                                             "value": "packets_recv"
                                         },
                                         {
                                             "table": "vpsutil_net_io_counters",
-                                            "projection": "'Average sent packets per second'",
-                                            "restriction": "iface = '%(PGSYSINTERFACE)s'",
+                                            "projection": "'Average sent packets per second'::text",
+                                            "restriction": "iface = '%(PGSYSINTERFACE)s'::text",
                                             "value": "packets_sent"
                                         }
                                     ]

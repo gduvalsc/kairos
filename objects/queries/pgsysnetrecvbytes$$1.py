@@ -7,7 +7,7 @@ class UserObject(dict):
                 "vpsutil_net_io_counters"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, iface label, bytes_recv value from vpsutil_net_io_counters) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, iface as label, bytes_recv as value from vpsutil_net_io_counters) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

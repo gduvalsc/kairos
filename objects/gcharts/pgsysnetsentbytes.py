@@ -61,7 +61,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "vpsutil_net_io_counters",
-                                            "projection": "'All interfaces'",
+                                            "projection": "'All interfaces'::text",
                                             "restriction": "",
                                             "value": "bytes_sent"
                                         }

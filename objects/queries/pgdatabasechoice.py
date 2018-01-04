@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "PGDATABASECHOICE",
             "collections": ["vkpg_stat_activity"],
-            "request": "select distinct datname label from vkpg_stat_activity order by label"
+            "request": "select distinct datname as label from vkpg_stat_activity order by label"
         }
         super(UserObject, s).__init__(**object)

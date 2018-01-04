@@ -7,7 +7,7 @@ class UserObject(dict):
                 "vkpg_stat_database"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, datname label, blk_read_time value from vkpg_stat_database) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, datname as label, blk_read_time as value from vkpg_stat_database) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

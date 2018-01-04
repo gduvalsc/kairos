@@ -4,6 +4,6 @@ class UserObject(dict):
             "type": "query",
             "id": "PGPROCESSCHOICE",
             "collections": ["vpsutil_processes"],
-            "request": "select distinct pname||' - '||pid||' - '||create_time label from vpsutil_processes order by label"
+            "request": "select distinct pname||' - '||pid||' - '||create_time as label from vpsutil_processes order by label"
         }
         super(UserObject, s).__init__(**object)
