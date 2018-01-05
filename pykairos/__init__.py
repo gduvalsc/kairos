@@ -2303,7 +2303,7 @@ class KairosWorker:
             cproducers = dict()
             producers = s.iexpand(pattern=aggregatorselector, nodesdb=nodesdb, sort=aggregatorsort, take=aggregatortake, skip=aggregatorskip)
             ncache = Cache(nodesdb, objects=True)
-            ncache.execute("match (n:nodes) where id(n) = '" + id+ "' set n.type=to_json('A'::text), n.icon=to_json('A'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'::text), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'::text), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'::text), n.aggregatormethod=to_json('" + aggregatormethod + "'::text)")
+            ncache.execute("match (n:nodes) where id(n) = '" + id+ "' set n.type=to_json('L'::text), n.icon=to_json('L'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'::text), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'::text), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'::text), n.aggregatormethod=to_json('" + aggregatormethod + "'::text)")
             ncache.disconnect()
             for p in producers:
                 pchilds = s.igetnodes(nodesdb=nodesdb, parent=p['id'])
