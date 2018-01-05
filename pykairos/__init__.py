@@ -142,6 +142,7 @@ class Cache:
         logging.debug('Executing request: ' + req[0])
         c = s.agens.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         c.execute(*req)
+        logging.debug('Request completed!')
         return c
     def disconnect(s):
         if not s.autocommit: s.agens.commit()
@@ -1142,10 +1143,8 @@ class KairosWorker:
         hcache = Cache(cache.database, schema=cache.name)
         function = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['aggregatormethod'] + "', type:'aggregator'}")[0]
         meet = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id: 'meet', type: 'function'}")[0]
-        specavg = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'specavg', type:'function'}")[0]
         hcache.execute(function["function"])
         hcache.execute(meet["function"])
-        hcache.execute(specavg["function"])
         hcache.execute("drop table if exists aggregator")
         hcache.execute("create table aggregator as select '" + node['datasource']['aggregatormethod'] + "'::text as method")
         producers = list(mapproducers[collection]['updated'].keys())
@@ -1180,20 +1179,19 @@ class KairosWorker:
             oops = dict()
             if timestamp:
                 where = " where " + cache.name + ".meet(timestamp,'" + node['datasource']['aggregatortimefilter'] + "') or timestamp='00000000000000000'"
-                workrequest = "select " + cache.name + "." + function["name"] + "(timestamp) as timestamp, kairos_nodeid, count(*) as num from (select distinct timestamp, kairos_nodeid from " + inschname + "." + collection + where +') as foo group by ' + function["name"] + '(timestamp), kairos_nodeid'
-                #for x in hcache.execute(workrequest): specavg["accumulator"][x['timestamp'] + x['kairos_nodeid']] = x['num']
-                for row in hcache.execute(workrequest): oops[row['timestamp'] + row['kairos_nodeid']] = row['num']
-            jsonoops = json.dumps(oops)
+                hcache.execute("drop table if exists oops")
+                request = "create table oops as select " + cache.name + "." + function["name"] + "(timestamp)||kairos_nodeid newtimestamp, count(*) as num from (select distinct timestamp, kairos_nodeid from " + inschname + "." + collection + where +') as foo group by ' + function["name"] + '(timestamp)||kairos_nodeid'
+                hcache.execute(request)
             subrequest = "select " + ",".join(listf) + " from " + inschname + "." + collection.lower() + where
             request = 'insert into ' + collection.lower() + '(' + ','.join(listf) + ') select '
             for x in lgby:
                 if x=='timestamp': request += function["name"] + '(timestamp) as timestamp, '
                 else: request += x + ', '
             for x in lavg:
-                request += cache.name + ".specavg(sum(" + x + "::real)," + function["name"] + "(timestamp), kairos_nodeid, " + jsonoops + ") as " + x + ", "
+                request += "coalesce(sum(" + x + "::real) / avg(oops.num), 0) as " + x + ", "
             for x in lsum:
                 request += 'sum(' + x + ') as ' + x + ', '
-            request = request[:-2] + ' from (' + subrequest + ') as foo group by '
+            request = request[:-2] + ' from (' + subrequest + ') as foo, oops where oops.newtimestamp = ' + function["name"] + '(timestamp)||kairos_nodeid group by '
             for x in lgby: request = request + function["name"] + '(timestamp), ' if x == 'timestamp' else request + x + ', '
             request = request[:-2]
             hcache.execute(request)
@@ -2313,6 +2311,7 @@ class KairosWorker:
                             cproducers[child['name']] = [dict(id=child['id'], path=s.igetpath(id=child['id'], nodesdb=nodesdb))]
                         else:
                             cproducers[child['name']].append(dict(id=child['id'], path=s.igetpath(id=child['id'], nodesdb=nodesdb)))
+                        
             nchilds = s.igetnodes(nodesdb=nodesdb, parent=node['id'])
             pnames = {x for x in cproducers.keys()}
             nnames = {x['name'] for x in nchilds}
@@ -2332,7 +2331,7 @@ class KairosWorker:
                 tpath = [x['path'] for x in cproducers[c['name']]]
                 aggregatorselector = '|'.join(tpath)
                 ncache = Cache(nodesdb, objects=True)
-                ncache.execute("match (n:nodes) where id(n) = '" + id+ "' set n.type=to_json('A'::text), n.icon=to_json('A'::text), n.producers='" + json.dumps(cproducers[c['name']]) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'::text), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'::text), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'::text), n.aggregatormethod=to_json('" + aggregatormethod + "'::text)")
+                ncache.execute("match (n:nodes) where id(n) = '" + c['id'] + "' set n.type=to_json('A'::text), n.icon=to_json('A'::text), n.producers='" + json.dumps(cproducers[c['name']]) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'::text), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'::text), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'::text), n.aggregatormethod=to_json('" + aggregatormethod + "'::text)")
                 ncache.disconnect()
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True)[0]
         return web.json_response(dict(success=True, data=node))
