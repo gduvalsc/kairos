@@ -67,6 +67,10 @@ if args.launcher:
     os.system('rm -fr /var/log/gunicorn.pid')
     catchrun(gunicorn, notifier)
 if args.bootstrap:
+    try: 
+        ramsize = os.environ['RAMDISK']
+        crs = subprocess.run(['mount', '-t', 'tmpfs', '-o', 'size=' + str(ramsize) + 'M', 'tmpfs', '/ramdisk'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except: pass
     subprocess.run(['chown', 'agensgraph:agensgraph', '/home/agensgraph/data'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     print('A', end='', flush=True)
     logging.info("Trying to startup AgensGraph server ...")

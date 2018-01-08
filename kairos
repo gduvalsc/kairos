@@ -37,7 +37,6 @@ PLG = Parameter('--logging', 'logging')
 PLO = Parameter('--loglines', 'loglines')
 PTE = Parameter('--template', 'template')
 PWA = Parameter('--wallpaper', 'wallpaper')
-PAR = Parameter('--arrayinsert', 'arrayinsert')
 PPL = Parameter('--plotorientation', 'plotorientation')
 PID = Parameter('--id', 'id')
 PTY = Parameter('--type', 'type')
@@ -61,8 +60,8 @@ def get_parameters(parser, args, service):
 
     mandatory = []
 
-    if service == 'buildallcollectioncaches': mandatory = [PA, PP, PNO, PSY, PAR, PID]
-    if service == 'buildcollectioncache': mandatory = [PA, PP, PNO, PSY, PAR, PID, PCL]
+    if service == 'buildallcollectioncaches': mandatory = [PA, PP, PNO, PSY, PID]
+    if service == 'buildcollectioncache': mandatory = [PA, PP, PNO, PSY, PID, PCL]
     if service == 'changepassword': mandatory = [PA, PP, PPA]
     if service == 'clearcollectioncache': mandatory = [PA, PP, PNO, PSY, PID]
     if service == 'creategrant': mandatory = [PA, PP, PUS, PRO]
@@ -74,7 +73,7 @@ def get_parameters(parser, args, service):
     if service == 'deleteobject': mandatory = [PA, PP, PID, PTY, PDA]
     if service == 'deleterole': mandatory = [PA, PP, PRO]
     if service == 'deleteuser': mandatory = [PA, PP, PUS]
-    if service == 'displaycollection': mandatory = [PA, PP, PNO, PSY, PAR, PID, PCL]
+    if service == 'displaycollection': mandatory = [PA, PP, PNO, PSY, PID, PCL]
     if service == 'dropcollectioncache': mandatory = [PA, PP, PNO, PSY, PID, PCL]
     if service == 'emptytrash': mandatory = [PA, PP, PNO]
     if service == 'getcollections': mandatory = [PA, PP, PNO, PID]
@@ -91,7 +90,7 @@ def get_parameters(parser, args, service):
     if service == 'listsystemdb': mandatory = [PA, PP]
     if service == 'listusers': mandatory = [PA, PP]
     if service == 'renamenode': mandatory = [PA, PP, PNO, PID, PNE]
-    if service == 'updatesettings': mandatory = [PA, PP, PNO, PSY, PLO, PLG, PAR, PTE, PCO, PWA, PTP, PKE, PPL]
+    if service == 'updatesettings': mandatory = [PA, PP, PNO, PSY, PLO, PLG, PTE, PCO, PWA, PTP, PKE, PPL]
     if service == 'uploadnode': mandatory = [PA, PP, PNO, PFI, PID, PSY]
     if service == 'uploadobject': mandatory = [PNO, PFI]
 
@@ -120,8 +119,8 @@ def get_parameters(parser, args, service):
         syslog.syslog(message)
         exit(1)
 
-    if service == 'buildallcollectioncaches': parameters = dict(id=vars(args)[PID.target], arrayinsert=vars(args)[PAR.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
-    if service == 'buildcollectioncache': parameters = dict(id=vars(args)[PID.target], collection=vars(args)[PCL.target], arrayinsert=vars(args)[PAR.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
+    if service == 'buildallcollectioncaches': parameters = dict(id=vars(args)[PID.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
+    if service == 'buildcollectioncache': parameters = dict(id=vars(args)[PID.target], collection=vars(args)[PCL.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
     if service == 'changepassword':
         parameters = aiohttp.FormData()
         parameters.add_field('user', vars(args)[PA.target])
@@ -139,7 +138,7 @@ def get_parameters(parser, args, service):
     if service == 'deleteobject': parameters = dict(id=vars(args)[PID.target], type=vars(args)[PTY.target], database=vars(args)[PDA.target])
     if service == 'deleterole': parameters = dict(role=vars(args)[PRO.target])
     if service == 'deleteuser': parameters = dict(user=vars(args)[PUS.target])
-    if service == 'displaycollection': parameters = dict(id=vars(args)[PID.target], collection=vars(args)[PCL.target], arrayinsert=vars(args)[PAR.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
+    if service == 'displaycollection': parameters = dict(id=vars(args)[PID.target], collection=vars(args)[PCL.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
     if service == 'dropcollectioncache': parameters = dict(id=vars(args)[PID.target], collection=vars(args)[PCL.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
     if service == 'emptytrash': parameters = dict(nodesdb=vars(args)[PNO.target])
     if service == 'getcollections': parameters = dict(nodesdb=vars(args)[PNO.target], id=vars(args)[PID.target])
@@ -156,7 +155,7 @@ def get_parameters(parser, args, service):
     if service == 'listsystemdb': parameters = dict()
     if service == 'listusers': parameters = dict()
     if service == 'renamenode': parameters = dict(nodesdb=vars(args)[PNO.target], id=vars(args)[PID.target], new=vars(args)[PNE.target])
-    if service == 'updatesettings': parameters = dict(user=vars(args)[PA.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target], loglines=vars(args)[PLO.target], arrayinsert=vars(args)[PAR.target], template=args.template, colors=vars(args)[PCO.target], wallpaper=vars(args)[PWA.target], top=vars(args)[PTP.target], keycode=vars(args)[PKE.target], plotorientation=vars(args)[PPL.target], logging=vars(args)[PLG.target])
+    if service == 'updatesettings': parameters = dict(user=vars(args)[PA.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target], loglines=vars(args)[PLO.target], template=args.template, colors=vars(args)[PCO.target], wallpaper=vars(args)[PWA.target], top=vars(args)[PTP.target], keycode=vars(args)[PKE.target], plotorientation=vars(args)[PPL.target], logging=vars(args)[PLG.target])
     if service == 'uploadnode':
         parameters = aiohttp.FormData()
         parameters.add_field('nodesdb', vars(args)[PNO.target])
@@ -194,7 +193,6 @@ parser.add_argument(PLG.name, action = 'store', dest=PLG.target, default='', hel
 parser.add_argument(PLO.name, action = 'store', dest=PLO.target, default='', help='Kairos log length to display')
 parser.add_argument(PTE.name, action = 'store', dest=PTE.target, default='', help='Kairos template to be used')
 parser.add_argument(PWA.name, action = 'store', dest=PWA.target, default='', help='Kairos wallpaper to be used')
-parser.add_argument(PAR.name, action = 'store', dest=PAR.target, default='', help='Kairos buffer length')
 parser.add_argument(PPL.name, action = 'store', dest=PPL.target, default='', help='Kairos plot orientation')
 parser.add_argument(PID.name, action = 'store', dest=PID.target, default='', help='Object id')
 parser.add_argument(PTY.name, action = 'store', dest=PTY.target, default='', help='Object type')

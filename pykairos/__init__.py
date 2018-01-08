@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
-import string, random, ssl, logging, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, psycopg2, psycopg2.extras, psycopg2.extensions
+import string, random, ssl, logging, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, psycopg2, psycopg2.extras, psycopg2.extensions, queue, multiprocessing, multiprocessing.connection
 from collections import *
 from datetime import datetime
 from aiohttp import web, WSCloseCode, WSMsgType, MultiDict
@@ -105,29 +105,32 @@ def intercept_logging_and_internal_error(func):
 
 class Object: pass
 
-class Buffer:
-    def __init__(s, size=1, init=None, action=None):
-        s.init = init
+
+class Parallel:
+    def __init__(s, action, workers=multiprocessing.cpu_count()):
+        s.limit = int(workers)
+        s.workers = dict()
         s.action = action
-        s.size = size
-        s.collections = dict()
-    def push(s, c, d, v, n):
-        if c in s.collections:
-            x = s.collections[c]
-            v['kairos_nodeid'] = n
-            x['buffer'].append(v.copy())
-            x['length'] += 1
-            if x['length'] == s.size: s.flush(c)
+    def push(s, arg):
+        if len(s.workers.keys()) < s.limit:
+            p = multiprocessing.Process(target=s.action, args=(arg,))
+            p.start()
+            s.workers[p.sentinel] = p
         else:
-            s.collections[c]=dict(buffer=[], length=0, context=Object())
-            s.init(c, d)
-            s.push(c, d, v, n)
-    def flush(s, c):
-        if s.collections[c]['length'] > 0 : s.action(c, s.collections[c]['buffer'])
-        s.collections[c]['buffer'] = []
-        s.collections[c]['length'] = 0
-    def close(s):
-        for c in s.collections: s.flush(c)
+            if len(s.workers.keys()) == s.limit:
+                x = multiprocessing.connection.wait(s.workers.keys())
+                for e in x:
+                    s.workers[e].join()
+                    del s.workers[e]
+                p = multiprocessing.Process(target=s.action, args=(arg,))
+                p.start()
+                s.workers[p.sentinel] = p
+    def join(s):
+        while len(s.workers):
+            x = multiprocessing.connection.wait(s.workers.keys())
+            for e in x:
+                s.workers[e].join()
+                del s.workers[e]
 
 class Cache:
     def __init__(s,database=None, autocommit=False, objects=False, schema=None):
@@ -296,7 +299,7 @@ class Analyzer:
     def analyzestr(s, stream, name):
         logging.debug(s.name + ' - Analyzing stream ' + name)
         s.context = ''
-        s.stats = dict(lines=0, er=0, ser=0, rec=0)
+        s.stats = dict(lines=0, ger=0, sger=0, cer=0, scer=0, oer=0, soer=0, rec=0)
         if "BEGIN" in s.contextrules:
             logging.debug(s.name + ' - Calling BEGIN at line ' + str(s.stats["lines"]))
             s.contextrules["BEGIN"]["action"](s)
@@ -305,37 +308,41 @@ class Analyzer:
             if s.context == 'BREAK': break
             s.stats['lines'] += 1
             for r in s.rules:
-                s.stats['er'] += 1
+                s.stats['ger'] += 1
                 p = r["regexp"].search(ln)
                 if not p: continue
-                s.stats['ser'] += 1
+                s.stats['sger'] += 1
                 logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
                 r["action"](s, ln, p.group, name)
             if s.context == '':
                 for r in s.outcontextrules:
-                    s.stats['er'] += 1
+                    s.stats['oer'] += 1
                     p = r["regexp"].search(ln)
                     if not p: continue
-                    s.stats['ser'] += 1
+                    s.stats['soer'] += 1
                     logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
                     r["action"](s, ln, p.group, name)
                     break
             if s.context in s.contextrules:
                 r = s.contextrules[s.context]
-                s.stats['er'] += 1
+                s.stats['cer'] += 1
                 p = r["regexp"].search(ln)
                 if not p: continue
-                s.stats['ser'] += 1
+                s.stats['scer'] += 1
                 logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
                 r["action"](s, ln, p.group, name)
         if "END" in s.contextrules:
             logging.debug(s.name + ' - Calling END at line ' + str(s.stats["lines"]))
             s.contextrules["END"]["action"](s)
         logging.info(s.name + ' - Summary for member ' + name);
-        logging.info(s.name + ' -    Analyzed lines   : ' + str(s.stats["lines"]))
-        logging.info(s.name + ' -    Evaluated rules  : ' + str(s.stats["er"]))
-        logging.info(s.name + ' -    Satisfied rules  : ' + str(s.stats["ser"]))
-        logging.info(s.name + ' -    Emitted records  : ' + str(s.stats["rec"]))
+        logging.info(s.name + ' -    Analyzed lines              : ' + str(s.stats["lines"]))
+        logging.info(s.name + ' -    Evaluated rules (global)    : ' + str(s.stats["ger"]))
+        logging.info(s.name + ' -    Satisfied rules (global)    : ' + str(s.stats["sger"]))
+        logging.info(s.name + ' -    Evaluated rules (outcontext): ' + str(s.stats["oer"]))
+        logging.info(s.name + ' -    Satisfied rules (outcontext): ' + str(s.stats["soer"]))
+        logging.info(s.name + ' -    Evaluated rules (context)   : ' + str(s.stats["cer"]))
+        logging.info(s.name + ' -    Satisfied rules (context)   : ' + str(s.stats["scer"]))
+        logging.info(s.name + ' -    Emitted records             : ' + str(s.stats["rec"]))
     def analyzejson(s, stream, name):
         logging.debug(s.name + ' - Analyzing stream' + name)
         s.stats = dict(lines=0, er=0, ser=0, rec=0)
@@ -356,7 +363,7 @@ class Analyzer:
     def analyzexml(s, stream, name):
         logging.debug(s.name + ' - Analyzing xml stream' + name)
         s.context = ''
-        s.stats = dict(patterns=0, er=0, ser=0, rec=0)
+        s.stats = dict(patterns=0, ger=0, sger=0, cer=0, scer=0, oer=0, soer=0, rec=0)
         try:
             page=fromstring(stream)
             s.lxmltext = s.lxmltext1
@@ -370,34 +377,36 @@ class Analyzer:
             if s.context == 'BREAK': break
             s.stats['patterns'] += 1
             for r in s.rules:
-                s.stats['er'] += 1
+                s.stats['ger'] += 1
                 p = r["tag"].search(ln.tag)
                 if not p: continue
                 p = r["regexp"].search(s.lxmltext(ln))
                 if not p: continue
-                s.stats['ser'] += 1
+                s.stats['sger'] += 1
                 logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at text ' + s.lxmltext(ln) + ' for tag: ' + ln.tag)
                 r["action"](s, ln, p.group, name)
                 if s.context == 'BREAK': break
             if s.context == '':
+                #for r in s.outcontextrules[0:1]:
                 for r in s.outcontextrules:
-                    s.stats['er'] += 1
+                    s.stats['oer'] += 1
                     p = r["tag"].search(ln.tag)
                     if not p: continue
                     p = r["regexp"].search(s.lxmltext(ln))
                     if not p: continue
-                    s.stats['ser'] += 1
+                    #s.outcontextrules = s.outcontextrules[1:]
+                    s.stats['soer'] += 1
                     logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at text ' + s.lxmltext(ln) + ' for tag: ' + ln.tag)
                     r["action"](s, ln, p.group, name)
                     break
             if s.context in s.contextrules:
                 r = s.contextrules[s.context]
-                s.stats['er'] += 1
+                s.stats['cer'] += 1
                 p = r["tag"].search(ln.tag)
                 if not p: continue
                 p = r["regexp"].search(s.lxmltext(ln))
                 if not p: continue
-                s.stats['ser'] += 1
+                s.stats['scer'] += 1
                 logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at text ' + s.lxmltext(ln) + ' for tag: ' + ln.tag)
                 r["action"](s, ln, p.group, name)
         if "END" in s.contextrules:
@@ -405,9 +414,14 @@ class Analyzer:
             s.contextrules["END"]["action"](s)
         logging.info(s.name + ' - Summary for member ' + name);
         logging.info(s.name + ' -    Analyzed patterns   : ' + str(s.stats["patterns"]))
-        logging.info(s.name + ' -    Evaluated rules  : ' + str(s.stats["er"]))
-        logging.info(s.name + ' -    Satisfied rules  : ' + str(s.stats["ser"]))
-        logging.info(s.name + ' -    Emitted records  : ' + str(s.stats["rec"]))
+        logging.info(s.name + ' -    Evaluated rules (global)    : ' + str(s.stats["ger"]))
+        logging.info(s.name + ' -    Satisfied rules (global)    : ' + str(s.stats["sger"]))
+        logging.info(s.name + ' -    Evaluated rules (outcontext): ' + str(s.stats["oer"]))
+        logging.info(s.name + ' -    Satisfied rules (outcontext): ' + str(s.stats["soer"]))
+        logging.info(s.name + ' -    Evaluated rules (context)   : ' + str(s.stats["cer"]))
+        logging.info(s.name + ' -    Satisfied rules (context)   : ' + str(s.stats["scer"]))
+        logging.info(s.name + ' -    Emitted records             : ' + str(s.stats["rec"]))
+
         
 class NotifyEventHandler(pyinotify.ProcessEvent):
     
@@ -649,11 +663,13 @@ class KairosWorker:
                 collections[x]['members'].append(v['member'])
         analmain = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'ANALMAIN', type:'analyzer'}")[0]
         analyzer = Analyzer(analmain, {}, listener, None)
-        logging.info('Analyzing archive: ' + filepath + '...')
-        ziparchive = Arcfile(filepath, 'r')
-        for member in ziparchive.list():
+        def do(member):
             logging.info('Analyzing member: ' + member + '...')
             analyzer.analyze(ziparchive.read(member), member)
+            return None
+        logging.info('Analyzing archive: ' + filepath + '...')
+        ziparchive = Arcfile(filepath, 'r')
+        for member in ziparchive.list(): do(member)
         ziparchive.close()
         ncache = Cache(nodesdb, objects=True)        
         ncache.execute("match (n:nodes) where id(n) = '" + nid + "' create ((n)-[:node_has_source]->(s:sources {created:now(), location: '" + filepath+ "', collections:'" + json.dumps(collections) + "'}))")
@@ -764,7 +780,7 @@ class KairosWorker:
         ncache.execute("create extension oracle_fdw")
         ncache.execute("create graph kairos")
         ncache.execute("create vlabel settings")
-        ncache.execute("create (:settings {colors:'COLORS', keycode:0, logging:'info', loglines:100, arrayinsert:100, nodesdb:'kairos_user_" + user + "', plotorientation:'horizontal', systemdb:'kairos_system_system', template:'DEFAULT', top:15, wallpaper:'DEFAULT'})")
+        ncache.execute("create (:settings {colors:'COLORS', keycode:0, logging:'info', loglines:100, nodesdb:'kairos_user_" + user + "', plotorientation:'horizontal', systemdb:'kairos_system_system', template:'DEFAULT', top:15, wallpaper:'DEFAULT'})")
         ncache.execute("create vlabel objects")
         ncache.execute("create vlabel nodes")
         ncache.execute("create (:nodes {name:'/', type:'N', created:now(), status:'ACTIVE', icon:'N'})")
@@ -1176,22 +1192,18 @@ class KairosWorker:
             for x in lavg: listf.append(x)
             for x in lsum: listf.append(x)
             timestamp = True if 'timestamp' in lgby else False
-            oops = dict()
             if timestamp:
                 where = " where " + cache.name + ".meet(timestamp,'" + node['datasource']['aggregatortimefilter'] + "') or timestamp='00000000000000000'"
-                hcache.execute("drop table if exists oops")
-                request = "create table oops as select " + cache.name + "." + function["name"] + "(timestamp)||kairos_nodeid newtimestamp, count(*) as num from (select distinct timestamp, kairos_nodeid from " + inschname + "." + collection + where +') as foo group by ' + function["name"] + '(timestamp)||kairos_nodeid'
-                hcache.execute(request)
             subrequest = "select " + ",".join(listf) + " from " + inschname + "." + collection.lower() + where
             request = 'insert into ' + collection.lower() + '(' + ','.join(listf) + ') select '
             for x in lgby:
                 if x=='timestamp': request += function["name"] + '(timestamp) as timestamp, '
                 else: request += x + ', '
             for x in lavg:
-                request += "coalesce(sum(" + x + "::real) / avg(oops.num), 0) as " + x + ", "
+                request += "avg(coalesce(" + x + ")) as " + x + ", "
             for x in lsum:
                 request += 'sum(' + x + ') as ' + x + ', '
-            request = request[:-2] + ' from (' + subrequest + ') as foo, oops where oops.newtimestamp = ' + function["name"] + '(timestamp)||kairos_nodeid group by '
+            request = request[:-2] + ' from (' + subrequest + ') as foo group by '
             for x in lgby: request = request + function["name"] + '(timestamp), ' if x == 'timestamp' else request + x + ', '
             request = request[:-2]
             hcache.execute(request)
@@ -1199,31 +1211,48 @@ class KairosWorker:
         hcache.disconnect()
 
     @trace_call
-    def ibuildcolcachetypeB(s, node, cache=None, arrayinsert=100, collections=None, analyzers=None):
+    def ibuildcolcachetypeB(s, node, cache=None, collections=None, analyzers=None, nodesdb=None):
         nid = node['id']
-        hcache = Cache(cache.database, schema=cache.name)
-
-        def init(collection, description):
-            description['kairos_nodeid'] = 'text'
-            request = 'create table ' + collection + '('
-            l = sorted(description.keys())
-            for k in l: request += k + ' ' + description[k] +  ', '
-            request = request[:-2] + ')'
-            hcache.execute(request)
-        
-        def action(collection, buff):
-            parameter = []
-            n = len(buff)
-            p = len(buff[0].keys())
-            for e in buff:
-                for k in sorted(e.keys()):
-                    parameter.append(None if e[k] == '' else e[k])
-            patterninsert = 'insert into ' + collection + ' values {}'.format(', '.join([''.join(['(',', '.join(['%s']*p),')'])] *n))
-            hcache.execute(patterninsert, parameter)
-            
-        buff = Buffer(init=init, size=arrayinsert, action=action)
+        files = dict()
+        lock = multiprocessing.Lock()
+        for collection in collections:
+            fname = '/ramdisk/' + cache.name + '_' + collection + '.sql'
+            try: os.remove(fname)
+            except: pass
         def listener(col, d, v, n):
-            buff.push(col, d, v, n)
+            lock.acquire()
+            fname = '/ramdisk/' + cache.name + '_' + col + '.sql'
+            f = open(fname, 'a')
+            if os.stat(fname).st_size == 0:
+                f.write("SET statement_timeout = 0;\n")
+                f.writelines("SET lock_timeout = 0;\n")
+                f.write("SET idle_in_transaction_session_timeout = 0;\n")
+                f.write("SET client_encoding = 'UTF8';\n")
+                f.write("SET standard_conforming_strings = on;\n")
+                f.write("SET check_function_bodies = false;\n")
+                f.write("SET client_min_messages = warning;\n")
+                f.write("SET row_security = off;\n")
+                f.write("SET search_path = " + cache.name + ", pg_catalog;\n")
+                f.write("SET default_tablespace = '';\n")
+                f.write("SET default_with_oids = false;\n")
+                d['kairos_nodeid'] = 'text'
+                request = 'create table ' + col + '('
+                l = sorted(d.keys())
+                for k in l: request += k + ' ' + d[k] +  ', '
+                request = request[:-2] + ');\n'
+                f.write(request)
+                f.write("alter table " + col + " owner to agensgraph;\n")
+                request = 'copy ' + col + '('
+                for k in l: request += k +  ', '
+                request = request[:-2] + ') from stdin;\n'
+                f.write(request)
+            record = ''
+            v['kairos_nodeid'] = nid
+            for k in sorted(v.keys()): record += '\\N\t' if v[k] == '' else str(v[k]).replace('\t','\\t') + '\t'
+            record = record[:-1] + '\n'
+            f.write(record)
+            f.close()
+            lock.release()
         def nulllistener(col, d, v, n): pass
         members =dict()
         for collection in collections:
@@ -1232,18 +1261,37 @@ class KairosWorker:
         source = node['datasource']['location']
         archive = Arcfile(source)
         logging.info('Analyzing archive: ' + source + '...')
-        curanalyzer = None
-        for member in archive.list():
+        try: nolistener = eval(os.environ['NOLISTENER'])
+        except: nolistener = False
+        listen = nulllistener if nolistener else listener
+        def do(member):
             if member in members:
-                if curanalyzer != members[member]: analyzer = Analyzer(members[member], set(collections), listener, nid)
+                analyzer = Analyzer(members[member], set(collections), listen, nid)
                 logging.info('Analyzing member: ' + member + '...')
                 analyzer.analyze(archive.read(member), member)
-                curanalyzer = members[member]
-        buff.close()
-        hcache.disconnect()
+                return None
+        try: limit = int(os.environ['PARALLEL'])
+        except: limit = 0
+        limit = multiprocessing.cpu_count() if limit==0 else limit
+        pl = Parallel(do, workers=limit)
+        for e in archive.list(): pl.push(e)
+        pl.join()
         archive.close()
-        for collection in collections:
-            cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')            
+        logging.info('Writing cache ...')
+        def write(fname):
+            logging.info('Writing collection from ' + fname + ' ...')
+            f = open(fname, 'a')       
+            f.write('\\.\n')
+            f.close()
+            ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -d ' + nodesdb + ' < ' + fname], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if  ag.returncode: 
+                raise Exception('Error when trying to import data from ' + fname)
+            else : 
+                os.remove(fname)
+        pl = Parallel(write, workers=limit)
+        for collection in collections: pl.push('/ramdisk/' + cache.name + '_' + collection + '.sql')
+        pl.join()
+        for collection in collections: cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
     @trace_call
     def ibuildcolcachetypeD(s, node, cache=None, collection=None, liveobject=None):
@@ -1280,7 +1328,7 @@ class KairosWorker:
         return (todo, mapproducers, analyzers)
 
     @trace_call
-    def ibuildcollectioncache(s, node, collections=None, arrayinsert=100, nodesdb=None, systemdb=None):
+    def ibuildcollectioncache(s, node, collections=None, nodesdb=None, systemdb=None):
         nid = node['id']
         ntype = node['datasource']['type']
         nodecache = node['datasource']['cache']
@@ -1302,7 +1350,7 @@ class KairosWorker:
                 if ntype in ['D']:
                     liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['liveobject'] + "', type:'liveobject'}")[0]
                     s.ibuildcolcachetypeD(node, cache=cache, collection=collection, liveobject=liveobject)
-            if ntype in ['B']: s.ibuildcolcachetypeB(node, cache=cache, arrayinsert=arrayinsert, collections=tcollections, analyzers=analyzers)
+            if ntype in ['B']: s.ibuildcolcachetypeB(node, cache=cache, collections=tcollections, analyzers=analyzers, nodesdb=nodesdb)
             logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with collections info: '" + str(tcollections) + "' ...")
             ncache = Cache(nodesdb, objects=True)
             ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' set c.collections = '" + json.dumps(cache.collections) + "'")
@@ -1476,7 +1524,7 @@ class KairosWorker:
         user = params['user'][0]
         db = 'kairos_user_' + user
         ncache = Cache(db, objects=True)
-        y = ncache.execute("match (s:settings) return cast(s.top as int) as top, s.colors, cast(s.keycode as int) as keycode, s.logging, s.nodesdb, cast(s.loglines as int) as loglines, s.systemdb, s.template, s.wallpaper, cast(s.arrayinsert as int) as arrayinsert, s.plotorientation")
+        y = ncache.execute("match (s:settings) return cast(s.top as int) as top, s.colors, cast(s.keycode as int) as keycode, s.logging, s.nodesdb, cast(s.loglines as int) as loglines, s.systemdb, s.template, s.wallpaper, s.plotorientation")
         settings = dict()
         for row in y.fetchall():
             for x in row.keys(): settings[x] = row[x]
@@ -1623,7 +1671,6 @@ class KairosWorker:
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
         loglines = params['loglines'][0]
-        arrayinsert = params['arrayinsert'][0]
         template = params['template'][0]
         colors = params['colors'][0]
         wallpaper = params['wallpaper'][0]
@@ -1634,7 +1681,7 @@ class KairosWorker:
         db = "kairos_user_" + user
         ncache = Cache(db, objects=True)       
         ncache.execute("match (s:settings) detach delete (s)")
-        ncache.execute("create (:settings {colors:'" + colors + "', keycode:" + keycode + ", logging:'" + logging + "', loglines:" + loglines + ", arrayinsert:" + arrayinsert + ", nodesdb:'" + nodesdb + "', plotorientation:'" + plotorientation + "', systemdb:'" + systemdb + "', template:'" + template + "', top:" + top + ", wallpaper:'" + wallpaper + "'})")
+        ncache.execute("create (:settings {colors:'" + colors + "', keycode:" + keycode + ", logging:'" + logging + "', loglines:" + loglines + ", nodesdb:'" + nodesdb + "', plotorientation:'" + plotorientation + "', systemdb:'" + systemdb + "', template:'" + template + "', top:" + top + ", wallpaper:'" + wallpaper + "'})")
         ncache.disconnect()
         return web.json_response(dict(success=True))
 
@@ -2151,13 +2198,12 @@ class KairosWorker:
         id = params['id'][0]
         query = params['query'][0]
         limit = int(params['top'][0])
-        arrayinsert = int(params['arrayinsert'][0])
         id = params['id'][0]
         variables = json.loads(params['variables'][0])
         for v in variables: kairos[v] = variables[v]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
         query = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + query + "', type:'query'}")[0]
-        s.ibuildcollectioncache(node, collections=query['collections'], arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncache(node, collections=query['collections'], systemdb=systemdb, nodesdb=nodesdb)
         message = s.ibuildquerycache(node, query=query, systemdb=systemdb, nodesdb=nodesdb)
         if not message: result = s.iqueryexecute(node, query=query, nodesdb=nodesdb, limit=limit)
         if message:
@@ -2170,12 +2216,11 @@ class KairosWorker:
     def displaycollection(s, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
-        arrayinsert = int(params['arrayinsert'][0])
         systemdb = params['systemdb'][0]
         id = params['id'][0]
         collection = params['collection'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        s.ibuildcollectioncache(node, collections=[collection], arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncache(node, collections=[collection], systemdb=systemdb, nodesdb=nodesdb)
         result = s.iqueryexecute(node, query=dict(id=collection), nodesdb=nodesdb)
         return web.json_response(dict(success=True, data=result))
 
@@ -2185,11 +2230,10 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
-        arrayinsert = int(params['arrayinsert'][0])
         collection = params['collection'][0]
         id = params['id'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        s.ibuildcollectioncache(node, collections={collection}, arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncache(node, collections={collection}, systemdb=systemdb, nodesdb=nodesdb)
         return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
@@ -2198,10 +2242,9 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
-        arrayinsert = int(params['arrayinsert'][0])
         id = params['id'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        s.ibuildcollectioncache(node, collections={'*'}, arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
+        s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
         return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
@@ -2342,16 +2385,15 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
-        arrayinsert = int(params['arrayinsert'][0])
         id = params['id'][0]
         logging.info("Unloading node: " + id + " ...")
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
         path = s.igetpath(nodesdb=nodesdb, id=id)
         archive = path.replace('/', '_')[1:] + '-unload.zip'
-        fname = '/var/tmp/' + archive
+        fname = '/ramdisk/' + archive
         zip = Arcfile(fname, 'w:zip')
         cut = 10000
-        done = s.ibuildcollectioncache(node, collections={'*'}, arrayinsert=arrayinsert, systemdb=systemdb, nodesdb=nodesdb)
+        done = s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]        
         hcache = Cache(node['datasource']['cache']['database'], schema=node['datasource']['cache']['name'])
         for collection in node['datasource']['collections']:

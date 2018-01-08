@@ -1116,10 +1116,6 @@ dhtmlxEvent(window,"load",function(){
             _.each(_.range(1, 101), function (n) {
                 listtop.push({text: n, value: n, selected: n === desktop.settings.top ? true : false});
             });
-            var arrayinsert = [];
-            _.each([1, 10, 100, 1000], function (n) {
-                arrayinsert.push({text: n, value: n, selected: n === desktop.settings.arrayinsert ? true : false});
-            });
             var listkeycode = [];
             _.each(_.range(256), function (n) {
                 listkeycode.push({text: n, value: n, selected: n === desktop.settings.keycode ? true : false});
@@ -1136,7 +1132,6 @@ dhtmlxEvent(window,"load",function(){
                     {type: "select", label: "Plot orientation", options: plotorientation, name: "plotorientation"},
                     {type: "select", label: "Logging", options: listlogging, name: "logging"},
                     {type: "select", label: "Log lines to display", options: listloglines, name: "loglines"},
-                    {type: "select", label: "Analyzer array insert", options: arrayinsert, name: "arrayinsert"},
                     {type: "select", label: "Request labels limit", options: listtop, name: "top"},
                     //{type: "select", label: "Keycode", options: listkeycode, name: "keycode"}
                 ]},
@@ -1146,7 +1141,7 @@ dhtmlxEvent(window,"load",function(){
             settingsform.cross_and_load(settingsdata);
             settingsform.attachEvent("onButtonClick", function(){
                 waterfall([
-                    ajax_get_first_in_async_waterfall("updatesettings", {user: desktop.user, systemdb: settingsform.getItemValue("systemdb"), nodesdb: settingsform.getItemValue("nodesdb"), loglines: settingsform.getItemValue("loglines"), arrayinsert: settingsform.getItemValue("arrayinsert"), template: settingsform.getItemValue("template"), colors: settingsform.getItemValue("color"), wallpaper: settingsform.getItemValue("wallpaper"), top: settingsform.getItemValue("top"), keycode: 0, plotorientation: settingsform.getItemValue("plotorientation"), logging: settingsform.getItemValue("logging")}),
+                    ajax_get_first_in_async_waterfall("updatesettings", {user: desktop.user, systemdb: settingsform.getItemValue("systemdb"), nodesdb: settingsform.getItemValue("nodesdb"), loglines: settingsform.getItemValue("loglines"), template: settingsform.getItemValue("template"), colors: settingsform.getItemValue("color"), wallpaper: settingsform.getItemValue("wallpaper"), top: settingsform.getItemValue("top"), keycode: 0, plotorientation: settingsform.getItemValue("plotorientation"), logging: settingsform.getItemValue("logging")}),
                     function (x) {
                         waterfall([
                             ajax_get_first_in_async_waterfall("getsettings", {user: desktop.user}),
@@ -1906,10 +1901,10 @@ dhtmlxEvent(window,"load",function(){
                     ]);                   
                 }
                 if (btn === 'buildall') {
-                    f("buildallcollectioncaches", {nodesdb: desktop.settings.nodesdb, arrayinsert: desktop.settings.arrayinsert, id: id, systemdb: desktop.settings.systemdb});
+                    f("buildallcollectioncaches", {nodesdb: desktop.settings.nodesdb, id: id, systemdb: desktop.settings.systemdb});
                 }
                 if (btn === 'buildcolcache') {
-                    f("buildcollectioncache", {nodesdb: desktop.settings.nodesdb, arrayinsert: desktop.settings.arrayinsert, id: id, systemdb: desktop.settings.systemdb, collection: curcollection});
+                    f("buildcollectioncache", {nodesdb: desktop.settings.nodesdb, id: id, systemdb: desktop.settings.systemdb, collection: curcollection});
                 }
                 if (btn === 'dropcolcache') {
                     f("dropcollectioncache", {nodesdb: desktop.settings.nodesdb, id: id, systemdb: desktop.settings.systemdb, collection: curcollection});
@@ -2385,7 +2380,7 @@ dhtmlxEvent(window,"load",function(){
                     log.debug("Display collection at node: " + id + " (" + tree.getItemText(id) + ")");
                     var aftergetcollectionslist = function(collection) {
                         waterfall([
-                            ajax_get_first_in_async_waterfall("displaycollection", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, arrayinsert: desktop.settings.arrayinsert, id: id, collection: collection}),
+                            ajax_get_first_in_async_waterfall("displaycollection", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id, collection: collection}),
                             function (x) {
                                 var wq = create_window("display_collection", collection);
                                 var gq =wq.attachGrid();
@@ -2432,7 +2427,7 @@ dhtmlxEvent(window,"load",function(){
                 }
                 if (fid === "unload") {
                     log.debug("Unload at node: " + id + " (" + tree.getItemText(id) + ")");
-                    window.location.href = '/unload?id=' + encodeURIComponent(id) + '&arrayinsert=' + desktop.settings.arrayinsert + '&nodesdb=' + desktop.settings.nodesdb + '&systemdb=' + desktop.settings.systemdb;
+                    window.location.href = '/unload?id=' + encodeURIComponent(id) + '&nodesdb=' + desktop.settings.nodesdb + '&systemdb=' + desktop.settings.systemdb;
                 }
                 if (fid === "empty_trash") {
                     log.debug("Empty trash");
@@ -2562,7 +2557,7 @@ dhtmlxEvent(window,"load",function(){
                                     dataset.info[z[d.label]] = function () {
                                         desktop.variables[d.info.variable] = z[d.label];
                                         waterfall([
-                                            ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, arrayinsert: desktop.settings.arrayinsert, id: node.id, query: d.info.query, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)}),
+                                            ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, query: d.info.query, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)}),
                                             function (y) {
                                                 alertify.set({ delay: 15000 });
                                                 var key = node.datasource.type === 'C' ? y[i][0].key : y[0].key;
@@ -2592,13 +2587,13 @@ dhtmlxEvent(window,"load",function(){
             log.debug('Executing queries');
             var chartqueries = {};
             if (x.chart.reftime !== undefined) {
-                chartqueries[x.chart.reftime] = ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, arrayinsert: desktop.settings.arrayinsert, id: node.id, query: x.chart.reftime, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)});
+                chartqueries[x.chart.reftime] = ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, query: x.chart.reftime, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)});
 
             }
             _.each(x.chart.yaxis, function (y) {
                 _.each(y.renderers, function (r) {
                     _.each(r.datasets, function (d) {
-                        chartqueries[d.query] = ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, arrayinsert: desktop.settings.arrayinsert, id: node.id, query: d.query, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)});
+                        chartqueries[d.query] = ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, query: d.query, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)});
                     });
                 });
             });
@@ -2662,7 +2657,7 @@ dhtmlxEvent(window,"load",function(){
                 }
             };
             waterfall([
-                ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, arrayinsert: desktop.settings.arrayinsert, id: node.id, query: x.choice.query, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)}),
+                ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, query: x.choice.query, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)}),
                 function (y) {
                     var options = [];
                     _.each(_.sortBy(getallchoices(y, node.datasource.type), function(c) {
@@ -2678,7 +2673,7 @@ dhtmlxEvent(window,"load",function(){
 
     var dispquery = function (tree, node, query) {
         waterfall([
-            ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, query: query, arrayinsert: desktop.settings.arrayinsert, id: node.id, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)}),
+            ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, query: query, id: node.id, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)}),
             function (x) {
                 var wq = create_window("query", query + ' - ' + desktop.settings.nodesdb + ':' + tree.getPath(node.id.replace('#', '')));
                 var gq =wq.attachGrid();
