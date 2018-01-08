@@ -151,62 +151,6 @@ class Cache:
         if not s.autocommit: s.agens.commit()
         s.agens.close()
 
-class LiveCache:
-    def __init__(s,file=None, liveobject=None):
-        def dict_factory(cursor, row):
-            d = dict()
-            for idx,col in enumerate(cursor.description):
-                d[col[0]] = row[idx]
-            return d
-        s.nodeid = None
-        s.liveobject = liveobject
-        s.sqlite = apsw.Connection(file)
-        s.sqlite.setrowtrace(dict_factory)
-        for t in liveobject['tables']:
-            module = "module_" + t
-            s.createmodule(module, liveobject['tables'][t]['method']())
-    def setnodeid(s, nodeid):
-        s.nodeid = nodeid
-    def create_function(s,*a):
-        s.sqlite.createscalarfunction(a[0], a[2], a[1])
-    def createmodule(s, *a):
-        s.sqlite.createmodule(*a)
-    def execute(s,*req):
-        logging.debug('Executing request: ' + req[0])
-        c=s.sqlite.cursor()
-        c.execute(*req)
-        return c
-    def init(s, table):
-        params = []
-        for p in s.liveobject['tables'][table]['parameters']:
-            if type(p) == type('a'): params.append(p)
-            else: params.append(json.dumps(p))
-        params.append(s.nodeid)
-        eparams = [base64.b64encode(p.encode()).decode() for p in params]
-        vtable = 'virtual_' + table
-        vtable = vtable.lower()
-        if vtable in [x.lower() for x in s.desc()]:
-            request = "drop table virtual_" + table
-            s.execute(request)
-        request = "create virtual table virtual_" + table + " using module_" + table + "(" + ','.join([p for p in eparams]) + ")"
-        s.execute(request)
-    def desc(s,source=None,table=None):
-        d=OrderedDict()
-        if table:
-            table = table.lower().replace('virtual_','')
-            if not source: request = "pragma table_info(" + table + ")"
-            else: request = "pragma " + source + ".table_info(" + table + ")"
-            for x in s.execute(request): d[x['name']]=x['type']
-        else:
-            if not source: c=s.execute("select name,sql from sqlite_master where type='table'")
-            else: c=s.execute("select name,sql from "+source+".sqlite_master where type='table'")
-            for x in c: d[x['name']]=x['sql']
-        return d
-    def commit(s):
-        pass
-    def disconnect(s):
-        s.sqlite.close()
-
 class Arcfile:
     def __init__(s,file,mode='r'):
         opmode=mode.split(':')
@@ -937,7 +881,7 @@ class KairosWorker:
                 node['datasource']['liveobject'] = row['liveobject']
                 d = dict()
                 try:
-                    liveobject = s.igetobjects(nodesdb=nodesdb, systemdb='kairos_system_system', where="{id:'" + item['liveobject'] + "', type:'liveobject'}")[0]
+                    liveobject = s.igetobjects(nodesdb=nodesdb, systemdb='kairos_system_system', where="{id:'" + row['liveobject'] + "', type:'liveobject'}")[0]
                     for e in liveobject['tables']: d[e] = True
                 except: pass
                 node['datasource']['collections'] = d
@@ -1013,19 +957,27 @@ class KairosWorker:
         return None
     
     @trace_call
-    def iapplyliveobject(s, id, livecache=None, liveobject=None):
-        lcache = LiveCache(livecache, liveobject=liveobject)
-        lcache.setnodeid(id)
+    def iapplyliveobject(s, id=None, cache=None, liveobject=None):
+        hcache = Cache(cache.database, schema=cache.name)
+        extension = liveobject['extension']
+        server = liveobject['id']
+        dbserver = liveobject['dbserver']
+        hcache.execute('drop server if exists ' + server + ' cascade')
+        hcache.execute('create server ' + server + ' foreign data wrapper ' + extension + " options (dbserver '" + dbserver + "')")
+        hcache.execute('grant usage on foreign server ' + server + ' to agensgraph')
+        user = liveobject['user']
+        password = liveobject['password']
+        hcache.execute('create user mapping for agensgraph server ' + server + " options (user '" + user + "', password '" + password + "')")
         collections = []
         message = None
         for t in liveobject['tables']:
-            try: lcache.init(t)
-            except:
-                tb = sys.exc_info()
-                message = str(tb[1])
-                return (message, collections)
+            description = liveobject['tables'][t]['description']
+            request = liveobject['tables'][t]['request']
+            logging.debug('Foreign request: ' + request)
+            desc = ", ".join(["%(k)s %(v)s" % dict(k=d, v=description[d]) for d in description])
+            hcache.execute('create foreign table ' + t + '(' + desc + ') server ' + server + " options (table '(" + request.replace("'", "''").replace('kairos_nodeid_to_be_replaced', id) + ")')")
             collections.append(t)
-        lcache.disconnect()
+        hcache.disconnect()
         return (message, collections)
 
     @trace_call
@@ -1132,12 +1084,13 @@ class KairosWorker:
 
     @trace_call
     def idropcolcachetypeD(s, node, cache=None, collection=None):
-        generator = lambda x=16, y=string.ascii_uppercase: ''.join(random.choice(y) for _ in range(x))
-        hcache = Cache(cache.database, schema=cache.name)
-        tbname = "TO_BE_DELETED_" + generator()
-        hcache.execute("alter table " + collection + " rename to " + tbname)
-        hcache.execute("create table " + collection + " as select * from " + tbname + " limit 0")
-        hcache.disconnect()
+        pass
+        # generator = lambda x=16, y=string.ascii_uppercase: ''.join(random.choice(y) for _ in range(x))
+        # hcache = Cache(cache.database, schema=cache.name)
+        # tbname = "TO_BE_DELETED_" + generator()
+        # hcache.execute("alter table " + collection + " rename to " + tbname)
+        # hcache.execute("create table " + collection + " as select * from " + tbname + " limit 0")
+        # hcache.disconnect()
 
     @trace_call
     def idropcollectioncache(s, node, collection=None, nodesdb=None):
@@ -1298,13 +1251,6 @@ class KairosWorker:
         nid = node['id']
         ntype = node['datasource']['type']
         logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
-        (message, collections) = s.iapplyliveobject(id, livecache=cache.name, liveobject=liveobject)
-        lcache = LiveCache(cache.name, liveobject=liveobject)
-        tabledesc = lcache.desc(table=collection)
-        listf = ','.join(tabledesc.keys())
-        request = "insert into " + collection + "(" + listf + ") select " + listf + " from virtual_" + collection
-        lcache.execute(request)
-        lcache.disconnect()
         cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
     @trace_call
@@ -1344,7 +1290,7 @@ class KairosWorker:
                 logging.info("Node: " + nid + ", Type: " + ntype + ", removing obsolete parts of old collection cache: '" + collection + "' ...")
                 if ntype in ['A']: s.idropcolcachetypeA(node, mapproducers=mapproducers, cache=cache, collection=collection)
                 if ntype in ['B']: s.idropcolcachetypeB(node, cache=cache, collection=collection)
-                if ntype in ['D']: s.idropcolcachetypeD(node, cache=cache, collection=collection)                
+                #if ntype in ['D']: s.idropcolcachetypeD(node, cache=cache, collection=collection)                
             for collection in tcollections:
                 if ntype in ['A']: s.ibuildcolcachetypeA(node, cache=cache, collection=collection, nodesdb=nodesdb, systemdb=systemdb, mapproducers=mapproducers)
                 if ntype in ['D']:
@@ -1941,10 +1887,16 @@ class KairosWorker:
     def getcollections(s, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
+        systemdb = params['systemdb'][0]
         id = params['id'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True)[0]
         list = []
-        for collection in node['datasource']['collections']: list.append(dict(label=collection))
+        if node['datasource']['type'] == 'D':
+            loname = node['datasource']['liveobject']
+            liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + loname + "', type:'liveobject'}")[0]
+            for t in liveobject['tables']: list.append(dict(label=t))
+        else:
+            for collection in node['datasource']['collections']: list.append(dict(label=collection))
         return web.json_response(dict(success=True, data=list))
 
     @intercept_logging_and_internal_error
@@ -2476,7 +2428,7 @@ class KairosWorker:
             s.ideletecache(id, nodesdb=nodesdb)
         s.icreatecache(id, nodesdb=nodesdb)
         cache = s.igetcache(id, nodesdb=nodesdb)
-        (message, collections) = s.iapplyliveobject(id, livecache=cache.name, liveobject=liveobject)
+        (message, collections) = s.iapplyliveobject(id=id, cache=cache, liveobject=liveobject)
         ncache = Cache(nodesdb, objects=True)
         ncache.execute("match (n:nodes) where id(n) = '" + id+ "' set n.type=to_json('D'::text), n.icon=to_json('D'::text), n.aggregated=to_json(now()), n.liveobject=to_json('" + loname + "'::text)")
         ncache.disconnect()

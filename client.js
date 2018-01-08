@@ -2413,7 +2413,7 @@ dhtmlxEvent(window,"load",function(){
                         ]);
                     };
                     waterfall([
-                        ajax_get_first_in_async_waterfall("getcollections", {nodesdb: desktop.settings.nodesdb, id: id}),
+                        ajax_get_first_in_async_waterfall("getcollections", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id}),
                         function (x) {
                             var listcollections = [];
                             _.each(_.sortBy(getallchoices(x, tree.getUserData("type")), function(c) {
