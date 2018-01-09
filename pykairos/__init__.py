@@ -1081,13 +1081,9 @@ class KairosWorker:
 
     @trace_call
     def idropcolcachetypeD(s, node, cache=None, collection=None):
-        pass
-        # generator = lambda x=16, y=string.ascii_uppercase: ''.join(random.choice(y) for _ in range(x))
-        # hcache = Cache(cache.database, schema=cache.name)
-        # tbname = "TO_BE_DELETED_" + generator()
-        # hcache.execute("alter table " + collection + " rename to " + tbname)
-        # hcache.execute("create table " + collection + " as select * from " + tbname + " limit 0")
-        # hcache.disconnect()
+        hcache.execute("drop table if exists " + collection)
+        hcache = Cache(cache.database, schema=cache.name)
+        hcache.disconnect()
 
     @trace_call
     def idropcollectioncache(s, node, collection=None, nodesdb=None):
@@ -1248,6 +1244,9 @@ class KairosWorker:
         nid = node['id']
         ntype = node['datasource']['type']
         logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
+        hcache = Cache(cache.database, schema=cache.name)
+        hcache.execute("create table " + collection + " as select * from foreign_" +collection)
+        hcache.disconnect()
         cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
     @trace_call
