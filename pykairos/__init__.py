@@ -975,7 +975,7 @@ class KairosWorker:
             request = liveobject['tables'][t]['request']
             logging.debug('Foreign request: ' + request)
             desc = ", ".join(["%(k)s %(v)s" % dict(k=d, v=description[d]) for d in description])
-            hcache.execute('create foreign table ' + t + '(' + desc + ') server ' + server + " options (table '(" + request.replace("'", "''").replace('kairos_nodeid_to_be_replaced', id) + ")')")
+            hcache.execute('create foreign table foreign_' + t + '(' + desc + ') server ' + server + " options (table '(" + request.replace("'", "''").replace('kairos_nodeid_to_be_replaced', id) + ")')")
             collections.append(t)
         hcache.disconnect()
         return (message, collections)
@@ -1060,10 +1060,7 @@ class KairosWorker:
         ntype = node['datasource']['type']
         for collection in collections:
             logging.info("Node: " + nid + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
-            todo[collection] = False
-            datepart = cache.collections[collection][nid] if nid in cache.collections[collection] else None
-            todo[collection] = True if datepart == None else todo[collection]
-            todo[collection] = True if datepart != None and (datetime.now() - datetime.strptime(datepart, '%Y-%m-%d %H:%M:%S.%f')).seconds > 60 else todo[collection]            
+            todo[collection] = True        
         return todo
 
     @trace_call
@@ -1290,7 +1287,7 @@ class KairosWorker:
                 logging.info("Node: " + nid + ", Type: " + ntype + ", removing obsolete parts of old collection cache: '" + collection + "' ...")
                 if ntype in ['A']: s.idropcolcachetypeA(node, mapproducers=mapproducers, cache=cache, collection=collection)
                 if ntype in ['B']: s.idropcolcachetypeB(node, cache=cache, collection=collection)
-                #if ntype in ['D']: s.idropcolcachetypeD(node, cache=cache, collection=collection)                
+                if ntype in ['D']: s.idropcolcachetypeD(node, cache=cache, collection=collection)                
             for collection in tcollections:
                 if ntype in ['A']: s.ibuildcolcachetypeA(node, cache=cache, collection=collection, nodesdb=nodesdb, systemdb=systemdb, mapproducers=mapproducers)
                 if ntype in ['D']:
@@ -1317,7 +1314,8 @@ class KairosWorker:
                 message = s.ibuildquerycache(pnode, query=query, systemdb=systemdb, nodesdb=nodesdb)
                 if message: return message
         if ntype in ['A', 'B', 'D']:
-            todo = True if qid not in cache.queries else False
+            todo = True if ntype in ['D'] else False
+            todo = True if qid not in cache.queries else todo
             todo = True if "nocache" in query and query["nocache"] else todo
             for collection in query['collections']:
                 for part in cache.collections[collection]:
