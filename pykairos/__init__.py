@@ -902,7 +902,7 @@ class KairosWorker:
                         node['datasource']['collections'] = firstproducer['datasource']['collections']
                     except: node['datasource']['collections'] = None
             if getcache:
-                if row['type'] in ['A', 'B', 'D']:
+                if row['type'] in ['A', 'B', 'D', 'C']:
                     cache = s.igetcache(node['id'], nodesdb=nodesdb)
                     if hasattr(cache, 'rid'):
                         node['datasource']['cache']['collections'] = cache.collections
