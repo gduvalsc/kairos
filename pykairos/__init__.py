@@ -1058,9 +1058,14 @@ class KairosWorker:
         todo = dict()
         nid = node['id']
         ntype = node['datasource']['type']
+        try: timeout = int(os.environ['LIVECACHE_TIMEOUT'])
+        except: timeout = 60
         for collection in collections:
             logging.info("Node: " + nid + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
-            todo[collection] = True        
+            todo[collection] = False
+            datepart = cache.collections[collection][nid] if nid in cache.collections[collection] else None
+            todo[collection] = True if datepart == None else todo[collection]
+            todo[collection] = True if datepart != None and (datetime.now() - datetime.strptime(datepart, '%Y-%m-%d %H:%M:%S.%f')).seconds > timeout else todo[collection]                   
         return todo
 
     @trace_call
@@ -1081,8 +1086,8 @@ class KairosWorker:
 
     @trace_call
     def idropcolcachetypeD(s, node, cache=None, collection=None):
-        hcache.execute("drop table if exists " + collection)
         hcache = Cache(cache.database, schema=cache.name)
+        hcache.execute("drop table if exists " + collection)
         hcache.disconnect()
 
     @trace_call
@@ -1313,8 +1318,7 @@ class KairosWorker:
                 message = s.ibuildquerycache(pnode, query=query, systemdb=systemdb, nodesdb=nodesdb)
                 if message: return message
         if ntype in ['A', 'B', 'D']:
-            todo = True if ntype in ['D'] else False
-            todo = True if qid not in cache.queries else todo
+            todo = True if qid not in cache.queries else False
             todo = True if "nocache" in query and query["nocache"] else todo
             for collection in query['collections']:
                 for part in cache.collections[collection]:
