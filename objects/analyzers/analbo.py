@@ -54,6 +54,7 @@ class UserObject(dict):
         binf = datetime(vmin.year, vmin.month, vmin.day, vmin.hour, vmin.minute)
         bsup = datetime(vmax.year, vmax.month, vmax.day, vmax.hour, vmax.minute) + timedelta(1.0 / 24 / 60)
         bins = range(int((bsup - binf).total_seconds() / 60))
+        stack = []
         for k in sorted(a.data):
             for eid in sorted(a.data[k]):
                 newdata = dict()
@@ -83,7 +84,8 @@ class UserObject(dict):
                             newdata['executecount'] = 60
                         if i == y[1]:
                             newdata['executecount'] = delta2
-                    a.emit("BO", a.desctable["BOBO2"], newdata)
+                    stack.append(newdata)
+        a.emit("BO", a.desctable["BOBO2"], stack)
 
     def asep(s, a, l ,g, m):
         a.sep1 = g(1)

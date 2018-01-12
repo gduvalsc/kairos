@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
-import string, random, ssl, logging, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, psycopg2, psycopg2.extras, psycopg2.extensions, queue, multiprocessing, multiprocessing.connection
+import string, random, ssl, logging, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, psycopg2, psycopg2.extras, psycopg2.extensions, queue, multiprocessing, multiprocessing.connection, io, time
 from collections import *
 from datetime import datetime
 from aiohttp import web, WSCloseCode, WSMsgType, MultiDict
@@ -94,13 +94,21 @@ def intercept_logging_and_internal_error(func):
             return response
         except:
             tb = sys.exc_info()
-            #message = "Kairos internal error!"
             logging.error(str(tb))
-            #logging.critical(message)
             message = str(tb[1])
-            #logging.critical(message)
             return web.json_response(dict(success=False, message=message))
-            #raise
+    return wrapper
+
+def intercept_internal_error(func):
+    def wrapper(*args, **kwargs):
+        try:
+            response = func(*args, **kwargs)
+            return response
+        except:
+            tb = sys.exc_info()
+            logging.error(str(tb))
+            message = str(tb[1])
+            return web.json_response(dict(success=False, message=message))
     return wrapper
 
 class Object: pass
@@ -147,12 +155,18 @@ class Cache:
         c.execute(*req)
         logging.debug('Request completed!')
         return c
+    def copy(s, buffer, table, description):
+        logging.debug('Executing copy into: ' + table + " using: " + str(description))
+        c = s.agens.cursor()
+        c.copy_from(buffer, table, columns=description)
+        logging.debug('Request completed!')
     def disconnect(s):
         if not s.autocommit: s.agens.commit()
         s.agens.close()
 
 class Arcfile:
     def __init__(s,file,mode='r'):
+        s.lock = multiprocessing.Lock()
         opmode=mode.split(':')
         s.type='tarfile'
         if opmode[0] in ['r','a']:
@@ -172,12 +186,19 @@ class Arcfile:
         if s.type=='tarfile': return s.archive.getnames()
         else: return s.archive.namelist()
     def read(s,member):
+        s.lock.acquire()
         if s.type=='tarfile':
-            try: return bz2.decompress(s.archive.extractfile(s.archive.getmember(member).name).read())
-            except: return s.archive.extractfile(s.archive.getmember(member).name).read()
+            try: 
+                r = bz2.decompress(s.archive.extractfile(s.archive.getmember(member).name).read())
+            except: 
+                r = s.archive.extractfile(s.archive.getmember(member).name).read()
         else:
-            try: return bz2.decompress(s.archive.read(member))
-            except: return s.archive.read(member)
+            try: 
+                r = bz2.decompress(s.archive.read(member))
+            except: 
+                r = s.archive.read(member)
+        s.lock.release()
+        return r
     def write(s,member,stream):
         if s.type=='tarfile':
             inf=tarfile.TarInfo()
@@ -1161,87 +1182,103 @@ class KairosWorker:
             cache.collections[collection][pnode['id']] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
         hcache.disconnect()
 
+    @intercept_internal_error
     @trace_call
     def ibuildcolcachetypeB(s, node, cache=None, collections=None, analyzers=None, nodesdb=None):
         nid = node['id']
-        files = dict()
-        lock = multiprocessing.Lock()
+        queues = dict()
+        writeheader = dict()
+        readheader = dict()
+        members = dict()
         for collection in collections:
-            fname = '/ramdisk/' + cache.name + '_' + collection + '.sql'
-            try: os.remove(fname)
-            except: pass
-        def listener(col, d, v, n):
-            lock.acquire()
-            fname = '/ramdisk/' + cache.name + '_' + col + '.sql'
-            f = open(fname, 'a')
-            if os.stat(fname).st_size == 0:
-                f.write("SET statement_timeout = 0;\n")
-                f.writelines("SET lock_timeout = 0;\n")
-                f.write("SET idle_in_transaction_session_timeout = 0;\n")
-                f.write("SET client_encoding = 'UTF8';\n")
-                f.write("SET standard_conforming_strings = on;\n")
-                f.write("SET check_function_bodies = false;\n")
-                f.write("SET client_min_messages = warning;\n")
-                f.write("SET row_security = off;\n")
-                f.write("SET search_path = " + cache.name + ", pg_catalog;\n")
-                f.write("SET default_tablespace = '';\n")
-                f.write("SET default_with_oids = false;\n")
-                d['kairos_nodeid'] = 'text'
-                request = 'create table ' + col + '('
-                l = sorted(d.keys())
-                for k in l: request += k + ' ' + d[k] +  ', '
-                request = request[:-2] + ');\n'
-                f.write(request)
-                f.write("alter table " + col + " owner to agensgraph;\n")
-                request = 'copy ' + col + '('
-                for k in l: request += k +  ', '
-                request = request[:-2] + ') from stdin;\n'
-                f.write(request)
-            record = ''
-            v['kairos_nodeid'] = nid
-            for k in sorted(v.keys()): record += '\\N\t' if v[k] == '' else str(v[k]).replace('\t','\\t') + '\t'
-            record = record[:-1] + '\n'
-            f.write(record)
-            f.close()
-            lock.release()
+            queues[collection] = multiprocessing.Queue()
+            writeheader[collection] = True
+            readheader[collection] = True
+            for member in node['datasource']['collections'][collection]['members']: members[member]=analyzers[collection]
+
         def nulllistener(col, d, v, n): pass
-        members =dict()
-        for collection in collections:
-            for member in node['datasource']['collections'][collection]['members']:
-                members[member]=analyzers[collection]
+
+        def write_to_queue(col, d, v, n):
+            if writeheader[col]:
+                record = json.dumps(dict(header='KAIROS_START', desc=d)) 
+                queues[col].put(record)
+                writeheader[col] = False
+            v = v if type(v) == type([]) else [v]
+            for e in v:
+                record = ''
+                e['kairos_nodeid'] = nid
+                for k in sorted(e.keys()): record += '\\N\t' if e[k] == '' else str(e[k]).replace('\t','\\t') + '\t'
+                record = record[:-1] + '\n'
+                queues[col].put(record)
+
+        def read_from_queue(col):
+            hcache = Cache(cache.database, schema=cache.name)
+            buffer = io.StringIO()
+            bufferempty = True
+            counter = 0
+            try: limit = int(os.environ['BUFFER'])
+            except: limit = 10000
+            globalcounter = 0
+            while True:
+                record = queues[col].get()
+                if record == 'KAIROS_DONE': break
+                try: record = json.loads(record)
+                except: pass
+                if type(record) == type(dict()) and 'header' in record and record['header'] == 'KAIROS_START':
+                    if readheader[col]:
+                        record['desc']['kairos_nodeid'] = 'text'
+                        request = 'create table ' + col + '('
+                        description= sorted(record['desc'].keys())
+                        for k in description: request += k + ' ' + record['desc'][k] +  ', '
+                        request = request[:-2] + ')'
+                        hcache.execute(request)
+                        readheader[col] = False
+                else:
+                    bufferempty = False
+                    counter += 1 
+                    buffer.write(record)
+                    if counter == limit:
+                        buffer.seek(0)
+                        logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
+                        hcache.copy(buffer, col, tuple(description))
+                        buffer = io.StringIO()
+                        globalcounter += counter
+                        counter = 0
+                        bufferempty = True
+            if not bufferempty:
+                buffer.seek(0)
+                logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
+                hcache.copy(buffer, col, tuple(description))
+                globalcounter += counter
+            logging.info("Collection: " + col + ": " + str(globalcounter) + " records have been written! ")
+            hcache.disconnect()
+
         source = node['datasource']['location']
         archive = Arcfile(source)
         logging.info('Analyzing archive: ' + source + '...')
         try: nolistener = eval(os.environ['NOLISTENER'])
         except: nolistener = False
-        listen = nulllistener if nolistener else listener
+        listen = nulllistener if nolistener else write_to_queue
+        
         def do(member):
             if member in members:
                 analyzer = Analyzer(members[member], set(collections), listen, nid)
                 logging.info('Analyzing member: ' + member + '...')
                 analyzer.analyze(archive.read(member), member)
                 return None
+
         try: limit = int(os.environ['PARALLEL'])
         except: limit = 0
         limit = multiprocessing.cpu_count() if limit==0 else limit
-        pl = Parallel(do, workers=limit)
-        for e in archive.list(): pl.push(e)
-        pl.join()
+
+        pr = Parallel(read_from_queue, workers=len(collections))
+        for collection in collections: pr.push(collection)
+        pw = Parallel(do, workers = limit)
+        for e in archive.list(): pw.push(e)
+        pw.join()
         archive.close()
-        logging.info('Writing cache ...')
-        def write(fname):
-            logging.info('Writing collection from ' + fname + ' ...')
-            f = open(fname, 'a')       
-            f.write('\\.\n')
-            f.close()
-            ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -d ' + nodesdb + ' < ' + fname], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if  ag.returncode: 
-                raise Exception('Error when trying to import data from ' + fname)
-            else : 
-                os.remove(fname)
-        pl = Parallel(write, workers=limit)
-        for collection in collections: pl.push('/ramdisk/' + cache.name + '_' + collection + '.sql')
-        pl.join()
+        for collection in collections: queues[collection].put('KAIROS_DONE')
+        pr.join()
         for collection in collections: cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
     @trace_call

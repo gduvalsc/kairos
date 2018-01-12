@@ -43,6 +43,7 @@ class UserObject(dict):
         binf = datetime(vmin.year, vmin.month, vmin.day, vmin.hour, vmin.minute)
         bsup = datetime(vmax.year, vmax.month, vmax.day, vmax.hour, vmax.minute) + timedelta(1.0 / 24 / 60)
         bins = range(int((bsup - binf).total_seconds() / 60))
+        stack = []
         for k in sorted(a.data):
             newdata = dict()
             x0 = a.data[k]['begwait']
@@ -109,7 +110,8 @@ class UserObject(dict):
                     if i == y[1]:
                         newdata['waitcount'] = 0
                         newdata['executecount'] = delta2
-                a.emit("EBS12CM", a.desctable["EBS12CM"], newdata)
+                stack.append(newdata)
+        a.emit("EBS12CM", a.desctable["EBS12CM"], stack)
 
     def asep(s, a, l ,g, m):
         a.sep1 = g(1)

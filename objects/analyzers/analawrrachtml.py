@@ -69,6 +69,8 @@ class UserObject(dict):
                 a.date = {}
                 a.version = {}
                 desc = dict(timestamp='text',inum='text',instance='text',host='text',avgelapsed='real',elapsed='int',avgdbtime='real',avgactivesess='real')
+                stack = []
+                stack = []
                 for y in a.collected[x]:
                     inum = int(y[0])
                     instance = y[1]
@@ -85,10 +87,12 @@ class UserObject(dict):
                     a.version[inum] = y[6]
                     dbtime = tof(y[8]) * 60 / a.dur[inum]
                     avgactivesess = tof(y[10])
-                    if 'DBORARACMISC' in a.scope: a.emit('DBORARACMISC', desc, dict(timestamp=a.date[inum],inum=str(inum),instance=instance,host=host,avgelapsed=a.dur[inum],elapsed=int(a.dur[inum]),avgdbtime=dbtime,avgactivesess=avgactivesess))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),instance=instance,host=host,avgelapsed=a.dur[inum],elapsed=int(a.dur[inum]),avgdbtime=dbtime,avgactivesess=avgactivesess))
+                if 'DBORARACMISC' in a.scope: a.emit('DBORARACMISC', desc, stack)
 
             if x=='Report Summary':
                 desc = dict(timestamp='text',inum='text',dbcache='real',sharedpool='real',largepool='real',javapool='real',streampool='real',pgatarget='real',logbuffer='real')
+                stack = []
                 for y in a.collected[x]:
                     try: inum = int(y[0])
                     except: continue
@@ -99,10 +103,12 @@ class UserObject(dict):
                     streampool = tof(y[13])
                     pgatarget = tof(y[15])
                     logbuffer = tof(y[17])
-                    a.emit('DBORARACCSIZE', desc, dict(timestamp=a.date[inum],inum=str(inum),dbcache=dbcache,sharedpool=sharedpool,largepool=largepool,javapool=javapool,streampool=streampool,pgatarget=pgatarget,logbuffer=logbuffer))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),dbcache=dbcache,sharedpool=sharedpool,largepool=largepool,javapool=javapool,streampool=streampool,pgatarget=pgatarget,logbuffer=logbuffer))
+                a.emit('DBORARACCSIZE', desc, stack)
 
             if x=='OS Statistics By Instance':
                 desc = dict(timestamp='text',inum='text',numcpus='real',cpucores='real',loadend='real',busyp='real',usrp='real',sysp='real',wiop='real',idlp='real',busytime='real',idletime='real',totaltime='real',memory='real')
+                stack = []
                 for y in a.collected[x]:
                     try: inum = int(y[0])
                     except: continue
@@ -118,10 +124,12 @@ class UserObject(dict):
                     idletime = tof(y[12]) / a.dur[inum]
                     totaltime = tof(y[13]) / a.dur[inum]
                     memory = tof(y[14])
-                    a.emit('DBORARACOSS', desc, dict(timestamp=a.date[inum],inum=str(inum),numcpus=numcpus,cpucores=cpucores,loadend=loadend,busyp=busyp,usrp=usrp,sysp=sysp,wiop=wiop,idlp=idlp,busytime=busytime,idletime=idletime,totaltime=totaltime,memory=memory))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),numcpus=numcpus,cpucores=cpucores,loadend=loadend,busyp=busyp,usrp=usrp,sysp=sysp,wiop=wiop,idlp=idlp,busytime=busytime,idletime=idletime,totaltime=totaltime,memory=memory))
+                a.emit('DBORARACOSS', desc, stack)
 
             if x=='Time Model':
                 desc = dict(timestamp='text',inum='text',dbtime='real',dbcpu='real',sqlexecela='real',parseela='real',hardparseela='real',plsqlela='real',javaela='real',bgtime='real',bgcpu='real')
+                stack = []
                 for y in a.collected[x]:
                     try: inum = int(y[0])
                     except: continue
@@ -134,10 +142,12 @@ class UserObject(dict):
                     javaela = tof(y[7]) / a.dur[inum]
                     bgtime = tof(y[8]) / a.dur[inum]
                     bgcpu = tof(y[9]) / a.dur[inum]
-                    a.emit('DBORARACTM', desc, dict(timestamp=a.date[inum],inum=str(inum),dbtime=dbtime,dbcpu=dbcpu,sqlexecela=sqlexecela,parseela=parseela,hardparseela=hardparseela,plsqlela=plsqlela,javaela=javaela,bgtime=bgtime,bgcpu=bgcpu))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),dbtime=dbtime,dbcpu=dbcpu,sqlexecela=sqlexecela,parseela=parseela,hardparseela=hardparseela,plsqlela=plsqlela,javaela=javaela,bgtime=bgtime,bgcpu=bgcpu))
+                a.emit('DBORARACTM', desc, stack)
 
             if x=='Foreground Wait Classes':
                 desc = dict(timestamp='text',inum='text',userio='real',sysio='real',other='real',applic='real',commits='real',network='real',concurcy='real',config='real',cluster='real',dbcpu='real',dbtime='real')
+                stack = []
                 for y in a.collected[x]:
                     try: inum = int(y[0])
                     except: continue
@@ -152,12 +162,14 @@ class UserObject(dict):
                     cluster = tof(y[9]) / a.dur[inum]
                     dbcpu = tof(y[10]) / a.dur[inum]
                     dbtime = tof(y[11]) / a.dur[inum]
-                    a.emit('DBORARACFWC', desc, dict(timestamp=a.date[inum],inum=str(inum),dbtime=dbtime,dbcpu=dbcpu,userio=userio,sysio=sysio,other=other,applic=applic,commits=commits,network=network,concurcy=concurcy,config=config,cluster=cluster))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),dbtime=dbtime,dbcpu=dbcpu,userio=userio,sysio=sysio,other=other,applic=applic,commits=commits,network=network,concurcy=concurcy,config=config,cluster=cluster))
+                a.emit('DBORARACFWC', desc, stack)
 
 
             if x in ['Top Timed Events','Top Timed Foreground Events','Top Timed Background Events']:
                 collection = 'DBORARACTTE' if x=='Top Timed Events' else 'DBORARACTTFE' if x=='Top Timed Foreground Events' else 'DBORARACTTBE'
                 desc = dict(timestamp='text',inum='text',klass='text',event='text',waits='real',ptimeouts='real',timewaited='real',pdbtime='real')
+                stack = []
                 for y in a.collected[x]:
                     if len(y)!=13: continue
                     try:
@@ -172,10 +184,12 @@ class UserObject(dict):
                     except: ptimeouts = 0.0
                     timewaited = tof(y[5])/a.dur[inum]
                     pdbtime = tof(y[7])
-                    a.emit(collection, desc, dict(timestamp=a.date[inum],inum=str(inum),klass=klass,event=event,waits=waits,ptimeouts=ptimeouts,timewaited=timewaited,pdbtime=pdbtime))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),klass=klass,event=event,waits=waits,ptimeouts=ptimeouts,timewaited=timewaited,pdbtime=pdbtime))
+                a.emit(collection, desc, stack)
 
             if x=='System Statistics':
                 desc = dict(timestamp='text',inum='text',logicalreads='real',physicalreads='real',physicalwrites='real',redosizek='real',blockchanges='real',usercalls='real',execs='real',parses='real',logons='real',txns='real')
+                stack = []
                 for y in a.collected[x]:
                     try: inum = int(y[0])
                     except: continue
@@ -189,10 +203,12 @@ class UserObject(dict):
                     parses = tof(y[8]) / a.dur[inum]
                     logons = tof(y[9]) / a.dur[inum]
                     txns = tof(y[10]) / a.dur[inum]
-                    a.emit('DBORARACGALPSS', desc, dict(timestamp=a.date[inum],inum=str(inum),logicalreads=logicalreads,physicalreads=physicalreads,physicalwrites=physicalwrites,redosizek=redosizek,blockchanges=blockchanges,usercalls=usercalls,execs=execs,parses=parses,logons=logons,txns=txns))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),logicalreads=logicalreads,physicalreads=physicalreads,physicalwrites=physicalwrites,redosizek=redosizek,blockchanges=blockchanges,usercalls=usercalls,execs=execs,parses=parses,logons=logons,txns=txns))
+                a.emit('DBORARACGALPSS', desc, stack)
 
             if x=='SysStat and Global Messaging  - RAC':
                 desc = dict(timestamp='text',inum='text',brgcct='real',brgccr='real',bsgcct='real',bsgccr='real',cpugc='real',cpuipc='real',mgcsr='real',mgesr='real',mgcss='real',mgess='real',msd='real',msi='real',gcbl='real',gccrf='real')
+                stack = []
                 for y in a.collected[x]:
                     try: inum = int(y[0])
                     except: continue
@@ -210,20 +226,24 @@ class UserObject(dict):
                     msi = tof(y[12]) / a.dur[inum]
                     gcbl = tof(y[13]) / a.dur[inum]
                     gccrf = tof(y[14]) / a.dur[inum]
-                    a.emit('DBORARACGALPGM', desc, dict(timestamp=a.date[inum],inum=str(inum),brgcct=brgcct,brgccr=brgccr,bsgcct=bsgcct,bsgccr=bsgccr,cpugc=cpugc,cpuipc=cpuipc,mgcsr=mgcsr,mgesr=mgesr,mgcss=mgcss,mgess=mgess,msd=msd,msi=msi,gcbl=gcbl,gccrf=gccrf))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),brgcct=brgcct,brgccr=brgccr,bsgcct=bsgcct,bsgccr=bsgccr,cpugc=cpugc,cpuipc=cpuipc,mgcsr=mgcsr,mgesr=mgesr,mgcss=mgcss,mgess=mgess,msd=msd,msi=msi,gcbl=gcbl,gccrf=gccrf))
+                a.emit('DBORARACGALPGM', desc, stack)
 
             if x=='Global Cache Efficiency Percentages':
                 desc = dict(timestamp='text',inum='text',plocal='real',premote='real',pdisk='real')
+                stack = []
                 for y in a.collected[x]:
                     try: inum = int(y[0])
                     except: continue
                     plocal = tof(y[1])
                     premote = tof(y[2])
                     pdisk = tof(y[3])
-                    a.emit('DBORARACGCEP', desc, dict(timestamp=a.date[inum],inum=str(inum),plocal=plocal,premote=premote,pdisk=pdisk))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),plocal=plocal,premote=premote,pdisk=pdisk))
+                a.emit('DBORARACGCEP', desc, stack)
 
             if x=='Global Cache Transfer Stats':
                 desc = dict(timestamp='text',dest='text',src='text',bclass='text',crblocks='real',crimm='real',crbusy='real',crcngst='real',cublocks='real',cuimm='real',cubusy='real',cucngst='real',cravgimm='real',cravgbusy='real',cravgcngst='real',cuavgimm='real',cuavgbusy='real',cuavgcngst='real')
+                stack = []
                 for y in a.collected[x]:
                     a.dest = int(tof(y[0])) if tof(y[0]) else a.dest
                     src = y[1]
@@ -242,32 +262,38 @@ class UserObject(dict):
                     cuavgimm = tof(y[16])
                     cuavgbusy = tof(y[17])
                     cuavgcngst = tof(y[18])
-                    a.emit('DBORARACGCTS', desc, dict(timestamp=a.date[a.dest],dest=str(a.dest),src=src,bclass=bclass,crblocks=crblocks,crimm=crimm,crbusy=crbusy,crcngst=crcngst,cublocks=cublocks,cuimm=cuimm,cubusy=cubusy,cucngst=cucngst,cravgimm=cravgimm,cravgbusy=cravgbusy,cravgcngst=cravgcngst,cuavgimm=cuavgimm,cuavgbusy=cuavgbusy,cuavgcngst=cuavgcngst))
+                    stack.append(dict(timestamp=a.date[a.dest],dest=str(a.dest),src=src,bclass=bclass,crblocks=crblocks,crimm=crimm,crbusy=crbusy,crcngst=crcngst,cublocks=cublocks,cuimm=cuimm,cubusy=cubusy,cucngst=cucngst,cravgimm=cravgimm,cravgbusy=cravgbusy,cravgcngst=cravgcngst,cuavgimm=cuavgimm,cuavgbusy=cuavgbusy,cuavgcngst=cuavgcngst))
+                a.emit('DBORARACGCTS', desc, stack)
 
             if x in ['System Statistics (Global)','Global Messaging Statistics (Global)']:
                 desc = dict(timestamp='text',statistic='text',value='real')
+                stack = []
                 for y in a.collected[x]:
                     statistic = y[0]
                     value = tof(y[1]) / a.dur[0]
-                    a.emit('DBORARACSTA', desc, dict(timestamp=a.date[0],statistic=statistic,value=value))
+                    stack.append(dict(timestamp=a.date[0],statistic=statistic,value=value))
+                a.emit('DBORARACSTA', desc, stack)
 
             if x in ['System Statistics (Absolute Values)']:
                 desc = dict(timestamp='text',inum='text',statistic='text',value='real')
+                stack = []
                 for y in a.collected[x]:
                     try: inum = int(y[0])
                     except: continue
                     statistic = 'sessions'
                     value = tof(y[2])
-                    a.emit('DBORARACSTAA', desc, dict(timestamp=a.date[inum],inum=str(inum),statistic=statistic,value=value))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),statistic=statistic,value=value))
                     statistic = 'open cursors'
                     value = tof(y[4])
-                    a.emit('DBORARACSTAA', desc, dict(timestamp=a.date[inum],inum=str(inum),statistic=statistic,value=value))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),statistic=statistic,value=value))
                     statistic = 'session cached cursors'
                     value = tof(y[6])
-                    a.emit('DBORARACSTAA', desc, dict(timestamp=a.date[inum],inum=str(inum),statistic=statistic,value=value))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),statistic=statistic,value=value))
+                a.emit('DBORARACSTAA', desc, stack)
 
             if x in ['Segment Statistics (Global)']:
                 desc = dict(timestamp='text',statistic='text',owner='text',tablespace='text',object='text',subobject='text',objtype='text',value='real',ptotal='real',pcapture='real')
+                stack = []
                 for y in a.collected[x]:
                     if y[0]: a.statistic = y[0]
                     owner = y[1]
@@ -279,10 +305,12 @@ class UserObject(dict):
                     try: ptotal = tof(y[7])
                     except: ptotal = 0.0
                     pcapture = tof(y[8])
-                    a.emit('DBORARACSEG', desc, dict(timestamp=a.date[0],statistic=a.statistic,owner=owner,tablespace=tablespace,object=object,subobject=subobject,objtype=objtype,value=value,ptotal=ptotal,pcapture=pcapture))
+                    stack.append(dict(timestamp=a.date[0],statistic=a.statistic,owner=owner,tablespace=tablespace,object=object,subobject=subobject,objtype=objtype,value=value,ptotal=ptotal,pcapture=pcapture))
+                a.emit('DBORARACSEG', desc, stack)
 
             if x=='Ping Statistics':
                 desc = dict(timestamp='text',inum='text',dest='text',pc500='real',avgtp500='real',pc8k='real',avgtp8k='real')
+                stack = []
                 for y in a.collected[x]:
                     try:
                         inum = int(y[0])
@@ -293,15 +321,18 @@ class UserObject(dict):
                     avgtp500 = tof(y[4])
                     pc8k = tof(y[6]) / a.dur[inum]
                     avgtp8k = tof(y[8])
-                    a.emit('DBORARACPING', desc, dict(timestamp=a.date[inum],inum=str(inum),dest=str(dest),pc500=pc500,avgtp500=avgtp500,pc8k=pc8k,avgtp8k=avgtp8k))
+                    stack.append(dict(timestamp=a.date[inum],inum=str(inum),dest=str(dest),pc500=pc500,avgtp500=avgtp500,pc8k=pc8k,avgtp8k=avgtp8k))
+                a.emit('DBORARACPING', desc, stack)
 
             if x=='Complete List of SQL Text':
                 desc = dict(sqlid='text',module='text',request='text')
+                stack = []
                 for y in a.collected[x]:
                     sqlid = y[0]
                     request = toc(y[1])
                     module = a.sqlid[sqlid] if sqlid in a.sqlid else ''
-                    a.emit('DBORARACREQ', desc, dict(sqlid=sqlid,module=module,request=request))
+                    stack.append(dict(sqlid=sqlid,module=module,request=request))
+                a.emit('DBORARACREQ', desc, stack)
 
             if x in ['SQL ordered by Elapsed Time (Global)','SQL ordered by CPU Time (Global)','SQL ordered by User I/O Time (Global)','SQL ordered by Gets (Global)','SQL ordered by Reads (Global)','SQL ordered by UnOptimized Read Requests (Global)','SQL ordered by Executions (Global)','SQL ordered by Cluster Wait Time (Global)']:
                 collection = 'DBORARACSQE' if x=='SQL ordered by Elapsed Time (Global)' else 'DBORARACSQC' if x=='SQL ordered by CPU Time (Global)' else 'DBORARACSQI' if x=='SQL ordered by User I/O Time (Global)' else 'DBORARACSQG' if x=='SQL ordered by Gets (Global)' else 'DBORARACSQR' if x=='SQL ordered by Reads (Global)' else 'DBORARACSQU' if x=='SQL ordered by UnOptimized Read Requests (Global)' else 'DBORARACSQX' if x=='SQL ordered by Executions (Global)' else 'DBORARACSQW' if x=='SQL ordered by Cluster Wait Time (Global)' else 'ERROR'
@@ -314,6 +345,7 @@ class UserObject(dict):
                 if x=='SQL ordered by UnOptimized Read Requests (Global)': (ie,ic,ii,ig,ir,iy,iz,ix) = (3,4,5,1,2,6,7,8)
                 if x=='SQL ordered by Executions (Global)': (ie,ic,ii,ig,ir,iy,iz,ix) = (2,3,4,5,6,7,8,1)
                 if x=='SQL ordered by Cluster Wait Time (Global)': (ie,ic,ii,ig,ir,iy,iz,ix) = (2,3,4,5,6,7,1,8)
+                stack = []
                 for y in a.collected[x]:
                     if len(y) < 9: continue
                     sqlid = y[0]
@@ -325,7 +357,8 @@ class UserObject(dict):
                     rows = tof(y[iy]) / a.dur[0]
                     cluster = tof(y[iz]) / a.dur[0]
                     execs = tof(y[ix]) / a.dur[0]
-                    a.emit(collection, desc, dict(timestamp=a.date[0],sqlid=sqlid,elapsed=elapsed,cpu=cpu,iowait=iowait,gets=gets,reads=reads,rows=rows,cluster=cluster,execs=execs))
+                    stack.append(dict(timestamp=a.date[0],sqlid=sqlid,elapsed=elapsed,cpu=cpu,iowait=iowait,gets=gets,reads=reads,rows=rows,cluster=cluster,execs=execs))
+                a.emit(collection, desc, stack)
 
     def ah3(s, a, l, g, m):
         context = ''

@@ -46,10 +46,11 @@ PEV = Parameter('--events', 'events')
 PFR = Parameter('--from', 'efrom')
 PTO = Parameter('--to', 'eto')
 PPN = Parameter('--pattern', 'pattern')
+PQY = Parameter('--query', 'query')
 
 def get_parameters(parser, args, service):
 
-    handled_services = ['buildallcollectioncaches', 'buildcollectioncache', 'changepassword', 'checkserverconfig', 'clearcollectioncache', 'creategrant', 'createnode', 'createrole', 'createuser', 'createsystem', 'deletegrant', 'deletenode', 'deleteobject', 'deleterole', 'deleteuser', 'displaycollection', 'dropcollectioncache', 'emptytrash', 'getcollections', 'getid', 'getmenus', 'getnode', 'getobject', 'getsettings', 'listdatabases', 'listgrants', 'listobjects', 'listnodesdb', 'listroles', 'listsystemdb', 'listusers', 'renamenode', 'updatesettings', 'uploadnode', 'uploadobject']
+    handled_services = ['buildallcollectioncaches', 'buildcollectioncache', 'changepassword', 'checkserverconfig', 'clearcollectioncache', 'creategrant', 'createnode', 'createrole', 'createuser', 'createsystem', 'deletegrant', 'deletenode', 'deleteobject', 'deleterole', 'deleteuser', 'displaycollection', 'dropcollectioncache', 'emptytrash', 'executequery', 'getcollections', 'getid', 'getmenus', 'getnode', 'getobject', 'getsettings', 'listdatabases', 'listgrants', 'listobjects', 'listnodesdb', 'listroles', 'listsystemdb', 'listusers', 'renamenode', 'updatesettings', 'uploadnode', 'uploadobject']
     admin_services = ['listusers', 'createuser', 'deleteuser', 'listroles', 'createrole', 'deleterole', 'listgrants', 'creategrant', 'deletegrant']
 
     if service not in handled_services:
@@ -76,6 +77,7 @@ def get_parameters(parser, args, service):
     if service == 'displaycollection': mandatory = [PA, PP, PNO, PSY, PID, PCL]
     if service == 'dropcollectioncache': mandatory = [PA, PP, PNO, PSY, PID, PCL]
     if service == 'emptytrash': mandatory = [PA, PP, PNO]
+    if service == 'executequery': mandatory = [PA, PP, PNO, PSY, PID, PQY, PTP]
     if service == 'getcollections': mandatory = [PA, PP, PNO, PID]
     if service == 'getid': mandatory = [PA, PP, PNO, PPN]
     if service == 'getmenus': mandatory = [PA, PP, PNO, PSY]
@@ -141,6 +143,7 @@ def get_parameters(parser, args, service):
     if service == 'displaycollection': parameters = dict(id=vars(args)[PID.target], collection=vars(args)[PCL.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
     if service == 'dropcollectioncache': parameters = dict(id=vars(args)[PID.target], collection=vars(args)[PCL.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
     if service == 'emptytrash': parameters = dict(nodesdb=vars(args)[PNO.target])
+    if service == 'executequery': parameters = dict(nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target], id=vars(args)[PID.target], query=vars(args)[PQY.target], top=vars(args)[PTP.target], variables=json.dumps(dict()))
     if service == 'getcollections': parameters = dict(nodesdb=vars(args)[PNO.target], id=vars(args)[PID.target])
     if service == 'getid': parameters = dict(nodesdb=vars(args)[PNO.target], pattern=vars(args)[PPN.target])
     if service == 'getmenus': parameters = dict(nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
@@ -202,6 +205,7 @@ parser.add_argument(PEV.name, action = 'store', dest=PEV.target, default='', hel
 parser.add_argument(PFR.name, action = 'store', dest=PFR.target, default='', help='Node emitting event')
 parser.add_argument(PTO.name, action = 'store', dest=PTO.target, default='', help='Node receiving event')
 parser.add_argument(PPN.name, action = 'store', dest=PPN.target, default='', help='Pattern to find a node id')
+parser.add_argument(PQY.name, action = 'store', dest=PQY.target, default='', help='Query to execute')
 args = parser.parse_args()
 
 parameters = get_parameters(parser, args, args.service)
