@@ -706,6 +706,7 @@ class KairosWorker:
         ncache = Cache("kairos_group_" + role)        
         ncache.execute("create language plpythonu")
         ncache.execute("create extension oracle_fdw")
+        ncache.execute("create extension postgres_fdw")
         ncache.execute("create graph kairos")
         ncache.execute("create vlabel objects")
         ncache.execute("create vlabel nodes")
@@ -743,6 +744,7 @@ class KairosWorker:
         ncache = Cache("kairos_user_" + user)
         ncache.execute("create language plpythonu")
         ncache.execute("create extension oracle_fdw")
+        ncache.execute("create extension postgres_fdw")
         ncache.execute("create graph kairos")
         ncache.execute("create vlabel settings")
         ncache.execute("create (:settings {colors:'COLORS', keycode:0, logging:'info', loglines:100, nodesdb:'kairos_user_" + user + "', plotorientation:'horizontal', systemdb:'kairos_system_system', template:'DEFAULT', top:15, wallpaper:'DEFAULT'})")
@@ -982,9 +984,9 @@ class KairosWorker:
         hcache = Cache(cache.database, schema=cache.name)
         extension = liveobject['extension']
         server = liveobject['id']
-        dbserver = liveobject['dbserver']
+        options = liveobject['options']
         hcache.execute('drop server if exists ' + server + ' cascade')
-        hcache.execute('create server ' + server + ' foreign data wrapper ' + extension + " options (dbserver '" + dbserver + "')")
+        hcache.execute('create server ' + server + ' foreign data wrapper ' + extension + " options (" + options + ")")
         hcache.execute('grant usage on foreign server ' + server + ' to agensgraph')
         user = liveobject['user']
         password = liveobject['password']
@@ -993,10 +995,13 @@ class KairosWorker:
         message = None
         for t in liveobject['tables']:
             description = liveobject['tables'][t]['description']
-            request = liveobject['tables'][t]['request']
-            logging.debug('Foreign request: ' + request)
+            if extension == 'oracle_fdw': request = liveobject['tables'][t]['request']
+            if extension == 'postgres_fdw': schema = liveobject['tables'][t]['schema']
+            if extension == 'oracle_fdw': logging.debug('Foreign request: ' + request)
+            if extension == 'postgres_fdw': logging.debug('Foreign table: ' + t)
             desc = ", ".join(["%(k)s %(v)s" % dict(k=d, v=description[d]) for d in description])
-            hcache.execute('create foreign table foreign_' + t + '(' + desc + ') server ' + server + " options (table '(" + request.replace("'", "''").replace('kairos_nodeid_to_be_replaced', id) + ")')")
+            if extension == 'oracle_fdw': hcache.execute('create foreign table foreign_' + t + '(' + desc + ') server ' + server + " options (table '(" + request.replace("'", "''").replace('kairos_nodeid_to_be_replaced', id) + ")')")
+            if extension == 'postgres_fdw': hcache.execute('create foreign table foreign_' + t + '(' + desc + ') server ' + server + " options (schema_name '" + schema + "', table_name '" + t + "')")
             collections.append(t)
         hcache.disconnect()
         return (message, collections)
@@ -1287,7 +1292,7 @@ class KairosWorker:
         ntype = node['datasource']['type']
         logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
         hcache = Cache(cache.database, schema=cache.name)
-        hcache.execute("create table " + collection + " as select * from foreign_" +collection)
+        hcache.execute("create table " + collection + " as select '" + nid + "'::text as kairos_nodeid, * from foreign_" +collection)
         hcache.disconnect()
         cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
