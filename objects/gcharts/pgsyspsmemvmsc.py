@@ -38,7 +38,7 @@ class UserObject(dict):
                                             "table": "vpsutil_processes",
                                             "projection": "pname",
                                             "restriction": "",
-                                            "value": "vms"
+                                            "value": "vms::real"
                                         }
                                     ]
                                 }
@@ -63,7 +63,7 @@ class UserObject(dict):
                                             "table": "vpsutil_processes",
                                             "projection": "'All commands'::text",
                                             "restriction": "",
-                                            "value": "vms"
+                                            "value": "vms::real"
                                         }
                                     ]
                                 }

@@ -38,7 +38,7 @@ class UserObject(dict):
                                             "table": "vpsutil_processes",
                                             "projection": "cmdline",
                                             "restriction": "",
-                                            "value": "rss"
+                                            "value": "rss::real"
                                         }
                                     ]
                                 }
@@ -63,7 +63,7 @@ class UserObject(dict):
                                             "table": "vpsutil_processes",
                                             "projection": "'All families'::text",
                                             "restriction": "",
-                                            "value": "rss"
+                                            "value": "rss::real"
                                         }
                                     ]
                                 }

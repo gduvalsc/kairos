@@ -7,7 +7,7 @@ class UserObject(dict):
                 "vkpg_stat_database"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'all databases'::text as label, numbackends as value from vkpg_stat_database) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'all databases'::text as label, numbackends::real as value from vkpg_stat_database) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

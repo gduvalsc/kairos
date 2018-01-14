@@ -34,13 +34,13 @@ class UserObject(dict):
                                             "table": "vpsutil_swap_memory",
                                             "projection": "'Total size'::text",
                                             "restriction": "",
-                                            "value": "total"
+                                            "value": "total::real"
                                         },
                                         {
                                             "table": "vpsutil_swap_memory",
                                             "projection": "'Used size'::text",
                                             "restriction": "",
-                                            "value": "used"
+                                            "value": "used::real"
                                         }
                                     ]
                                 }
@@ -75,13 +75,13 @@ class UserObject(dict):
                                             "table": "vpsutil_swap_memory",
                                             "projection": "'Swap in'::text",
                                             "restriction": "",
-                                            "value": "sin"
+                                            "value": "sin::real"
                                         },
                                         {
                                             "table": "vpsutil_swap_memory",
                                             "projection": "'Swap out'::text",
                                             "restriction": "",
-                                            "value": "sout"
+                                            "value": "sout::real"
                                         }
                                     ]
                                 }

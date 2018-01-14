@@ -7,7 +7,7 @@ class UserObject(dict):
                 "vpsutil_swap_memory"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'Swap in'::text as label, sin as value from vpsutil_swap_memory union all select timestamp, 'Swap out'::text as label, sout as value from vpsutil_swap_memory) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'Swap in'::text as label, sin::real as value from vpsutil_swap_memory union all select timestamp, 'Swap out'::text as label, sout::real as value from vpsutil_swap_memory) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

@@ -34,7 +34,7 @@ class UserObject(dict):
                                             "table": "vkpg_stat_database",
                                             "projection": "datname",
                                             "restriction": "",
-                                            "value": "numbackends"
+                                            "value": "numbackends::real"
                                         }
                                     ]
                                 }
@@ -59,7 +59,7 @@ class UserObject(dict):
                                             "table": "vkpg_stat_database",
                                             "projection": "'all databases'::text",
                                             "restriction": "",
-                                            "value": "numbackends"
+                                            "value": "numbackends::real"
                                         }
                                     ]
                                 }

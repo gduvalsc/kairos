@@ -34,13 +34,13 @@ class UserObject(dict):
                                             "table": "vpsutil_processes",
                                             "projection": "'USER_TIME'::text",
                                             "restriction": "pname = '%(PGSYSCOMMAND)s'::text",
-                                            "value": "usr"
+                                            "value": "usr::real"
                                         },
                                         {
                                             "table": "vpsutil_processes",
                                             "projection": "'SYS_TIME'::text",
                                             "restriction": "pname = '%(PGSYSCOMMAND)s'::text",
-                                            "value": "sys"
+                                            "value": "sys::real"
                                         }
                                     ]
                                 }
@@ -75,31 +75,31 @@ class UserObject(dict):
                                             "table": "vpsutil_processes",
                                             "projection": "'Resident size'::text",
                                             "restriction": "pname = '%(PGSYSCOMMAND)s'::text",
-                                            "value": "rss"
+                                            "value": "rss::real"
                                         },
                                         {
                                             "table": "vpsutil_processes",
                                             "projection": "'Virtual size'::text",
                                             "restriction": "pname = '%(PGSYSCOMMAND)s'::text",
-                                            "value": "vms"
+                                            "value": "vms::real"
                                         },
                                         {
                                             "table": "vpsutil_processes",
                                             "projection": "'Text size'::text",
                                             "restriction": "pname = '%(PGSYSCOMMAND)s'::text",
-                                            "value": "texts"
+                                            "value": "texts::real"
                                         },
                                         {
                                             "table": "vpsutil_processes",
                                             "projection": "'Shared size'::text",
                                             "restriction": "pname = '%(PGSYSCOMMAND)s'::text",
-                                            "value": "shared"
+                                            "value": "shared::real"
                                         },
                                         {
                                             "table": "vpsutil_processes",
                                             "projection": "'Data size'::text",
                                             "restriction": "pname = '%(PGSYSCOMMAND)s'::text",
-                                            "value": "datas"
+                                            "value": "datas::real"
                                         }
                                     ]
                                 }

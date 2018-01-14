@@ -145,4 +145,4 @@ if args.bootstrap:
 #             subprocess.run(['cat', '/var/log/kairos/webserver.log'])
 #             raise
         subprocess.run(['rm', '-fr', '/tmp/objects'])
-    catchrun(['bash'])
+    #catchrun(['bash'])

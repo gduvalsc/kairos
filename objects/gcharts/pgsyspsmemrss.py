@@ -38,7 +38,7 @@ class UserObject(dict):
                                             "table": "vpsutil_processes",
                                             "projection": "pname||' - '||pid||' - '||create_time",
                                             "restriction": "",
-                                            "value": "rss"
+                                            "value": "rss::real"
                                         }
                                     ]
                                 }
@@ -63,7 +63,7 @@ class UserObject(dict):
                                             "table": "vpsutil_processes",
                                             "projection": "'All processes'::text",
                                             "restriction": "",
-                                            "value": "rss"
+                                            "value": "rss::real"
                                         }
                                     ]
                                 }
