@@ -1130,6 +1130,10 @@ class KairosWorker:
 
     @trace_call
     def ibuildcolcachetypeA(s, node, cache=None, collection=None, mapproducers=None, nodesdb=None, systemdb=None):
+        return s.ibuildcolcachetypeA2(node, cache=cache, collection=collection, mapproducers=mapproducers, nodesdb=nodesdb, systemdb=systemdb)
+
+    @trace_call
+    def ibuildcolcachetypeA1(s, node, cache=None, collection=None, mapproducers=None, nodesdb=None, systemdb=None):
         nid = node['id']
         ntype = node['datasource']['type']
         logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
@@ -1186,6 +1190,112 @@ class KairosWorker:
             hcache.execute(request)
             cache.collections[collection][pnode['id']] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
         hcache.disconnect()
+
+    @intercept_internal_error
+    @trace_call
+    def ibuildcolcachetypeA2(s, node, cache=None, collection=None, mapproducers=None, nodesdb=None, systemdb=None):
+        nid = node['id']
+        ntype = node['datasource']['type']
+        logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
+        hcache = Cache(cache.database, schema=cache.name)
+        function = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['aggregatormethod'] + "', type:'aggregator'}")[0]
+        meet = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id: 'meet', type: 'function'}")[0]
+        hcache.execute(function["function"])
+        hcache.execute(meet["function"])
+        hcache.execute("drop table if exists aggregator")
+        hcache.execute("create table aggregator as select '" + node['datasource']['aggregatormethod'] + "'::text as method")
+        producers = list(mapproducers[collection]['updated'].keys())
+        producers.extend(list(mapproducers[collection]['created'].keys()))
+        x = hcache.execute("select distinct table_name from information_schema.columns where table_schema='" + cache.name + "'")
+        schdesc = [row['table_name'] for row in x.fetchall()]
+        for producer in producers:
+            pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]
+            inschname = pnode['datasource']['cache']['name']
+            x = hcache.execute("select distinct table_name from information_schema.columns where table_schema='" + inschname + "'")
+            inschdesc = [row['table_name'] for row in x.fetchall()]
+            if collection.lower() not in inschdesc: continue
+            if collection.lower() not in schdesc: 
+                hcache.execute("create table " + collection.lower() + " as select * from " + inschname + "." + collection.lower() + " limit 0")
+                break
+        # At this point the new collection is created but empty
+
+        tabledesc = OrderedDict()
+        x = hcache.execute("select column_name, data_type from information_schema.columns where table_name = '" + collection.lower() + "' and table_schema = '" + cache.name + "'")
+        for row in x.fetchall(): tabledesc[row['column_name']] = row['data_type']
+        hcache.disconnect()
+        
+        queue = multiprocessing.Queue()
+        
+        def write_to_queue(producer):
+            logging.info("Node: " + nid + ", Type: " + ntype + ", building partition for producer: '" + producer + "' ...")
+            inschname = pnode['datasource']['cache']['name']
+            lgby = [k for k in tabledesc if tabledesc[k] == 'text']
+            lavg = [k for k in tabledesc if tabledesc[k] == 'real']
+            lsum = [k for k in tabledesc if tabledesc[k] in ['integer', 'bigint']]
+            listf = tabledesc.keys()
+            where = " where meet(timestamp,'" + node['datasource']['aggregatortimefilter'] + "') or timestamp='00000000000000000'" if 'timestamp' in lgby else ' '
+            subrequest = "select * from " + inschname + "." + collection.lower() + where
+            request = "select "
+            for x in lgby: request = request + function["name"] + '(timestamp) as timestamp, ' if x == "timestamp" else request + x + ', '
+            for x in lavg: request += 'sum(' + x + ') as ' + x + ', '
+            for x in lsum: request += 'sum(' + x + ') as ' + x + ', '
+            request = request[:-2] + ' from (' + subrequest + ') as foo group by '
+            for x in lgby: request = request + function["name"] + '(timestamp), ' if x == 'timestamp' else request + x + ', '
+            request = request[:-2]
+
+            hcache = Cache(cache.database, schema=cache.name)        
+            x = hcache.execute(request)
+            for row in x.fetchall():
+                record = ''
+                for k in tabledesc.keys(): record += '\\N\t' if row[k] == None else str(row[k]).replace('\t','\\t') + '\t'
+                record = record[:-1] + '\n'
+                queue.put(record)
+            hcache.disconnect()
+
+        def read_from_queue(col):
+            hcache = Cache(cache.database, schema=cache.name)
+            buffer = io.StringIO()
+            bufferempty = True
+            counter = 0
+            try: limit = int(os.environ['BUFFER'])
+            except: limit = 10000
+            globalcounter = 0
+            while True:
+                record = queue.get()
+                if record == 'KAIROS_DONE': break
+                bufferempty = False
+                counter += 1 
+                buffer.write(record)
+                if counter == limit:
+                    buffer.seek(0)
+                    logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
+                    hcache.copy(buffer, col, tuple(tabledesc.keys()))
+                    buffer = io.StringIO()
+                    globalcounter += counter
+                    counter = 0
+                    bufferempty = True
+            if not bufferempty:
+                buffer.seek(0)
+                logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
+                hcache.copy(buffer, col, tuple(tabledesc.keys()))
+                globalcounter += counter
+            logging.info("Collection: " + col + ": " + str(globalcounter) + " records have been written! ")
+            hcache.disconnect()
+        
+        try: limit = int(os.environ['PARALLEL'])
+        except: limit = 0
+        limit = multiprocessing.cpu_count() if limit==0 else limit
+
+        pr = Parallel(read_from_queue, workers=1)
+        pr.push(collection)
+        pw = Parallel(write_to_queue, workers = limit)
+        for p in producers: pw.push(p)
+        pw.join()
+        queue.put('KAIROS_DONE')
+        pr.join()
+        for producer in producers:
+            pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]             
+            cache.collections[collection][pnode['id']] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
     @intercept_internal_error
     @trace_call
