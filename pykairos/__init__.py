@@ -1824,7 +1824,7 @@ class KairosWorker:
         ncache.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
         ncache.execute("create (:objects {id:'" + id + "', type:'" + typeobj + "', created: now(), filename:'" + filename + "', content:'" + content.decode() + "'})")
         ncache.disconnect()
-        return web.json_response(dict(success=True, state=True, name=filename))
+        return web.json_response(dict(success=True, state=True, name=filename, id=id, type=typeobj))
 
     @intercept_logging_and_internal_error
     @trace_call

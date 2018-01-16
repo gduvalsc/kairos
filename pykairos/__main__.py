@@ -128,8 +128,10 @@ if args.bootstrap:
             print('l', end='', flush=True)
             logging.info('Loading ' + o + " ...")
             try: 
-                success = json.loads(subprocess.getoutput("kairos -s uploadobject --nodesdb kairos_system_system --file '" + o + "'"))['success']
+                result = json.loads(subprocess.getoutput("kairos -s uploadobject --nodesdb kairos_system_system --file '" + o + "'"))
+                success = result['success']
                 if not success: logging.error('Error during loading of: ' + o)
+                else: logging.info(json.dumps(result))
             except:
                 logging.error('Error during loading of: ' + o)
                 subprocess.run(['cat', '/var/log/kairos/kairos.log'])
@@ -138,11 +140,10 @@ if args.bootstrap:
         logging.info(str(len(objects)) + ' found objects in /tmp/objects!')
         data = json.loads(subprocess.getoutput('kairos -s listobjects --nodesdb kairos_system_system --systemdb kairos_system_system'))['data']
         logging.info("System database has " + str(int((len(data)) / 2)) + " objects.")
-#        try:
-#            assert len(objects) == int((len(lines) - 1) / 2)
-#        except:
-#             subprocess.run(['cat', '/var/log/kairos/kairos.log'])
-#             subprocess.run(['cat', '/var/log/kairos/webserver.log'])
-#             raise
+        try:
+            assert len(objects) == int((len(data) - 1) / 2)
+        except:
+            subprocess.run(['cat', '/var/log/kairos/kairos.log'])
+            subprocess.run(['cat', '/var/log/kairos/webserver.log'])
+            raise
         subprocess.run(['rm', '-fr', '/tmp/objects'])
-    #catchrun(['bash'])
