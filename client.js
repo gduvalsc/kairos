@@ -2576,7 +2576,7 @@ dhtmlxEvent(window,"load",function(){
             });
             log.debug('Drawing chart: ' + chart);
             var selector = '[id=' + uniquecid + ']';
-            g.draw(selector, uniquecid);
+            g.draw(selector, uniquecid, desktop);
             log.debug('End of drawing');
         };
         parallel({
@@ -2608,7 +2608,7 @@ dhtmlxEvent(window,"load",function(){
             prepare_and_draw(wchart.descchart, wchart.resultqueries);
         });
         wchart.attachEvent("onMaximize", function () {
-            wchart.kairosg.destroy();
+            //wchart.kairosg.destroy();
             prepare_and_draw(wchart.descchart, wchart.resultqueries);
         });
         wchart.attachEvent("onMinimize", function () {

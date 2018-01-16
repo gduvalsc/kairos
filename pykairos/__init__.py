@@ -1225,9 +1225,11 @@ class KairosWorker:
         hcache.disconnect()
         
         queue = multiprocessing.Queue()
-        
+
+        @intercept_internal_error
         def write_to_queue(producer):
             logging.info("Node: " + nid + ", Type: " + ntype + ", building partition for producer: '" + producer + "' ...")
+            pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]
             inschname = pnode['datasource']['cache']['name']
             lgby = [k for k in tabledesc if tabledesc[k] == 'text']
             lavg = [k for k in tabledesc if tabledesc[k] == 'real']
@@ -1237,21 +1239,26 @@ class KairosWorker:
             subrequest = "select * from " + inschname + "." + collection.lower() + where
             request = "select "
             for x in lgby: request = request + function["name"] + '(timestamp) as timestamp, ' if x == "timestamp" else request + x + ', '
-            for x in lavg: request += 'sum(' + x + ') as ' + x + ', '
+            for x in lavg: request += 'sum(coalesce(' + x + ', 0)) as ' + x + ', '
             for x in lsum: request += 'sum(' + x + ') as ' + x + ', '
             request = request[:-2] + ' from (' + subrequest + ') as foo group by '
             for x in lgby: request = request + function["name"] + '(timestamp), ' if x == 'timestamp' else request + x + ', '
             request = request[:-2]
-
-            hcache = Cache(cache.database, schema=cache.name)        
-            x = hcache.execute(request)
-            for row in x.fetchall():
+            workrequest = 'select ' + function["name"] + '(timestamp) as timestamp, kairos_nodeid, count(*) num from (select distinct timestamp, kairos_nodeid from ' + inschname  + '.' + collection + where +') as foo group by ' + function["name"] + '(timestamp), kairos_nodeid'
+            divisor = dict()
+            hcache = Cache(cache.database, schema=cache.name)
+            if 'timestamp' in lgby:  
+                for x in hcache.execute(workrequest).fetchall(): divisor[x['timestamp'] + x ['kairos_nodeid']] = x['num'] 
+            for row in hcache.execute(request).fetchall():
                 record = ''
+                if 'timestamp' in lgby:
+                    for x in lavg: row[x] = row[x] * 1.0 / divisor[row['timestamp'] + row['kairos_nodeid']]
                 for k in tabledesc.keys(): record += '\\N\t' if row[k] == None else str(row[k]).replace('\t','\\t') + '\t'
                 record = record[:-1] + '\n'
                 queue.put(record)
             hcache.disconnect()
 
+        @intercept_internal_error
         def read_from_queue(col):
             hcache = Cache(cache.database, schema=cache.name)
             buffer = io.StringIO()
@@ -1326,6 +1333,7 @@ class KairosWorker:
                 record = record[:-1] + '\n'
                 queues[col].put(record)
 
+        @intercept_internal_error
         def read_from_queue(col):
             hcache = Cache(cache.database, schema=cache.name)
             buffer = io.StringIO()

@@ -435,6 +435,7 @@ module KairosCharter {
         private dom: any;
         private paper: any;
         private width: number;
+        private desktop: any;
 
         public charttemplate: KaChartTemplate;
 
@@ -605,16 +606,17 @@ module KairosCharter {
             })
         }
 
-        public draw (attach?: string, key?: string) : void {
+        public draw (attach?: string, key?: string, desktop?: any) : void {
             let me = this;
             log.debug("Drawing chart");
             me.createCanvas(attach, key);
+            me.desktop = desktop;
             me.paper.mainLayer.on({
                 draw: function (event) {
                     me.paper.project.view.draw();
                 }
             });
-            me.drawWaiterLayerBox();
+            //me.drawWaiterLayerBox();
             me.finalize();
             me.drawMain();
             me.prepareXaxiss();
@@ -624,6 +626,7 @@ module KairosCharter {
             me.drawYaxiss();
             me.drawXaxiss();
             me.drawTitles();
+            window.status = 'Done!';
             log.debug("End of drawing");
         }
 
@@ -673,22 +676,24 @@ module KairosCharter {
 
         private showWaiterProgress(message: string) : void {
             let me = this;
-            let containerw = me.getWidth();
-            let containerh = me.getHeight();
-            me.paper.waiterLayer.activate();
-            me.paper.waiterGroup.removeChildren();
-            me.paper.waiterGroup.addChild(new paper.PointText({ point: [containerw / 2, containerh / 2 + 3], content: message, fontSize: 10, fillColor: parsecolor("black"), justification: 'center' }));
-            me.paper.mainLayer.emit('draw', {});
-            me.paper.mainLayer.activate();
+            me.desktop.statusbar.setText(message);            
+            // let containerw = me.getWidth();
+            // let containerh = me.getHeight();
+            // me.paper.waiterLayer.activate();
+            // me.paper.waiterGroup.removeChildren();
+            // me.paper.waiterGroup.addChild(new paper.PointText({ point: [containerw / 2, containerh / 2 + 3], content: message, fontSize: 10, fillColor: parsecolor("black"), justification: 'center' }));
+            // me.paper.mainLayer.emit('draw', {});
+            // me.paper.mainLayer.activate();
         }
 
         private hideWaiterLayerBox () : void {
             let me = this;
             postpone(0, function () {
-                me.paper.waiterLayer.activate();
-                me.paper.waiterLayer.removeChildren();
-                me.paper.mainLayer.activate();
-                me.paper.mainLayer.emit('draw', {});
+                me.desktop.statusbar.setText('');            
+                // me.paper.waiterLayer.activate();
+                // me.paper.waiterLayer.removeChildren();
+                // me.paper.mainLayer.activate();
+                // me.paper.mainLayer.emit('draw', {});
             });
         }
 
@@ -697,7 +702,7 @@ module KairosCharter {
             postpone(0, function () {
                 log.debug("Drawing dataset:", moid, bindid);
                 me.showWaiterProgress("Drawing dataset: " + moid);
-                me.drawWaiterLayerBox();
+                //me.drawWaiterLayerBox();
                 let bind = me.getBind(bindid);
                 let dataset = bind.dataset;
                 _.each(dataset.getOrderedPaths(), function(id) {
@@ -783,7 +788,7 @@ module KairosCharter {
                                                 rectpath.fillColor = parsecolor(color.toString(), mo);
                                                 text.fillColor = parsecolor(me.color(moid, "stroke"), mo);
                                             }
-                                            me.drawWaiterLayerBox();
+                                            //me.drawWaiterLayerBox();
                                             me.prepareXaxis(me.getBind(bindid).xaxisname);
                                             me.prepareYaxis(me.getBind(bindid).yaxisname);
                                             me.drawPlot(me.getBind(bindid).plotname, true);
@@ -1562,7 +1567,7 @@ module KairosCharter {
                                 let bind = me.getBindsFromPlot(plot)[0];
                                 bind.xaxis.zoom = undefined;
                                 bind.xaxis.translation = undefined;
-                                me.drawWaiterLayerBox();
+                                //me.drawWaiterLayerBox();
                                 me.prepareXaxis(bind.xaxisname);
                                 var plots = [];
                                 _.each(me.getBindsFromXaxis(bind.xaxis), function(b) {
@@ -1613,7 +1618,7 @@ module KairosCharter {
                                 _.each(me.getBindsFromXaxis(bind.xaxis), function(b) {
                                     plots.push(b.plotname);
                                 });
-                                me.drawWaiterLayerBox();
+                                //me.drawWaiterLayerBox();
                                 _.each(_.uniq(plots), function(p) {
                                     me.drawPlot(p, true);
                                 });
