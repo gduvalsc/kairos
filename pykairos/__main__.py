@@ -141,7 +141,7 @@ if args.bootstrap:
         data = json.loads(subprocess.getoutput('kairos -s listobjects --nodesdb kairos_system_system --systemdb kairos_system_system'))['data']
         logging.info("System database has " + str(int((len(data)) / 2)) + " objects.")
         try:
-            assert len(objects) == int((len(data) - 1) / 2)
+            assert len(objects) == int(len(data) / 2)
         except:
             subprocess.run(['cat', '/var/log/kairos/kairos.log'])
             subprocess.run(['cat', '/var/log/kairos/webserver.log'])

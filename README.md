@@ -67,21 +67,21 @@ The `KAIROS` container is created like this:
 docker create 
         -it 
         --name kairos 
-        -h kairos 
-        -p 2443:443 
-        -p 2480:2480 
-        -v /Users/gdsc/Documents/kairos_store/databases:/orientdb/databases 
-        -v /Users/gdsc/Documents/kairos_store/files:/orientdb/files 
+        -h kairos
+        -P --privileged -v /sys/fs/cgroup:/sys/fs/cgroup 
+        -p 2443:443
+        -v /Users/gdsc/Documents/kairos_store/data:/home/agensgraph/data 
+        -v /Users/gdsc/Documents/kairos_store/files:/files 
         -v /Users/gdsc/Documents/kairos_autoupload:/autoupload 
         gdsc/kairos
 ```
 
 The `KAIROS` container must remain a black box with no user data inside. For this, when the container is created, we have to specify (-v option) which directories are mounted within the container to access data. 3 directories are mounted externally:
--	/orientdb/databases
--	/orientdb/files
+-	/home/agensgraph/data
+-	/files
 -	/autoupload
 
-The `KAIROS` container is also listening on 2 ports (443 and 2480). These 2 ports must be routed (-p option) on ports belonging to the physical machine hosting docker. 
+The `KAIROS` container is also listening on 1 port (443). This port must be routed (-p option) on  a port belonging to the physical machine hosting docker. 
 
 Once created, this container can be started with this command:
 
