@@ -9,7 +9,7 @@ class UserObject(dict):
             "userfunctions": [
                 "ebscoeff"
             ],
-            "request": "select timestamp, 'All programs with status G'::text as label, sum(value) as value from (select timestamp, 'xxx'::text as label, executecount * 1.0 / ebscoeff() as value from EBS12CM where status_code = 'G'::text) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'All programs with status G'::text as label, executecount * 1.0 / ebscoeff() as value from EBS12CM where status_code = 'G'::text) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

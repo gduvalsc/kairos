@@ -7,7 +7,7 @@ class UserObject(dict):
                 "SARD"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Max (%) all disks' label, max(value) value from (select timestamp, 'xxx' label, busy value from SARD) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, max(value) as value from (select timestamp, 'Max (%) all disks'::text as label, busy as value from SARD) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

@@ -54,7 +54,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Waiting nodes'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -68,7 +68,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Waiting nodes'::text",
                                             "restriction": "prg_name not like 'FNDRS%'::text",
                                             "value": "waitcount * 1.0 / ebscoeff()"
                                         }
@@ -98,7 +98,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Wait time'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -110,7 +110,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Wait time'::text",
                                             "restriction": "prg_name not like 'FNDRS%'::text",
                                             "value": "wait * 60.0"
                                         }

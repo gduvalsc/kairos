@@ -50,7 +50,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Temp space allocated'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHAS"
                                     ],
@@ -64,7 +64,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "ORAHAS",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Temp space allocated'::text",
                                             "restriction": "",
                                             "value": "temp_space_allocated"
                                         }

@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORAFIL"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'database blocks per read'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, blocksperread as value from DBORAFIL where file='%(DBORAFIL)s') as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'database blocks per read'::text as label, blocksperread as value from DBORAFIL where file='%(DBORAFIL)s') as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

@@ -27,7 +27,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "avg",
-                                    "projection": "'average time (ms)'",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORAWEB"
                                     ],
@@ -38,7 +38,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAWEB",
-                                            "projection": "event",
+                                            "projection": "'average time (ms)'",
                                             "restriction": "event='%(DBORAWEB)s'",
                                             "value": "1000.0 * time / count"
                                         }
@@ -61,7 +61,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'number of operations/sec'",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORAWEB"
                                     ],
@@ -72,7 +72,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAWEB",
-                                            "projection": "event",
+                                            "projection": "'number of operations/sec'",
                                             "restriction": "event='%(DBORAWEB)s'",
                                             "value": "count"
                                         }
@@ -80,7 +80,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'number of timeouts/sec'",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORAWEB"
                                     ],
@@ -91,7 +91,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAWEB",
-                                            "projection": "event",
+                                            "projection": "'number of timeouts/sec'",
                                             "restriction": "event='%(DBORAWEB)s'",
                                             "value": "timeouts"
                                         }

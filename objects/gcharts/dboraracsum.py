@@ -25,7 +25,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'wait events'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORARACTTFE"
                                     ],
@@ -35,7 +35,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORARACTTFE",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'wait events'::text",
                                             "restriction": "inum::int = 0 and event != 'DB CPU'::text",
                                             "value": "timewaited::real"
                                         }

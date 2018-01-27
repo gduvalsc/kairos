@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORAPGA"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'PGA aggregate target'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, aggrtarget as value from DBORAPGA) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'PGA aggregate target'::text as label, aggrtarget as value from DBORAPGA) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

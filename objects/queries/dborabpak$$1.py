@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORABPA"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label as label , avg(value) as value from (select timestamp, sizefactor as label, estphysreadsfactor as value from DBORABPA where bufpool='K') as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, avg(value) as value from (select timestamp, sizefactor as label, estphysreadsfactor as value from DBORABPA where bufpool='K') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

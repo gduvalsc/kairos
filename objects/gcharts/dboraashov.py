@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'on cpu'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHAS"
                                     ],
@@ -34,7 +34,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "ORAHAS",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'on cpu'::text",
                                             "restriction": "session_state = 'ON CPU'",
                                             "value": "kairos_count * 1.0 /ashcoeff()"
                                         }
@@ -42,7 +42,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'waiting'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHAS"
                                     ],
@@ -56,7 +56,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "ORAHAS",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'waiting'::text",
                                             "restriction": "session_state = 'WAITING'",
                                             "value": "kairos_count * 1.0 /ashcoeff()"
                                         }

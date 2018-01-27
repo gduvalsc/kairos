@@ -7,7 +7,7 @@ class UserObject(dict):
                 "EBS12CM"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Response time'::text as label, avg(value) as value from (select timestamp, 'xxx'::text as label, time * 60.0 as value from EBS12CM where queue_name = '%(EBSQUENODR)s'::text) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, avg(value) as value from (select timestamp, 'Response time'::text as label, time * 60.0 as value from EBS12CM where queue_name = '%(EBSQUENODR)s'::text) as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

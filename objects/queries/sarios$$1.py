@@ -7,7 +7,7 @@ class UserObject(dict):
                 "SARB"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, 'lwrite' label, lwrite value from SARB union all select timestamp, 'lread' label, lread value from SARB union all select timestamp, 'pwrite' label, pwrite value from SARB union all select timestamp, 'pread' label, pread value from SARB union all select timestamp, 'bwrite' label, bwrite value from SARB union all select timestamp, 'bread' label, bread value from SARB) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'lwrite' as label, lwrite as value from SARB union all select timestamp, 'lread' as label, lread as value from SARB union all select timestamp, 'pwrite' as label, pwrite as value from SARB union all select timestamp, 'pread' as label, pread as value from SARB union all select timestamp, 'bwrite' as label, bwrite as value from SARB union all select timestamp, 'bread' as label, bread as value from SARB) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

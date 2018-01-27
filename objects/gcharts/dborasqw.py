@@ -48,7 +48,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Captured SQLs'",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORASQW"
                                     ],
@@ -60,7 +60,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASQW",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Captured SQLs'",
                                             "restriction": "",
                                             "value": "clusterwait"
                                         }

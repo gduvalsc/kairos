@@ -7,7 +7,7 @@ class UserObject(dict):
                 "NMONDISKREAD"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Read MB/s'::text as label, sum(value) as value from (select timestamp, 'xxx'::text as label, value / 1024.0 as value from NMONDISKREAD where id = '%(NMONDISK)s'::text) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'Read MB/s'::text as label, value / 1024.0 as value from NMONDISKREAD where id = '%(NMONDISK)s'::text) as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": false
         }

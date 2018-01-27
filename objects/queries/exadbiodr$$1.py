@@ -7,7 +7,7 @@ class UserObject(dict):
                 "EXATOPDBIOR"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, dbname as label, diskr as value from EXATOPDBIOR) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, dbname as label, diskr as value from EXATOPDBIOR) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

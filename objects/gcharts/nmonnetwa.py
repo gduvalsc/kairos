@@ -45,7 +45,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All adapters (write)'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "NMONNET"
                                     ],
@@ -57,7 +57,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONNET",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'All adapters (write)'::text",
                                             "restriction": "id like '%write%'::text",
                                             "value": "value / 1024.0"
                                         }

@@ -54,7 +54,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All programs with status G'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -68,7 +68,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'All programs with status G'::text",
                                             "restriction": "status_code = 'G'::text",
                                             "value": "executecount * 1.0 / ebscoeff()"
                                         }

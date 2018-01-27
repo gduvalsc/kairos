@@ -49,7 +49,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Captured PHVs'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHQS",
                                         "DBORAMISC"
@@ -62,7 +62,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select h.timestamp as timestamp, plan_hash_value, coalesce(buffer_gets_delta,0)::real * 1.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Captured PHVs'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

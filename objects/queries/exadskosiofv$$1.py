@@ -7,7 +7,7 @@ class UserObject(dict):
                 "EXATOPDSKOSIO"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, disk as label, vaverage as value from EXATOPDSKOSIO where type like 'F/%') as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, disk as label, vaverage as value from EXATOPDSKOSIO where type like 'F/%') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

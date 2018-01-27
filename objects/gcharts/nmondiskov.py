@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Read MB/s'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "NMONDISKREAD"
                                     ],
@@ -32,7 +32,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONDISKREAD",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Read MB/s'::text",
                                             "restriction": "",
                                             "value": "value / 1024.0"
                                         }
@@ -40,7 +40,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Write MB/s'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "NMONDISKWRITE"
                                     ],
@@ -52,7 +52,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONDISKWRITE",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Write MB/s'::text",
                                             "restriction": "",
                                             "value": "value / 1024.0"
                                         }

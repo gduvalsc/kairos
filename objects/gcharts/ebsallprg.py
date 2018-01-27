@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Running programs'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -34,7 +34,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Running programs'::text",
                                             "restriction": "prg_name not like 'FNDRS%'::text",
                                             "value": "executecount * 1.0 / ebscoeff()"
                                         }
@@ -42,7 +42,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Waiting programs'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "EBS12CM"
                                     ],
@@ -56,7 +56,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "EBS12CM",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Waiting programs'::text",
                                             "restriction": "prg_name not like 'FNDRS%'::text",
                                             "value": "waitcount * 1.0 / ebscoeff()"
                                         }

@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORAWEV"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'number of operations/sec' as label , sum(value) as value from (select timestamp, event as label, count as value from DBORAWEV where event='%(DBORAWEV)s') as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'number of operations/sec' as label, count as value from DBORAWEV where event='%(DBORAWEV)s') as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": false
         }

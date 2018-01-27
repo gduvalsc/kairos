@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORASRV"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'DB Wait time'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, dbtime - cpu as value from DBORASRV where service = '%(DBORASV)s') as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'DB Wait time'::text as label, dbtime - cpu as value from DBORASRV where service = '%(DBORASV)s') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

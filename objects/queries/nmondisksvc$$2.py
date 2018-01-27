@@ -7,7 +7,7 @@ class UserObject(dict):
                 "NMONDISKSERV"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Max service time'::text as label, max(value) as value from (select timestamp, 'xxx'::text as label, value as value from NMONDISKSERV) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, max(value) as value from (select timestamp, 'Max service time'::text as label, value as value from NMONDISKSERV) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

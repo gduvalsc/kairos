@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORARACGCEP"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, avg(value) value from (select timestamp, inum label, pdisk value from DBORARACGCEP) group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, avg(value) as value from (select timestamp, inum as label, pdisk as value from DBORARACGCEP) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

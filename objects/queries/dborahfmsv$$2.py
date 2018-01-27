@@ -7,7 +7,7 @@ class UserObject(dict):
                 "ORAHQS"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Captured FMSs'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, version_count as value from ORAHQS) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'Captured FMSs'::text as label, version_count as value from ORAHQS) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

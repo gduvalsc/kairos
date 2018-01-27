@@ -7,7 +7,7 @@ class UserObject(dict):
                 "ORAHQS"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, force_matching_signature as label, version_count as value from ORAHQS) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, force_matching_signature as label, version_count as value from ORAHQS) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

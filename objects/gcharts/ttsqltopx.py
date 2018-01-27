@@ -9,8 +9,8 @@ class UserObject(dict):
             "yaxis": [
                 {
                     "title": "# of executions per second",
-                    "scaling": "LINEAR",
                     "position": "LEFT",
+                    "scaling": "LINEAR",
                     "properties": {},
                     "minvalue": 0,
                     "maxvalue": null,

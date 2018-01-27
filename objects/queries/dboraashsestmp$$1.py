@@ -9,7 +9,7 @@ class UserObject(dict):
             "userfunctions": [
                 "ashcoeff"
             ],
-            "request": "select timestamp, 'Temp space allocated'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, temp_space_allocated as value from ORAHAS where session_id||' - '||program = '%(DBORAASHSESTMP)s') as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'Temp space allocated'::text as label, temp_space_allocated as value from ORAHAS where session_id||' - '||program = '%(DBORAASHSESTMP)s') as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

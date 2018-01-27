@@ -45,7 +45,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Read MB/s'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "NMONDISKREAD"
                                     ],
@@ -57,7 +57,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONDISKREAD",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Read MB/s'::text",
                                             "restriction": "",
                                             "value": "value / 1024.0"
                                         }

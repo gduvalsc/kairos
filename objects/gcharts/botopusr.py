@@ -54,7 +54,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All users'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "BO"
                                     ],
@@ -68,7 +68,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "BO",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'All users'::text",
                                             "restriction": "",
                                             "value": "executecount * 1.0 / bocoeff()"
                                         }
@@ -98,7 +98,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Response time'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "BO"
                                     ],
@@ -110,7 +110,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "BO",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Response time'::text",
                                             "restriction": "",
                                             "value": "duration::real / 60.0"
                                         }

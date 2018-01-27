@@ -40,7 +40,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "max",
-                                    "projection": "'Max throughput (all disks)'",
+                                    "projection": "label",
                                     "collections": [
                                         "SARD"
                                     ],
@@ -52,7 +52,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "SARD",
-                                            "projection": "'xxx'",
+                                            "projection": "'Max throughput (all disks)'::text",
                                             "restriction": "",
                                             "value": "rws"
                                         }

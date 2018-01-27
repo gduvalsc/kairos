@@ -45,7 +45,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "max",
-                                    "projection": "'Max busy'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "NMONDISKBUSY"
                                     ],
@@ -57,7 +57,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONDISKBUSY",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Max busy'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

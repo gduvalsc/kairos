@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORAFIL"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, file as label, busytime * busy / 1000.0 as value from DBORAFIL) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, file as label, busytime * busy / 1000.0 as value from DBORAFIL) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

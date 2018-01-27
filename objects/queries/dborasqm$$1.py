@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORASQM"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label as label , sum(value) as value from (select timestamp, sqlid as label, sharedmem as value from DBORASQM) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, sqlid as label, sharedmem as value from DBORASQM) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

@@ -19,7 +19,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Workarea (Manual + Auto) allocated'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORAPGA"
                                     ],
@@ -29,7 +29,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAPGA",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Workarea (Manual + Auto) allocated'::text",
                                             "restriction": "",
                                             "value": "memused"
                                         }
@@ -37,7 +37,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Memory other allocated'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORAPGA"
                                     ],
@@ -47,7 +47,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAPGA",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Memory other allocated'::text",
                                             "restriction": "",
                                             "value": "memalloc - memused"
                                         }
@@ -60,7 +60,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Memory allocated'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORAPGA"
                                     ],
@@ -70,7 +70,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAPGA",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Memory allocated'::text",
                                             "restriction": "",
                                             "value": "memalloc"
                                         }
@@ -78,7 +78,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'PGA aggregate target'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORAPGA"
                                     ],
@@ -88,7 +88,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAPGA",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'PGA aggregate target'::text",
                                             "restriction": "",
                                             "value": "aggrtarget"
                                         }
@@ -117,7 +117,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'One pass execs'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORAPGC"
                                     ],
@@ -127,7 +127,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select c.timestamp as timestamp, execs1 * elapsed as value from DBORAPGC c, DBORAMISC m where c.timestamp = m.timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'One pass execs'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -135,7 +135,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Multi pass execs'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORAPGC"
                                     ],
@@ -145,7 +145,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select c.timestamp as timestamp, execs2 * elapsed as value from DBORAPGC c, DBORAMISC m where c.timestamp = m.timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Multi pass execs'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

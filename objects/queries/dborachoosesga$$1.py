@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORASGA"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, pool||' '||name label, size value from DBORASGA where pool||' '||name = '%(DBORASGA)s') group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, pool||' '||name as label, size as value from DBORASGA where pool||' '||name = '%(DBORASGA)s') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

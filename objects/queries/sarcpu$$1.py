@@ -7,7 +7,7 @@ class UserObject(dict):
                 "SARU"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label label, sum(value) value from (select timestamp, 'sys' label, sys value from SARU where cpuid = 'all' union all select timestamp, 'usr' label, usr value from SARU where cpuid = 'all') group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'sys' as label, sys as value from SARU where cpuid = 'all' union all select timestamp, 'usr' as label, usr as value from SARU where cpuid = 'all') as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

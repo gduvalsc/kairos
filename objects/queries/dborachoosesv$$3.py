@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORASVW"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'Concurrency wait time'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, conwaitt as value from DBORASVW where service = '%(DBORASV)s') as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'Concurrency wait time'::text as label, conwaitt as value from DBORASVW where service = '%(DBORASV)s') as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

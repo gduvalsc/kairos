@@ -7,7 +7,7 @@ class UserObject(dict):
                 "EXATOPCLLOSIO"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label as label , avg(value) as value from (select timestamp, 'Flash disk maximum capacity for cell'::text as label, 35716.0::real as value from EXATOPCLLOSIO) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, avg(value) as value from (select timestamp, 'Flash disk maximum capacity for cell'::text as label, 35716.0::real as value from EXATOPCLLOSIO) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

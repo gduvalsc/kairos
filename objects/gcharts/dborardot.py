@@ -18,7 +18,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'redo write time'",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORASTA"
                                     ],
@@ -28,7 +28,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select x.timestamp as timestamp, 10.0 * x.value / y. value as value from DBORASTA x, DBORASTA y where x.statistic='redo write time' and y.statistic='redo writes' and x.timestamp = y.timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'redo write time'",
                                             "restriction": "",
                                             "value": "value"
                                         }

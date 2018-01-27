@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Virtual usr+sys+idle %'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "NMONLPAR"
                                     ],
@@ -32,7 +32,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select timestamp, sum(value) as value from NMONLPAR where id in ('VP_User%', 'VP_Sys%', 'VP_Idle%') group by timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Virtual usr+sys+idle %'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -40,7 +40,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Virtual usr+sys %'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "NMONLPAR"
                                     ],
@@ -52,7 +52,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select timestamp, sum(value) as value from NMONLPAR where id in ('VP_User%', 'VP_Sys%') group by timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Virtual usr+sys %'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -60,7 +60,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Logical CPU (computation 1) %'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "NMONCPU"
                                     ],
@@ -72,7 +72,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONCPU",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Logical CPU (computation 1) %'::text",
                                             "restriction": "id = 'ALL'",
                                             "value": "usr + sys"
                                         }
@@ -80,7 +80,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "avg",
-                                    "projection": "'Logical CPU (computation 2) %'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "NMONCPU"
                                     ],
@@ -92,7 +92,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select timestamp, sum(usr + sys) / count(cpus) as value from NMONCPU where id != 'ALL' group by timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Logical CPU (computation 2) %'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

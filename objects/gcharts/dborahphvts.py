@@ -20,7 +20,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Application'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHQS",
                                         "DBORAMISC"
@@ -33,7 +33,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select h.timestamp as timestamp, coalesce(apwait_delta,0)::real / 1000000.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where plan_hash_value='%(DBORAHPHVTS)s' and h.timestamp=m.timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Application'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -41,7 +41,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Concurrency'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHQS",
                                         "DBORAMISC"
@@ -54,7 +54,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select h.timestamp as timestamp, coalesce(ccwait_delta,0)::real / 1000000.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where plan_hash_value='%(DBORAHPHVTS)s' and h.timestamp=m.timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Concurrency'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -62,7 +62,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'User I/O'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHQS",
                                         "DBORAMISC"
@@ -75,7 +75,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select h.timestamp as timestamp, coalesce(iowait_delta,0)::real / 1000000.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where plan_hash_value='%(DBORAHPHVTS)s' and h.timestamp=m.timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'User I/O'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -83,7 +83,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Cluster'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHQS",
                                         "DBORAMISC"
@@ -96,7 +96,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select h.timestamp as timestamp, coalesce(clwait_delta,0)::real / 1000000.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where plan_hash_value='%(DBORAHPHVTS)s' and h.timestamp=m.timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Cluster'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -104,7 +104,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Cpu'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHQS",
                                         "DBORAMISC"
@@ -117,7 +117,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select h.timestamp as timestamp, coalesce(cpu_time_delta,0)::real / 1000000.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where plan_hash_value='%(DBORAHPHVTS)s' and h.timestamp=m.timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Cpu'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -130,7 +130,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Elapsed'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHQS",
                                         "DBORAMISC"
@@ -143,7 +143,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select h.timestamp as timestamp, coalesce(elapsed_time_delta,0)::real / 1000000.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where plan_hash_value='%(DBORAHPHVTS)s' and h.timestamp=m.timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Elapsed'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

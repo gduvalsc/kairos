@@ -49,7 +49,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Captured FMSs'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHQS",
                                         "DBORAMISC"
@@ -62,7 +62,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select h.timestamp as timestamp, force_matching_signature, coalesce(cpu_time_delta,0)::real / 1000000.0 / m.elapsed as value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp) as foo",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Captured FMSs'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

@@ -45,7 +45,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All captured commands'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "NMONTOP"
                                     ],
@@ -57,7 +57,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONTOP",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'All captured commands'::text",
                                             "restriction": "id = '%CPU'::text",
                                             "value": "(value+0) / 100.0"
                                         }

@@ -48,7 +48,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'Captured PHVs'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "ORAHQS"
                                     ],
@@ -60,7 +60,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "ORAHQS",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'Captured PHVs'::text",
                                             "restriction": "",
                                             "value": "version_count"
                                         }

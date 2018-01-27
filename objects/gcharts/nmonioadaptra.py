@@ -45,7 +45,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'All adapters (read)'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "NMONIOADAPT"
                                     ],
@@ -57,7 +57,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "NMONIOADAPT",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'All adapters (read)'::text",
                                             "restriction": "id like '%read%'::text",
                                             "value": "value / 1024.0"
                                         }

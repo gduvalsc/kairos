@@ -40,7 +40,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "max",
-                                    "projection": "'Max (%) all disks'",
+                                    "projection": "label",
                                     "collections": [
                                         "SARD"
                                     ],
@@ -52,7 +52,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "SARD",
-                                            "projection": "'xxx'",
+                                            "projection": "'Max (%) all disks'::text",
                                             "restriction": "",
                                             "value": "busy"
                                         }

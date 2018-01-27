@@ -9,7 +9,7 @@ class UserObject(dict):
             "userfunctions": [
                 "ashcoeff"
             ],
-            "request": "select timestamp, 'PGA allocated'::text as label , sum(value) as value from (select timestamp, 'xxx'::text as label, pga_allocated as value from ORAHAS) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'PGA allocated'::text as label, pga_allocated as value from ORAHAS) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }

@@ -19,7 +19,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'gets'",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORABUF"
                                     ],
@@ -29,7 +29,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'gets'",
                                             "restriction": "bufpool='R'",
                                             "value": "gets"
                                         }
@@ -37,7 +37,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'reads'",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORABUF"
                                     ],
@@ -47,7 +47,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'reads'",
                                             "restriction": "bufpool='R'",
                                             "value": "reads"
                                         }
@@ -77,7 +77,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'hit ratio'",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORABUF"
                                     ],
@@ -87,7 +87,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'hit ratio'",
                                             "restriction": "bufpool='R'",
                                             "value": "100.0 * (1 - (reads / gets))"
                                         }
@@ -110,7 +110,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'write complete waits'",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORABUF"
                                     ],
@@ -120,7 +120,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'write complete waits'",
                                             "restriction": "bufpool='R'",
                                             "value": "writecompletewaits"
                                         }
@@ -128,7 +128,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'free buffer waits'",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORABUF"
                                     ],
@@ -138,7 +138,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'free buffer waits'",
                                             "restriction": "bufpool='R'",
                                             "value": "freewaits"
                                         }
@@ -146,7 +146,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'buffer busy waits'",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORABUF"
                                     ],
@@ -156,7 +156,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'xxx'::text",
+                                            "projection": "'buffer busy waits'",
                                             "restriction": "bufpool='R'",
                                             "value": "busywaits"
                                         }

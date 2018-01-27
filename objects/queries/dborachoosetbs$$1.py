@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORATBS"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'average time (ms)'::text as label , avg(value) as value from (select timestamp, 'xxx'::text as label, readtime as value from DBORATBS where tablespace='%(DBORATBS)s') as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, avg(value) as value from (select timestamp, 'average time (ms)'::text as label, readtime as value from DBORATBS where tablespace='%(DBORATBS)s') as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }
