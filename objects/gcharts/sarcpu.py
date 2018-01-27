@@ -32,13 +32,13 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "SARU",
-                                            "projection": "'sys'",
+                                            "projection": "'sys'::text",
                                             "restriction": "cpuid = 'all'",
                                             "value": "sys"
                                         },
                                         {
                                             "table": "SARU",
-                                            "projection": "'usr'",
+                                            "projection": "'usr'::text",
                                             "restriction": "cpuid = 'all'",
                                             "value": "usr"
                                         }
@@ -73,13 +73,13 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "SARQ",
-                                            "projection": "'Run queue'",
+                                            "projection": "'Run queue'::text",
                                             "restriction": "",
                                             "value": "runqsz"
                                         },
                                         {
                                             "table": "SARQ",
-                                            "projection": "'Swap queue'",
+                                            "projection": "'Swap queue'::text",
                                             "restriction": "",
                                             "value": "swpqsz"
                                         }

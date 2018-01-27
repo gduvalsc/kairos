@@ -38,7 +38,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAWEB",
-                                            "projection": "'average time (ms)'",
+                                            "projection": "'average time (ms)'::text",
                                             "restriction": "event='%(DBORAWEB)s'",
                                             "value": "1000.0 * time / count"
                                         }
@@ -72,7 +72,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAWEB",
-                                            "projection": "'number of operations/sec'",
+                                            "projection": "'number of operations/sec'::text",
                                             "restriction": "event='%(DBORAWEB)s'",
                                             "value": "count"
                                         }
@@ -91,7 +91,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAWEB",
-                                            "projection": "'number of timeouts/sec'",
+                                            "projection": "'number of timeouts/sec'::text",
                                             "restriction": "event='%(DBORAWEB)s'",
                                             "value": "timeouts"
                                         }

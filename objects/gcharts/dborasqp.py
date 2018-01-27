@@ -60,7 +60,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASQP",
-                                            "projection": "'Captured SQLs'",
+                                            "projection": "'Captured SQLs'::text",
                                             "restriction": "",
                                             "value": "parses"
                                         }

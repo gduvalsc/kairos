@@ -28,7 +28,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select x.timestamp as timestamp, 10.0 * x.value / y. value as value from DBORASTA x, DBORASTA y where x.statistic='redo write time' and y.statistic='redo writes' and x.timestamp = y.timestamp) as foo",
-                                            "projection": "'redo write time'",
+                                            "projection": "'redo write time'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }
@@ -48,7 +48,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORAWEV",
                                             "projection": "event",
-                                            "restriction": "event='log file sync'",
+                                            "restriction": "event='log file sync'::text",
                                             "value": "1000.0 * time / count"
                                         }
                                     ]
@@ -67,7 +67,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORAWEB",
                                             "projection": "event",
-                                            "restriction": "event='log file parallel write'",
+                                            "restriction": "event='log file parallel write'::text",
                                             "value": "1000.0 * time / count"
                                         }
                                     ]

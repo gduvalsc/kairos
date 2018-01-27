@@ -25,7 +25,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'wait events'",
+                                    "projection": "'wait events'::text",
                                     "collections": [
                                         "DBORAWEC"
                                     ],

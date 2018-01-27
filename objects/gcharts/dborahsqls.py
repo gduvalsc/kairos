@@ -62,7 +62,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "(select h.timestamp timestamp, sql_id, sorts_delta * 1.0 / m.elapsed value from ORAHQS h, DBORAMISC m where h.timestamp = m.timestamp)",
-                                            "projection": "'Captured SQLs'",
+                                            "projection": "'Captured SQLs'::text",
                                             "restriction": "",
                                             "value": "value"
                                         }

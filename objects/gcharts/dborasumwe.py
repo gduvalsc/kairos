@@ -39,7 +39,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'DB CPU'",
+                                    "projection": "'DB CPU'::text",
                                     "collections": [
                                         "DBORATMS"
                                     ],

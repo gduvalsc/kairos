@@ -29,7 +29,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'gets'",
+                                            "projection": "'gets'::text",
                                             "restriction": "bufpool='D'",
                                             "value": "gets"
                                         }
@@ -47,7 +47,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'reads'",
+                                            "projection": "'reads'::text",
                                             "restriction": "bufpool='D'",
                                             "value": "reads"
                                         }
@@ -87,7 +87,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'hit ratio'",
+                                            "projection": "'hit ratio'::text",
                                             "restriction": "bufpool='D'",
                                             "value": "100.0 * (1 - (reads / gets))"
                                         }
@@ -120,7 +120,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'write complete waits'",
+                                            "projection": "'write complete waits'::text",
                                             "restriction": "bufpool='D'",
                                             "value": "writecompletewaits"
                                         }
@@ -138,7 +138,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'free buffer waits'",
+                                            "projection": "'free buffer waits'::text",
                                             "restriction": "bufpool='D'",
                                             "value": "freewaits"
                                         }
@@ -156,7 +156,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORABUF",
-                                            "projection": "'buffer busy waits'",
+                                            "projection": "'buffer busy waits'::text",
                                             "restriction": "bufpool='D'",
                                             "value": "busywaits"
                                         }

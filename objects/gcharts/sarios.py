@@ -32,37 +32,37 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "SARB",
-                                            "projection": "'lwrite'",
+                                            "projection": "'lwrite'::text",
                                             "restriction": "",
                                             "value": "lwrite"
                                         },
                                         {
                                             "table": "SARB",
-                                            "projection": "'lread'",
+                                            "projection": "'lread'::text",
                                             "restriction": "",
                                             "value": "lread"
                                         },
                                         {
                                             "table": "SARB",
-                                            "projection": "'pwrite'",
+                                            "projection": "'pwrite'::text",
                                             "restriction": "",
                                             "value": "pwrite"
                                         },
                                         {
                                             "table": "SARB",
-                                            "projection": "'pread'",
+                                            "projection": "'pread'::text",
                                             "restriction": "",
                                             "value": "pread"
                                         },
                                         {
                                             "table": "SARB",
-                                            "projection": "'bwrite'",
+                                            "projection": "'bwrite'::text",
                                             "restriction": "",
                                             "value": "bwrite"
                                         },
                                         {
                                             "table": "SARB",
-                                            "projection": "'bread'",
+                                            "projection": "'bread'::text",
                                             "restriction": "",
                                             "value": "bread"
                                         }
