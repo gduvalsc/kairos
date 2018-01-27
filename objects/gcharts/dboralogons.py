@@ -25,7 +25,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'user transactions'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORASTA"
                                     ],
@@ -35,7 +35,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASTA",
-                                            "projection": "statistic",
+                                            "projection": "'user transactions'::text",
                                             "restriction": "statistic in ('user rollbacks', 'user commits')",
                                             "value": "value"
                                         }
@@ -63,7 +63,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'logon rate'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORASTA"
                                     ],
@@ -73,7 +73,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASTA",
-                                            "projection": "statistic",
+                                            "projection": "'logon rate'::text",
                                             "restriction": "statistic in ('logons cumulative')",
                                             "value": "value"
                                         }
@@ -94,7 +94,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'sessions'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORAMISC"
                                     ],
@@ -104,7 +104,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAMISC",
-                                            "projection": "sessions",
+                                            "projection": "'sessions'::text",
                                             "restriction": "",
                                             "value": "sessions"
                                         }

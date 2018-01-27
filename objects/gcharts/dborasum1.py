@@ -25,7 +25,7 @@ class UserObject(dict):
                             "datasets": [
                                 {
                                     "groupby": "sum",
-                                    "projection": "'wait events'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORAWEV"
                                     ],
@@ -38,7 +38,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORAWEV",
-                                            "projection": "event",
+                                            "projection": "'wait events'::text",
                                             "restriction": "not idlewev(event) and not pxwev(event)",
                                             "value": "time"
                                         }

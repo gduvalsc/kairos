@@ -1288,9 +1288,10 @@ class KairosWorker:
                 globalcounter += counter
             logging.info("Collection: " + col + ": " + str(globalcounter) + " records have been written! ")
             hcache.disconnect()
-        
+
         try: limit = int(os.environ['PARALLEL'])
         except: limit = 0
+        
         limit = multiprocessing.cpu_count() if limit==0 else limit
 
         pr = Parallel(read_from_queue, workers=1)
@@ -1329,7 +1330,7 @@ class KairosWorker:
             for e in v:
                 record = ''
                 e['kairos_nodeid'] = nid
-                for k in sorted(e.keys()): record += '\\N\t' if e[k] == '' else str(e[k]).replace('\t','\\t') + '\t'
+                for k in sorted(e.keys()): record += '\\N\t' if e[k] == '' else str(e[k]).replace('\t','\\t').replace('\r', '') + '\t'
                 record = record[:-1] + '\n'
                 queues[col].put(record)
 
@@ -1358,7 +1359,8 @@ class KairosWorker:
                         readheader[col] = False
                 else:
                     bufferempty = False
-                    counter += 1 
+                    counter += 1
+                    logging.debug('Stacking record: ' + str(record))
                     buffer.write(record)
                     if counter == limit:
                         buffer.seek(0)
@@ -1389,7 +1391,6 @@ class KairosWorker:
                 logging.info('Analyzing member: ' + member + '...')
                 analyzer.analyze(archive.read(member), member)
                 return None
-
         try: limit = int(os.environ['PARALLEL'])
         except: limit = 0
         limit = multiprocessing.cpu_count() if limit==0 else limit

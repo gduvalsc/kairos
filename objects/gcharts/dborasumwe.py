@@ -39,7 +39,7 @@ class UserObject(dict):
                                 },
                                 {
                                     "groupby": "sum",
-                                    "projection": "'DB CPU'::text",
+                                    "projection": "label",
                                     "collections": [
                                         "DBORATMS"
                                     ],
@@ -49,7 +49,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORATMS",
-                                            "projection": "statistic",
+                                            "projection": "'DB CPU'::text",
                                             "restriction": "statistic='DB CPU'",
                                             "value": "time"
                                         }

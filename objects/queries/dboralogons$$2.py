@@ -7,7 +7,7 @@ class UserObject(dict):
                 "DBORASTA"
             ],
             "userfunctions": [],
-            "request": "select timestamp, 'logon rate'::text as label, sum(value) as value from (select timestamp, statistic as label, value as value from DBORASTA where statistic in ('logons cumulative')) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'logon rate'::text as label, value as value from DBORASTA where statistic in ('logons cumulative')) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }
