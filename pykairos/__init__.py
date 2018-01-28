@@ -434,11 +434,6 @@ class KairosNotifier:
 class KairosWorker:
     def __init__(s, jpypeflag=True):
         
-        # if jpypeflag:
-        #     jarpath = os.environ['CLASSPATH']
-        #     jvm = jpype.getDefaultJVMPath()
-        #     jpype.startJVM(jvm, '-Djava.class.path=' + jarpath)
-
         app = web.Application()
         app['websockets'] = []
 
