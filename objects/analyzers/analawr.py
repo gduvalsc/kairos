@@ -439,7 +439,7 @@ class UserObject(dict):
         a.emit('DBORATBS', d, v)
 
     def afil(s, a, l, g, m):
-        if not 'AWR' in a.type: return
+    #if not 'AWR' in a.type: return
         try:
             reads=a.getfloat(2,l)/a.dur
             readtime=a.getfloat(4,l)
