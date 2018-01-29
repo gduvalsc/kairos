@@ -212,8 +212,6 @@ class UserObject(dict):
         tof=lambda x: float(x.replace(',','').replace(u'\xa0','0')) if x!=u'' else 0.0
         toc=lambda x: x.replace('&quot;',"'").replace('&lt;',"<").replace('&gt;',">").replace(u'\xa0','')
         for x in sorted(a.collected.keys(),reverse=True):
-            logging.debug("======= " + x)
-            logging.debug("+++++++ " + str(a.collected[x]))
             line=-1
             if x =='zz9':
                 dmisc = dict(timestamp='text', sessions='real', avgelapsed='real', elapsed='int')

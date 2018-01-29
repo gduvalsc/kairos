@@ -19,6 +19,10 @@ from datetime import datetime
 from aiohttp import web, WSCloseCode, WSMsgType, MultiDict
 from urllib.parse import parse_qs
 
+logging.TRACE = 5
+logging.addLevelName(5, "TRACE")
+logging.trace = lambda m: logging.log(logging.TRACE, m)
+
 global kairos
 kairos=dict()
 
@@ -84,6 +88,7 @@ def intercept_logging_and_internal_error(func):
         params = parse_qs(request.query_string)
         if 'logging' in params:
             logger = logging.getLogger()
+            if params['logging'][0] == 'trace': logger.setLevel(logging.TRACE)
             if params['logging'][0] == 'debug': logger.setLevel(logging.DEBUG)
             if params['logging'][0] == 'info': logger.setLevel(logging.INFO)
             if params['logging'][0] == 'warn': logger.setLevel(logging.WARNING)
@@ -222,7 +227,9 @@ class Analyzer:
         s.listenercontext = listenercontext
         s.scope = scope
         s.name = c['id']
-        logging.debug(s.name + ' - Init Analyzer()')
+        try: s.behaviour = os.environ['ANALYZER_BEHAVIOUR']
+        except: s.behaviour = 'OLD'
+        logging.trace(s.name + ' - Init Analyzer()')
         if "rules" in c:
             for r in c["rules"]:
                 if  not "scope" in r or r["scope"] in scope or '*' in scope: s.addRule(r)
@@ -234,39 +241,39 @@ class Analyzer:
                 if  not "scope" in r or r["scope"] in scope or '*' in scope: s.addOutContextRule(r)
         if "begin" in c: s.addContextRule({"context": "BEGIN", "action": c["begin"], "regexp": '.'})
         if "end" in c: s.addContextRule({"context": "END", "action": c["end"], "regexp": '.'})
-    def debug(s, m):
-        logging.debug(s.name + ' - ' +m)
+    def trace(s, m):
+        logging.trace(s.name + ' - ' + m)
     def addRule(s, r):
-        logging.debug(s.name + ' - Adding rule, regular expression: /' + r["regexp"] + '/, action: ' + r["action"].__name__)
+        logging.trace(s.name + ' - Adding rule, regular expression: /' + r["regexp"] + '/, action: ' + r["action"].__name__)
         if 'tag' in r: s.rules.append({"action": r["action"], "regexp": re.compile(r["regexp"]), "tag": re.compile(r["tag"])})
         else: s.rules.append({"action": r["action"], "regexp": re.compile(r["regexp"])})
     def addOutContextRule(s, r):
-        logging.debug(s.name + ' - Adding out context rule, regular expression: /' + r["regexp"] + '/, action: ' + r["action"].__name__)
+        logging.trace(s.name + ' - Adding out context rule, regular expression: /' + r["regexp"] + '/, action: ' + r["action"].__name__)
         if 'tag' in r: s.outcontextrules.append({"action": r["action"], "regexp": re.compile(r["regexp"]), "tag": re.compile(r["tag"])})
         else: s.outcontextrules.append({"action": r["action"], "regexp": re.compile(r["regexp"])})
     def addContextRule(s, r):
-        logging.debug(s.name + ' - Adding context rule, context: ' + r["context"] + ', regular expression: /' + r["regexp"] + '/, action: ' + r["action"].__name__)
+        logging.trace(s.name + ' - Adding context rule, context: ' + r["context"] + ', regular expression: /' + r["regexp"] + '/, action: ' + r["action"].__name__)
         if 'tag' in r: s.contextrules[r["context"]] = {"action": r["action"], "regexp": re.compile(r["regexp"]), "tag": re.compile(r["tag"])}
         else: s.contextrules[r["context"]] = {"action": r["action"], "regexp": re.compile(r["regexp"])}
     def setContext(s, c):
-        logging.debug(s.name + ' - Setting context: ' + c)
+        logging.trace(s.name + ' - Setting context: ' + c)
         s.context = c
     def emit(s, col, d, v):
         s.stats["rec"] += 1
         s.listener(col, d, v, s.listenercontext)
         s.gcpt += 1;
-        logging.debug(json.dumps(d))
+        logging.trace(json.dumps(d))
     def analyze(s, stream, name):
-        logging.debug(s.name + ' - Scope: ' + str(s.scope))
+        logging.trace(s.name + ' - Scope: ' + str(s.scope))
         if "content" in s.configurator and s.configurator["content"] == "xml": s.analyzexml(stream.decode(), name)
         elif "content" in s.configurator and s.configurator["content"] == "json": s.analyzejson(stream.decode(), name)
         else: s.analyzestr(stream.decode(errors="ignore"), name)
     def analyzestr(s, stream, name):
-        logging.debug(s.name + ' - Analyzing stream ' + name)
+        logging.trace(s.name + ' - Analyzing stream ' + name)
         s.context = ''
         s.stats = dict(lines=0, ger=0, sger=0, cer=0, scer=0, oer=0, soer=0, rec=0)
         if "BEGIN" in s.contextrules:
-            logging.debug(s.name + ' - Calling BEGIN at line ' + str(s.stats["lines"]))
+            logging.trace(s.name + ' - Calling BEGIN at line ' + str(s.stats["lines"]))
             s.contextrules["BEGIN"]["action"](s)
         for ln in stream.split('\n'):
             ln=ln.rstrip('\r')
@@ -277,15 +284,17 @@ class Analyzer:
                 p = r["regexp"].search(ln)
                 if not p: continue
                 s.stats['sger'] += 1
-                logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
+                logging.trace(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
                 r["action"](s, ln, p.group, name)
             if s.context == '':
-                for r in s.outcontextrules:
+                outr = s.outcontextrules[0:1] if s.behaviour == 'NEW' else s.outcontextrules
+                for r in outr:           
                     s.stats['oer'] += 1
                     p = r["regexp"].search(ln)
                     if not p: continue
+                    s.outcontextrules = s.outcontextrules[1:] if s.behaviour == 'NEW' else s.outcontextrules                 
                     s.stats['soer'] += 1
-                    logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
+                    logging.trace(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
                     r["action"](s, ln, p.group, name)
                     break
             if s.context in s.contextrules:
@@ -294,10 +303,10 @@ class Analyzer:
                 p = r["regexp"].search(ln)
                 if not p: continue
                 s.stats['scer'] += 1
-                logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
+                logging.trace(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
                 r["action"](s, ln, p.group, name)
         if "END" in s.contextrules:
-            logging.debug(s.name + ' - Calling END at line ' + str(s.stats["lines"]))
+            logging.trace(s.name + ' - Calling END at line ' + str(s.stats["lines"]))
             s.contextrules["END"]["action"](s)
         logging.info(s.name + ' - Summary for member ' + name);
         logging.info(s.name + ' -    Analyzed lines              : ' + str(s.stats["lines"]))
@@ -309,12 +318,12 @@ class Analyzer:
         logging.info(s.name + ' -    Satisfied rules (context)   : ' + str(s.stats["scer"]))
         logging.info(s.name + ' -    Emitted records             : ' + str(s.stats["rec"]))
     def analyzejson(s, stream, name):
-        logging.debug(s.name + ' - Analyzing stream' + name)
+        logging.trace(s.name + ' - Analyzing stream' + name)
         s.stats = dict(lines=0, er=0, ser=0, rec=0)
         d = json.loads(stream)
         for x in d['data']: s.emit(d['collection'], d['desc'], x)
-        logging.debug(s.name + ' - Summary for member ' + name);
-        logging.debug(s.name + ' -    Emitted records  : ' + str(s.stats["rec"]))
+        logging.info(s.name + ' - Summary for member ' + name);
+        logging.info(s.name + ' -    Emitted records  : ' + str(s.stats["rec"]))
     def lxmltext1(s, e):
         r = e.text.replace('\n','').replace('\r','').lstrip().rstrip() if type(e.text) == type('') else ''
         if not r and e.tag in  ['td', 'h3']:
@@ -326,7 +335,7 @@ class Analyzer:
     def lxmltext2(s, e):
         return e.text_content().replace('\n','').replace('\r','').lstrip().rstrip()
     def analyzexml(s, stream, name):
-        logging.debug(s.name + ' - Analyzing xml stream' + name)
+        logging.trace(s.name + ' - Analyzing xml stream' + name)
         s.context = ''
         s.stats = dict(patterns=0, ger=0, sger=0, cer=0, scer=0, oer=0, soer=0, rec=0)
         try:
@@ -336,7 +345,7 @@ class Analyzer:
             page=lxml.html.fromstring(stream)
             s.lxmltext = s.lxmltext2
         if "BEGIN" in s.contextrules:
-            logging.debug(s.name + ' - Calling BEGIN at pattern ' + str(s.stats["patterns"]))
+            logging.trace(s.name + ' - Calling BEGIN at pattern ' + str(s.stats["patterns"]))
             s.contextrules["BEGIN"]["action"](s)
         for ln in page.getiterator():
             if s.context == 'BREAK': break
@@ -348,20 +357,20 @@ class Analyzer:
                 p = r["regexp"].search(s.lxmltext(ln))
                 if not p: continue
                 s.stats['sger'] += 1
-                logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at text ' + s.lxmltext(ln) + ' for tag: ' + ln.tag)
+                logging.trace(s.name + ' - Calling ' + r["action"].__name__ + ' at text ' + s.lxmltext(ln) + ' for tag: ' + ln.tag)
                 r["action"](s, ln, p.group, name)
                 if s.context == 'BREAK': break
             if s.context == '':
-                #for r in s.outcontextrules[0:1]:
-                for r in s.outcontextrules:
+                outr = s.outcontextrules[0:1] if s.behaviour == 'NEW' else s.outcontextrules
+                for r in outr:           
                     s.stats['oer'] += 1
                     p = r["tag"].search(ln.tag)
                     if not p: continue
                     p = r["regexp"].search(s.lxmltext(ln))
                     if not p: continue
-                    #s.outcontextrules = s.outcontextrules[1:]
+                    s.outcontextrules = s.outcontextrules[1:] if s.behaviour == 'NEW' else s.outcontextrules                 
                     s.stats['soer'] += 1
-                    logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at text ' + s.lxmltext(ln) + ' for tag: ' + ln.tag)
+                    logging.trace(s.name + ' - Calling ' + r["action"].__name__ + ' at text ' + s.lxmltext(ln) + ' for tag: ' + ln.tag)
                     r["action"](s, ln, p.group, name)
                     break
             if s.context in s.contextrules:
@@ -372,10 +381,10 @@ class Analyzer:
                 p = r["regexp"].search(s.lxmltext(ln))
                 if not p: continue
                 s.stats['scer'] += 1
-                logging.debug(s.name + ' - Calling ' + r["action"].__name__ + ' at text ' + s.lxmltext(ln) + ' for tag: ' + ln.tag)
+                logging.trace(s.name + ' - Calling ' + r["action"].__name__ + ' at text ' + s.lxmltext(ln) + ' for tag: ' + ln.tag)
                 r["action"](s, ln, p.group, name)
         if "END" in s.contextrules:
-            logging.debug(s.name + ' - Calling END at pattern ' + str(s.stats["patterns"]))
+            logging.trace(s.name + ' - Calling END at pattern ' + str(s.stats["patterns"]))
             s.contextrules["END"]["action"](s)
         logging.info(s.name + ' - Summary for member ' + name);
         logging.info(s.name + ' -    Analyzed patterns   : ' + str(s.stats["patterns"]))
