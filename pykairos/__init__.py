@@ -229,6 +229,7 @@ class Analyzer:
         s.name = c['id']
         try: s.behaviour = os.environ['ANALYZER_BEHAVIOUR']
         except: s.behaviour = 'OLD'
+        logging.trace("Analyzer behaviour: " + s.behaviour)
         logging.trace(s.name + ' - Init Analyzer()')
         if "rules" in c:
             for r in c["rules"]:
