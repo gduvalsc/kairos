@@ -153,6 +153,7 @@ Jython 2.7.0 (default:9987c746f838, Apr 29 2015, 02:25:11)
 Type "help", "copyright", "credits" or "license" for more information.
 >>> 
 ```
+
 ###### d) copy kairosora.py to the target system and check the available options
 
 kairosora.py can be transfered anywhere (for example /tmp)
@@ -220,12 +221,11 @@ In this example, you are requiring data where snap times are greater than 2018-0
 
 ```
 jython kairosora.py --password PERFSTAT --from "2018-02-05 08:30" --to "2018-02-05 17:30"
-
 ```
 
-In this exmaple, you are requiring data where snap times are between "2018-02-05 08:30" and "2018-02-05 17:30".
+In this exmaple, you are requiring data where snap times are between "2018-02-05 08:30" and "2018-02-05 17:30"
 
-#### STATSPACK installation
+#### STATSPACK installation
 
 STASTSPACK is always available in Oracle 10, 11, 12, even if all STATSPACK functionalities have been replaced by AWR.
 
@@ -249,7 +249,8 @@ To automate the production of snapshots, the SPAUTO script must be used. The def
 SQL>  CONNECT perfstat/my_perfstat_password
 SQL>  @?/rdbms/admin/spauto
 ````
-.
+
+
 #### B-ASH installation
 
 The package to install and configure B-ASH is provided in attachment.
