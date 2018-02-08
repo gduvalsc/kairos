@@ -11,7 +11,7 @@ There are 2 ways to collect Oracle data for KAIROS:
 a) through a provided Korn-shell script: kairosora.ksh
 b) through a python script runnable under JYTHON (Preferred method when available)
 
-###### Oracle Data Collection for Kairos with kairosora.ksh
+#### Oracle Data Collection for Kairos with kairosora.ksh
 
 The script must be transfered to a system where the Oracle Database resides. Some Oracle installations don't use the "oraenv" mechanism to switch between Oracle contexts.
 
@@ -60,13 +60,13 @@ PPPP is the PERFSTAT password is the case of STATSPACK. The default value is PER
 
 If the PERSTAT password is not PERFSTAT and if the customer don't want to pass the password as an argument of the command, the default password must be changed in the provided KAIROS script.
 
-###### Oracle Data Collection for Kairos with kairosora.py
+#### Oracle Data Collection for Kairos with kairosora.py
 
 This method supposes that JAVA is available on the system where the collect must be done.
 
 Steps to be realized:
 
-######### find a java executable
+###### find a java executable
 
 ```
 find / -name 'java' 2> /dev/null
