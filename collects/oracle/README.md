@@ -223,7 +223,7 @@ jython kairosora.py --password PERFSTAT --from "2018-02-05 08:30" --to "2018-02-
 
 ```
 
-In this exmaple, you are requiring data where snap times are between "2018-02-05 08:30" and "2018-02-05 17:30"
+In this exmaple, you are requiring data where snap times are between "2018-02-05 08:30" and "2018-02-05 17:30".
 
 #### STATSPACK installation
 
@@ -249,7 +249,7 @@ To automate the production of snapshots, the SPAUTO script must be used. The def
 SQL>  CONNECT perfstat/my_perfstat_password
 SQL>  @?/rdbms/admin/spauto
 ````
-
+.
 #### B-ASH installation
 
 The package to install and configure B-ASH is provided in attachment.
