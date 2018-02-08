@@ -250,8 +250,7 @@ SQL>  CONNECT perfstat/my_perfstat_password
 SQL>  @?/rdbms/admin/spauto
 ````
 
-
-#### B-ASH installation
+#### B-ASH installation
 
 The package to install and configure B-ASH is provided in attachment.
 
