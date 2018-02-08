@@ -1,4 +1,4 @@
-Within this directory, a lot of scripts to collect data on production systems. The result is a zip or a tar.gz file to be uploaded into Kairos
+Within this directory, a lot of scripts to collect Oracle data on production systems. The result is a zip or a tar.gz file to be uploaded into Kairos
 
 ## Data collection for Oracle
 
@@ -6,9 +6,12 @@ Starting from Oracle version 10 and upper, there are AWR and ASH availables but 
 
 So KAIROS can collect data above AWR and ASH if the customer has the right to use them, but KAIROS can collect data above STATSPACK and another Free Software (B-ASH, see https://marcusmonnig.wordpress.com/bash/) if the customer doesn't have the right to use "Oracle diagnostic pack".
 
-The script "kairosora.ksh" is available to collect data both  AWR or STATSPACK and B-ASH.
+There are 2 ways to collect Oracle data for KAIROS:
 
-###### Oracle Data Collection for Kairos
+a) through a provided Korn-shell script: kairosora.ksh
+b) through a python script runnable under JYTHON (Preferred method when available)
+
+###### Oracle Data Collection for Kairos with kairosora.ksh
 
 The script must be transfered to a system where the Oracle Database resides. Some Oracle installations don't use the "oraenv" mechanism to switch between Oracle contexts.
 
@@ -57,6 +60,135 @@ PPPP is the PERFSTAT password is the case of STATSPACK. The default value is PER
 
 If the PERSTAT password is not PERFSTAT and if the customer don't want to pass the password as an argument of the command, the default password must be changed in the provided KAIROS script.
 
+###### Oracle Data Collection for Kairos with kairosora.py
+
+This method supposes that JAVA is available on the system where the collect must be done.
+
+Steps to be realized:
+
+######### find a java executable
+
+```
+find / -name 'java' 2> /dev/null
+```
+Several lines can be displayed. Example:
+
+```
+/etc/pki/java
+/etc/pki/ca-trust/extracted/java
+/oracle/12.2.0/jdk/bin/java
+/oracle/12.2.0/jdk/jre/bin/java
+/oracle/12.2.0/xdk/doc/java
+/oracle/12.2.0/OPatch/jre/bin/java
+```
+
+The third line (/oracle/12.2.0/jdk/bin/java) seems to be a good candidate...
+
+Check the java version like this:
+
+```
+/oracle/12.2.0/jdk/bin/java -version
+```
+
+Something like the following result will be displayed:
+
+```
+java version "1.8.0_91"
+Java(TM) SE Runtime Environment (build 1.8.0_91-b14)
+Java HotSpot(TM) 64-Bit Server VM (build 25.91-b14, mixed mode)
+```
+
+######### find an "ojdbc.jar" file 
+
+```
+find / -name '*ojdbc*jar' 2> /dev/null
+```
+
+An example of result:
+
+```
+/oracle/12.2.0/suptools/tfa/release/tfa_home/jlib/ojdbc5.jar
+/oracle/12.2.0/jdbc/lib/ojdbc8dms.jar
+/oracle/12.2.0/jdbc/lib/ojdbc8dms_g.jar
+/oracle/12.2.0/jdbc/lib/ojdbc8.jar
+/oracle/12.2.0/jdbc/lib/ojdbc8_g.jar
+/oracle/12.2.0/sqldeveloper/sqlcl/lib/ojdbc7.jar
+/oracle/12.2.0/sqldeveloper/jdbc/lib/ojdbc7.jar
+/oracle/12.2.0/md/property_graph/lib/ojdbc7.jar
+/oracle/12.2.0/dmu/jlib/ojdbc6.jar
+/oracle/12.2.0/inventory/Scripts/ext/jlib/ojdbc8.jar
+/oracle/12.2.0/inventory/Scripts/ext/jlib/._ojdbc8.jar
+/oracle/12.2.0/inventory/backup/2017-10-10_04-21-57PM/Scripts/ext/jlib/ojdbc8.jar
+/oracle/12.2.0/inventory/backup/2017-10-10_04-21-57PM/Scripts/ext/jlib/._ojdbc8.jar
+/oracle/sqlcl/lib/ojdbc8.jar
+```
+ojdbc6.jar or ojdbc8.jar are good candidates
+
+######### make jython available for use
+
+Transfer the jar file "jython-standalone.jar" to any directory (for example: /tmp)
+
+Create an alias for jython (example)
+
+```
+alias jython='/oracle/12.2.0/jdk/bin/java -classpath /tmp/jython-standalone.jar:/oracle/12.2.0/jdbc/lib/ojdbc8.jar org.python.util.jython'
+```
+
+This alias is made of several things:
+a) it contains the full path to the "JAVA" executable
+b) it contains the full path of "JYTHON" jar file
+c) it contains the full path of "OJDBC" jar file
+
+Check that jython is available:
+
+```
+jython
+```
+
+The following result should be displayed:
+
+```
+Jython 2.7.0 (default:9987c746f838, Apr 29 2015, 02:25:11) 
+[Java HotSpot(TM) 64-Bit Server VM (Oracle Corporation)] on java1.8.0_91
+Type "help", "copyright", "credits" or "license" for more information.
+>>> 
+```
+######### copy kairosora.py to the target system and check the available options
+
+kairosora.py can be transfered anywhere (for example /tmp)
+
+```
+jython kairosora.py -h   
+usage: kairosora.py [-h] [--version] [--awr] [--host HOST] [--port PORT]
+                    [--service SERVICE] [--user USER] [--password PASSWORD]
+                    [--instance INSTANCE] [--level LEVEL] [--from FROM]
+                    [--to TO] [--directory DIRECTORY] [--bash]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --version             show program's version number and exit
+  --awr                 True: AWR extract, False: STATSPACK extract
+  --host HOST           Host to connect to using SQL*Net. Default: current
+                        host name
+  --port PORT           Port number. Default 1521
+  --service SERVICE     Service to connect to. Default: value of ORACLE_SID
+  --user USER           Schema from which STATSPACK data is extracted.
+                        Default: PERFSTAT
+  --password PASSWORD   PERFSTAT schema password in case of STATSPACK, SYS
+                        password in case of AWR
+  --instance INSTANCE   Instance from which to retrieve data. Default: value
+                        of ORACLE_SID
+  --level LEVEL         Level 1: Extract AWR, level 2: Detailed info on
+                        requests, level 3: ASH
+  --from FROM           Extract data generated from this date
+  --to TO               Extract data generated until this date
+  --directory DIRECTORY
+                        Directory to store the result. Default: /tmp
+  --bash                True: B-ash extract
+  ```
+
+At this point, the extraction can be realized.
+
 ###### STATSPACK installation
 
 STASTSPACK is always available in Oracle 10, 11, 12, even if all STATSPACK functionalities have been replaced by AWR.
@@ -97,74 +229,3 @@ grant select on bash$hist_active_sess_history to perfstat;
 ```
 
 B-ASH installation must be done after STATSPACK installation
-
-## Data collection for PostgreSQL
-
-In the PostgreSQL universe, data collection is done by adding an extension to a PostgreSQL database.
-
-The software is delivered as  a "tar" archive. The name is "pgkairos.tar". This tar file must be copied on a system where PostgreSQL is running for exemple in the "/tmp" directory. From there, the administrator has to identify the directory where extensions are stored.
-
-To identify the directory where the extension must be installed, run the following command:
-
-```
-$ psql -c "create extension very_improbable_name"
-ERROR:  could not open extension control file "/usr/share/postgresql/9.5/extension/very_improbable_name.control": No such file or directory
-```
-
-The error message indicates the directory where the tar file must be extracted. In this example: "/usr/share/postgresql/9.5/extension"
-
-So to install properly this PostgreSQL extension you have to:
-
-```
-$ cd /usr/share/postgresql/9.5/extension
-$ tar xvf /tmp/pgkairos.tar
-```
-
-After that step, the extension is available. You can check the availability by running:
-
-```
-$ psql -c "select * from pg_available_extensions" | grep kairos
-```
-
-This extension must be then created in a new PostgreSQL database named "kairos"
-
-```
-$ psql -c "create database kairos"
-$ psql -d kairos -c "create extension kairos"
-$ psql -d kairos -c "\dp"
-```
-
-The last command lists all tables created through the extension. An exmaple of the list is:
-
-```
-                                      Access privileges
- Schema |          Name           | Type  | Access privileges | Column privileges | Policies 
---------+-------------------------+-------+-------------------+-------------------+----------
- public | config                  | table |                   |                   | 
- public | kairos_pg_stat_activity | table |                   |                   | 
- public | kairos_sql_text         | table |                   |                   | 
-(3 rows)
-
-```
-
-From there, the extension is operational. A lot of functions are available to collect, purge or export data.
-
-The "config" table keeps in mind the global parameters to control this process:
-
-```
-$ psql -d kairos -c "select * from config"
-   param   | value 
------------+-------
- enable    | true
- retention | 15.0
- directory | /tmp
-(3 rows)
-```
-
-The kairos extension collects statistics if the "enable" poarameter is set to "true". Controlling the "enable" parameter allows to enable or disable the collect of statistics
-
-The "retention" parameter specifies the number of days statistics are retained in the kairos database. When the purge is activated, it removes data older than "retention" days.
-
-The "directory" parameter specifies the directory in which "exports" are generated.
-
-All parameters of the config table can be read using the "get_param" function.
