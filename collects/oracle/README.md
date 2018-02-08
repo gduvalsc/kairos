@@ -191,6 +191,39 @@ At this point, the extraction can be realized.
 
 ###### e) perform the extraction 
 
+With this method (python script with jython), data extraction is not necessarily done on the target system where the database resides.
+It can be done on any system with an Oracle client installed if java is available and if the target database can be reached through SQL*Net.
+
+Examples of use with STATSPACK
+
+```
+jython kairosora.py --password PERFSTAT
+```
+
+In this case, you are adressing the current host and the Oracle instance identified by environment variable ORACLE_SID. The connection to the database is done with SQL*Net through the port value = 1521. 
+The target schema is PERFSTAT and the password is provided on the command line.
+There are no filter on time so that everything will be captured from the PERFSTAT schema
+
+```
+jython kairosora.py --host MYHOST --port 15211 --service TARGETDB --instance ABCD --user PERFSTAT_X --password PERFSTAT_X --from YESTERDAY --to TODAY --directory /mydirectory --bash
+```
+
+In this case, you are adressing the listener hosted on MYHOST and listening on port 15211. Your requirement is to connect to the service TARGETDB with user PERFSTAT_X and password PERFSTAT_X.
+You are requiring B-ASH data. You want an extract of the previous day (--from YESTERDAY and --to TODAY).
+The result of the extract will be stored in the directory /mydirectory
+
+```
+jython kairosora.py --password PERFSTAT --from 2018-02-05
+```
+
+In this example, you are requiring data where snap times are greater than 2018-02-05
+
+```
+jython kairosora.py --password PERFSTAT --from "2018-02-05 08:30" --to "2018-02-05 17:30"
+
+```
+
+In this exmaple, you are requiring data where snap times are between "2018-02-05 08:30" and "2018-02-05 17:30"
 
 #### STATSPACK installation
 
