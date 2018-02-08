@@ -66,7 +66,7 @@ This method supposes that JAVA is available on the system where the collect must
 
 Steps to be realized:
 
-###### find a java executable
+###### a) find a java executable
 
 ```
 find / -name 'java' 2> /dev/null
@@ -98,7 +98,7 @@ Java(TM) SE Runtime Environment (build 1.8.0_91-b14)
 Java HotSpot(TM) 64-Bit Server VM (build 25.91-b14, mixed mode)
 ```
 
-######### find an "ojdbc.jar" file 
+###### b) find an "ojdbc.jar" file 
 
 ```
 find / -name '*ojdbc*jar' 2> /dev/null
@@ -124,7 +124,7 @@ An example of result:
 ```
 ojdbc6.jar or ojdbc8.jar are good candidates
 
-######### make jython available for use
+###### c) make jython available for use
 
 Transfer the jar file "jython-standalone.jar" to any directory (for example: /tmp)
 
@@ -153,7 +153,7 @@ Jython 2.7.0 (default:9987c746f838, Apr 29 2015, 02:25:11)
 Type "help", "copyright", "credits" or "license" for more information.
 >>> 
 ```
-######### copy kairosora.py to the target system and check the available options
+###### d) copy kairosora.py to the target system and check the available options
 
 kairosora.py can be transfered anywhere (for example /tmp)
 
@@ -189,7 +189,10 @@ optional arguments:
 
 At this point, the extraction can be realized.
 
-###### STATSPACK installation
+###### e) perform the extraction 
+
+
+#### STATSPACK installation
 
 STASTSPACK is always available in Oracle 10, 11, 12, even if all STATSPACK functionalities have been replaced by AWR.
 
@@ -214,7 +217,7 @@ SQL>  CONNECT perfstat/my_perfstat_password
 SQL>  @?/rdbms/admin/spauto
 ````
 
-###### B-ASH installation
+#### B-ASH installation
 
 The package to install and configure B-ASH is provided in attachment.
 
