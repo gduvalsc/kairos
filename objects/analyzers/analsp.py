@@ -79,7 +79,7 @@ class UserObject(dict):
                 {"action": s.atype, "regexp": '(DB Name +DB Id +Instance +Inst Num Release +OPS Host)|(DB Name +DB Id +Instance +Inst Num Release +Cluster Host)|(Database +DB Id +Instance +Inst Num +Startup Time +Release +RAC)|(DB Name +DB Id +Instance +Inst Num Release +RAC Host)|(DB Name +DB Id +Instance +Inst Num Startup Time +Release +RAC)'},
                 {"action": s.genstate('tim'), "regexp": 'Begin Snap: ' },
                 {"action": s.genstate('tms'), "regexp": 'Time Model (System Stats|Statistics) +(for DB| DB\/Inst):', "scope": "DBORATMS"},
-                {"action": s.genstate('wev'), "regexp": 'Wait Events +(for DB| DB\/Inst):', "scope": "DBORAWEV"},
+                {"action": s.genstate('wev'), "regexp": 'Foreground Wait Events +(for DB| DB\/Inst):', "scope": "DBORAWEV"},
                 {"action": s.genstate('web'), "regexp": 'Background Wait Events +(for DB| DB/Inst):', "scope": "DBORAWEB"},
                 {"action": s.genstate1('sqc'), "regexp": 'SQL ordered by CPU( Time| time| ) *(for DB| DB/Inst):', "scope": "DBORASQC"},
                 {"action": s.genstate1('sqe'), "regexp": 'SQL ordered by Elapsed( Time| time| ) *(for DB| DB/Inst):', "scope": "DBORASQE"},

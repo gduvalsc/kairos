@@ -1335,7 +1335,7 @@ class KairosWorker:
             for e in v:
                 record = ''
                 e['kairos_nodeid'] = nid
-                for k in sorted(e.keys()): record += '\\N\t' if e[k] == '' else str(e[k]).replace('\t','\\t').replace('\r', '') + '\t'
+                for k in sorted(e.keys()): record += '\\N\t' if e[k] == '' else str(e[k]).replace('\n','\\n').replace('\t','\\t').replace('\r', '') + '\t'
                 record = record[:-1] + '\n'
                 queues[col].put(record)
 
@@ -2567,7 +2567,7 @@ class KairosWorker:
             message = 'A trash cannot be part of a link operation!'
             return web.json_response(dict(success=False, status='error', message=message))
         producers = tnode['datasource']['producers']
-        if fromid in producers:
+        if fromid in [producer['id'] for producer in producers]:
             message = fpath + ': this node is already included in the list of producers!'
             return web.json_response(dict(success=False, status='error', message=message))   
         producers.append(dict(path=s.igetpath(nodesdb=origindb, id=fromid), id=fromid))
@@ -2575,7 +2575,7 @@ class KairosWorker:
         if 'aggregatorselector' not in tnode['datasource']:
             ncache.execute("match (n:nodes) where id(n) = '" + toid + "' set n.type=to_json('L'::text), n.icon=to_json('L'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + s.igetpath(nodesdb=origindb, id=fromid) + "'::text), n.aggregatortake=to_json(1), n.aggregatortimefilter=to_json('.'::text), n.aggregatorskip=to_json(0), n.aggregatorsort=to_json('desc'::text), n.aggregatormethod=to_json('$none'::text)")
         else:
-            ncache.execute("match (n:nodes) where id(n) = '" + toid + "' set n.type=to_json('L'::text), n.icon=to_json('L'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + "'::text), n.aggregatortake=to_json(" + str(tnode['datasource']['aggregatortake'] +  1) + ")")
+            ncache.execute("match (n:nodes) where id(n) = '" + toid + "' set n.type=to_json('L'::text), n.icon=to_json('L'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + "'::text), n.aggregatortake=to_json(" + str(int(tnode['datasource']['aggregatortake']) +  1) + ")")
         ncache.disconnect()
         tnode = s.igetnodes(nodesdb=targetdb, id=toid, getsource=True)[0]
         return web.json_response(dict(success=True, data=tnode))

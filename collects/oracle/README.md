@@ -223,7 +223,7 @@ In this example, you are requiring data where snap times are greater than 2018-0
 jython kairosora.py --password PERFSTAT --from "2018-02-05 08:30" --to "2018-02-05 17:30"
 ```
 
-In this exmaple, you are requiring data where snap times are between "2018-02-05 08:30" and "2018-02-05 17:30"
+In this example, you are requiring data where snap times are between "2018-02-05 08:30" and "2018-02-05 17:30"
 
 #### STATSPACK installation
 
