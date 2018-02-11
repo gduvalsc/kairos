@@ -11,33 +11,35 @@ class UserObject(dict):
                     "type": "submenu",
                     "label": "Summary",
                     "items": [
-                        { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait", "action": "dispchart", "chart": "DBORASUM", "keyfunc": "G" },
-                        { "type": "menuitem", "tablecondition": "DBORASTATSPACK", "label": "DB CPU & Wait", "action": "dispchart", "chart": "DBORASUM1", "keyfunc": "G" },
+                        { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait", "action": "dispchart", "chart": "DBORASUM"},
+                        { "type": "menuitem", "tablecondition": "DBORASTATSPACK", "label": "DB CPU & Wait", "action": "dispchart", "chart": "DBORASUM1"},
                         { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait Classes", "action": "dispchart", "chart": "DBORASUMWC" },
                         { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait Classes (Percentage)", "action": "dispchart", "chart": "DBORASUMWCP" },
                         { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait Events", "action": "dispchart", "chart": "DBORASUMWE" },
                         { "type": "menuitem", "label": "DB Time Model", "action": "dispchart", "chart": "DBORASUME" },
                     ]
                 },
-                { "type": "separator"},
-                { "type": "menuitem", "label": "System statistics", "action": "dispchart", "chart": "DBORASYS", "keycode": 38 },
+                { "type": "separator", "tablecondition": "DBORAOSS"},
+                { "type": "menuitem", "tablecondition": "DBORAOSS", "label": "System statistics", "action": "dispchart", "chart": "DBORASYS"},
                 { "type": "separator"},
                 {
                     "type": "submenu",
                     "label": "Wait events",
                     "items": [
-                        { "type": "menuitem", "label": "Top wait events", "action": "dispchart", "chart": "DBORAWEV", "keyfunc": "W" },
-                        { "type": "menuitem", "label": "Top wait events (Percentage)", "action": "dispchart", "chart": "DBORAWEVP"},
-                        { "type": "menuitem", "label": "Top background wait events", "action": "dispchart", "chart": "DBORAWEB" },
-                        { "type": "menuitem", "label": "Top wait events - Parallel query", "action": "dispchart", "chart": "DBORAWEP" },
+                        { "type": "menuitem", "tablecondition": "DBORAWEV", "label": "Top wait events", "action": "dispchart", "chart": "DBORAWEV"},
+                        { "type": "menuitem", "tablecondition": "DBORAWEV", "label": "Top wait events (Percentage)", "action": "dispchart", "chart": "DBORAWEVP"},
+                        { "type": "menuitem", "tablecondition": "DBORAWEB", "label": "Top background wait events", "action": "dispchart", "chart": "DBORAWEB" },
+                        { "type": "menuitem", "tablecondition": "DBORAWEV", "label": "Top wait events - Parallel query", "action": "dispchart", "chart": "DBORAWEP" },
                         { "type": "separator"},
-                        { "type": "menuitem", "label": "Choose wait event ...", "action": "dispchoice", "choice": "DBORAWEV" },
-                        { "type": "menuitem", "label": "Choose background wait event ...", "action": "dispchoice", "choice": "DBORAWEB" },
+                        { "type": "menuitem", "tablecondition": "DBORAWEV", "label": "Choose wait event ...", "action": "dispchoice", "choice": "DBORAWEV" },
+                        { "type": "menuitem", "tablecondition": "DBORAWEB", "label": "Choose background wait event ...", "action": "dispchoice", "choice": "DBORAWEB" },
+                        { "type": "menuitem", "tablecondition": "DBORAWEH", "label": "Choose wait event, display histogram ...", "action": "dispchoice", "choice": "DBORAWEH" },
                     ]
                 },
                 { "type": "separator"},
                 {
                     "type": "submenu",
+                    "tablecondition": "DBORASTA",
                     "label": "Statistics",
                     "items": [
                         { "type": "menuitem", "label": "Logons", "action": "dispchart", "chart": "DBORALOGONS" },
@@ -65,21 +67,29 @@ class UserObject(dict):
                 {
                     "type": "submenu",
                     "label": "Redo activity",
+                    "tablecondition": "DBORASTA",
                     "items": [
                         { "type": "menuitem", "label": "General redo activity", "action": "dispchart", "chart": "DBORARDO" },
                         { "type": "menuitem", "label": "Wait & Write time per operation", "action": "dispchart", "chart": "DBORARDOT" },
                         { "type": "menuitem", "label": "Redo writes & size per write", "action": "dispchart", "chart": "DBORARDOW" },
                     ]
                 },
-                { "type": "separator", "tablecondition": "DBORAAWR"},
+                { "type": "separator"},
                 {
                     "type": "submenu",
-                    "tablecondition": "DBORAAWR",
                     "label": "Advisors",
                     "items": [
-                        { "type": "menuitem", "tablecondition": "DBORABPA", "label": "Default buffer pool", "action": "dispchart", "chart": "DBORABPAD" },
-                        { "type": "menuitem", "tablecondition": "DBORABPA", "label": "Keep buffer pool", "action": "dispchart", "chart": "DBORABPAK" },
-                        { "type": "menuitem", "tablecondition": "DBORABPA", "label": "Recycle buffer pool", "action": "dispchart", "chart": "DBORABPAR" },
+                        {
+                            "type": "submenu",
+                            "tablecondition": "DBORABPA",
+                            "label": "Buffer Pool Advisor",
+                            "items": [
+                                { "type": "menuitem", "label": "Choose buffer pool ...", "action": "dispchoice", "choice": "DBORABUFPOOL" },
+                            ]
+                        },
+                        { "type": "menuitem", "tablecondition": "DBORAPMA", "label": "PGA Advisor", "action": "dispchart", "chart": "DBORAPGAA" },
+                        { "type": "menuitem", "tablecondition": "DBORASPA", "label": "Shared Pool Advisor", "action": "dispchart", "chart": "DBORASPA" },
+                        { "type": "menuitem", "tablecondition": "DBORASGAA", "label": "SGA Target Advisor", "action": "dispchart", "chart": "DBORASGAA" },
                     ]
                 },
                 { "type": "separator"},
@@ -87,15 +97,15 @@ class UserObject(dict):
                     "type": "submenu",
                     "label": "SQL requests",
                     "items": [
-                        { "type": "menuitem", "label": "Top SQL by Elapsed time", "action": "dispchart", "chart": "DBORASQE" },
-                        { "type": "menuitem", "label": "Top SQL by CPU time", "action": "dispchart", "chart": "DBORASQC" },
-                        { "type": "menuitem", "label": "Top SQL by Gets", "action": "dispchart", "chart": "DBORASQG" },
-                        { "type": "menuitem", "label": "Top SQL by Reads", "action": "dispchart", "chart": "DBORASQR" },
-                        { "type": "menuitem", "label": "Top SQL by Executions", "action": "dispchart", "chart": "DBORASQX" },
-                        { "type": "menuitem", "label": "Top SQL by Parse calls", "action": "dispchart", "chart": "DBORASQP" },
-                        { "type": "menuitem", "label": "Top SQL by Sharable memory", "action": "dispchart", "chart": "DBORASQM" },
-                        { "type": "menuitem", "label": "Top SQL by Version count", "action": "dispchart", "chart": "DBORASQV" },
-                        { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "Top SQL by Cluster wait time", "action": "dispchart", "chart": "DBORASQW" },
+                        { "type": "menuitem", "tablecondition": "DBORASQE", "label": "Top SQL by Elapsed time", "action": "dispchart", "chart": "DBORASQE" },
+                        { "type": "menuitem", "tablecondition": "DBORASQC", "label": "Top SQL by CPU time", "action": "dispchart", "chart": "DBORASQC" },
+                        { "type": "menuitem", "tablecondition": "DBORASQG", "label": "Top SQL by Gets", "action": "dispchart", "chart": "DBORASQG" },
+                        { "type": "menuitem", "tablecondition": "DBORASQR", "label": "Top SQL by Reads", "action": "dispchart", "chart": "DBORASQR" },
+                        { "type": "menuitem", "tablecondition": "DBORASQX", "label": "Top SQL by Executions", "action": "dispchart", "chart": "DBORASQX" },
+                        { "type": "menuitem", "tablecondition": "DBORASQP", "label": "Top SQL by Parse calls", "action": "dispchart", "chart": "DBORASQP" },
+                        { "type": "menuitem", "tablecondition": "DBORASQM", "label": "Top SQL by Sharable memory", "action": "dispchart", "chart": "DBORASQM" },
+                        { "type": "menuitem", "tablecondition": "DBORASQV", "label": "Top SQL by Version count", "action": "dispchart", "chart": "DBORASQV" },
+                        { "type": "menuitem", "tablecondition": "DBORASQW", "label": "Top SQL by Cluster wait time", "action": "dispchart", "chart": "DBORASQW" },
                     ]
                 },
                 { "type": "separator"},
@@ -118,10 +128,9 @@ class UserObject(dict):
                         { "type": "menuitem", "label": "Choose database file, read activity ...", "action": "dispchoice", "choice": "DBORAFIL" },
                     ]
                 },
-                { "type": "separator", "tablecondition": "DBORAAWR"},
+                { "type": "separator"},
                 {
                     "type": "submenu",
-                    "tablecondition": "DBORAAWR",
                     "label": "Segments",
                     "items": [
                         { "type": "menuitem", "label": "Top segments by logical reads", "action": "dispchart", "chart": "DBORASGLR" },
