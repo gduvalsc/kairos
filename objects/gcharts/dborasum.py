@@ -36,7 +36,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORAWEC",
                                             "projection": "'wait events'::text",
-                                            "restriction": "eclass not in ('DB CPU')",
+                                            "restriction": "eclass not in ('DB CPU', 'Idle')",
                                             "value": "time"
                                         }
                                     ]

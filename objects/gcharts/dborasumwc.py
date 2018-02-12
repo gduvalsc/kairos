@@ -29,7 +29,7 @@ class UserObject(dict):
                                         {
                                             "table": "DBORAWEC",
                                             "projection": "eclass",
-                                            "restriction": "eclass not in ('DB CPU')",
+                                            "restriction": "eclass not in ('DB CPU', 'Idle')",
                                             "value": "time"
                                         }
                                     ]
