@@ -1050,7 +1050,7 @@ class KairosWorker:
                     if datepart[collection][pid] != None and pcache.collections[collection][p] > datepart[collection][pid] and pid in mapproducers[collection]['unchanged']:
                         del mapproducers[collection]['unchanged'][pid]
                         mapproducers[collection]['updated'][pid] = producer
-                if ptype in 'D': mapproducers[collection]['updated'][pid] = producer
+                #if ptype in 'D': mapproducers[collection]['updated'][pid] = producer
                 todo[collection] = True if len(mapproducers[collection]['deleted']) + len(mapproducers[collection]['created']) + len(mapproducers[collection]['updated']) > 0 else False
         for collection in collections:
             message = "Node: " + nid + ", Type: " + ntype + ", Collection: '" + collection + "'"
@@ -2432,7 +2432,7 @@ class KairosWorker:
         if 'aggregatorselector' not in tnode['datasource']:
             ncache.execute("match (n:nodes) where id(n) = '" + toid+ "' set n.type=to_json('A'::text), n.icon=to_json('A'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + s.igetpath(nodesdb=origindb, id=fromid) + '$' + "'::text), n.aggregatortake=to_json(1), n.aggregatortimefilter=to_json('.'::text), n.aggregatorskip=to_json(0), n.aggregatorsort=to_json('desc'::text), n.aggregatormethod=to_json('$none'::text)")
         else:
-            ncache.execute("match (n:nodes) where id(n) = '" + toid+ "' set n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + '$' + "'::text), n.aggregatortake=to_json(" + str(tnode['datasource']['aggregatortake'] +  1) + "")            
+            ncache.execute("match (n:nodes) where id(n) = '" + toid+ "' set n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + '$' + "'::text), n.aggregatortake=to_json(" + str(int(tnode['datasource']['aggregatortake']) +  1) + ")")            
         ncache.disconnect()
         tnode = s.igetnodes(nodesdb=targetdb, id=toid, getsource=True)[0]
         return web.json_response(dict(success=True, data=tnode))

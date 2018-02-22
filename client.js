@@ -18,7 +18,7 @@
 
 dhtmlxEvent(window,"load",function(){
 
-    var VERSION = "4.1";
+    var VERSION = "4.2";
     var ajaxcpt = 0;
     var desktop = {};
     desktop.variables = {};
@@ -1986,12 +1986,14 @@ dhtmlxEvent(window,"load",function(){
         var data = [
             {type: "settings", label: "", position: "label-left", labelWidth: 150, inputWidth: 250},
             {type: "fieldset", inputWidth: 460, list:[
-                {type: "select", label: "Choose", options: listchoices, name: "choice"},
+                {type: "combo", label: "Choose", options: listchoices, name: "choice"},
             ]},
             {type: "button", value: "Choose", name: "choose", width: 460}
         ];
         var wf = wgc.attachForm();
         wf.cross_and_load(data);
+        var cb = wf.getCombo("choice");
+        cb.enableFilteringMode("between");
         wf.attachEvent("onButtonClick", function(){
             var choice = wf.getItemValue("choice");
             wgc.close();

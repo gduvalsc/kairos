@@ -2331,7 +2331,9 @@ module KairosCharter {
             } else {
                 x = me.data.reduce([], max).transpose();
             }
-            return x.reduce(me.getVisiblePaths(), max).getValue(0,0);
+            let v = me.getVisiblePaths();
+            let av = v.length === 0 ? [-1] : v;
+            return x.reduce(av, max).getValue(0,0);
         }
 
         private getVMin (options: any) : number {
@@ -2345,7 +2347,9 @@ module KairosCharter {
             } else {
                 x = me.data.reduce([], min).transpose();
             }
-            return x.reduce(me.getVisiblePaths(), min).getValue(0,0);
+            let v = me.getVisiblePaths();
+            let av = v.length === 0 ? [-1] : v;
+            return x.reduce(av, min).getValue(0,0);
         }
 
         public store = function (row) {
@@ -2441,7 +2445,12 @@ module KairosCharter {
             ic = ic === undefined || ic.length === 0 ? _.range(me.nc) : ic;
             _.each(_.range(me.nl), function (i) {
                 reduced.setValue(i, 0, _.reduce(_.map(ic, function (j) {
-                    return me.getValue(i,j);
+                    if (j === -1) 
+                    {
+                        return 0;
+                    } else {
+                        return me.getValue(i,j);
+                    } 
                 }), function (c, e) {
                     return callee(c, e);
                 }, 0));

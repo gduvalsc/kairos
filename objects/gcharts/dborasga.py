@@ -29,7 +29,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "DBORASGA",
-                                            "projection": "pool||' '||name",
+                                            "projection": "coalesce(pool, '')||' '||name",
                                             "restriction": "",
                                             "value": "size"
                                         }
