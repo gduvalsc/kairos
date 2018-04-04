@@ -2216,7 +2216,7 @@ dhtmlxEvent(window,"load",function(){
                     contextmenuenabled.download = true;
                     contextmenuenabled.display_member = true;
                 }
-                if (_.contains(["A", "B"], type)) {
+                if (_.contains(["A", "B", "D"], type)) {
                     contextmenuenabled.unload = true;
                 }
                 if (_.contains(["T"], type)) {

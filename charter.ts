@@ -16,9 +16,9 @@
 //
 "use strict";
 
-interface Event {
-    wheelDelta: number;
-}
+//interface Event {
+//    wheelDelta: number;
+//}
 
 interface Math {
     log10(x: number): number;
@@ -63,7 +63,7 @@ module KairosCharter {
     interface KaBoundDataset {
         datasets: any[];
         getRefTime(): any;
-        getVMinVMax(options: any): any;
+        getVMinVMax(options: any, maxticks: number): any;
         pop(bid: string): void;
         push(dataset: KaDataset, bid: string, stacked: boolean): void;
     }
@@ -392,7 +392,7 @@ module KairosCharter {
             return onedataset.dataset.reftime;
         }
 
-        public getVMinVMax (options: any) : any {
+        public getVMinVMax (options: any, maxticks: number) : any {
             let me = this;
             _.each(me.datasets, function(o) {
                 if (o.stacked) {
@@ -409,7 +409,7 @@ module KairosCharter {
             let vmin = dmin !== Infinity ? dmin.dataset.getVMin({ stacked: dmin.stacked }) : 0;
             let min = options !== undefined && options.min !== undefined ? options.min : vmin;
             let max = options !== undefined && options.max !== undefined ? options.max : vmax;
-            return nicenum(min, max, 10);
+            return nicenum(min, max, maxticks);
         }
 
         public pop (bid: string) : void {
@@ -616,7 +616,6 @@ module KairosCharter {
                     me.paper.project.view.draw();
                 }
             });
-            //me.drawWaiterLayerBox();
             me.finalize();
             me.drawMain();
             me.prepareXaxiss();
@@ -650,7 +649,41 @@ module KairosCharter {
             me.dom.canvas = document.getElementById(id);
             me.dom.canvas.style.cursor = 'default';
             me.dom.canvas.getContext('2d').scale(ratio, ratio);
-
+            me.paper.wheel = {delta:0, xaxis:{maxticks: 24, within: false}, yaxis:{maxticks: 20, within: false}};
+            var mousewheelhandler = function (e) {
+                me.paper.wheel.delta = -e.wheelDelta / 120 || e.detail;
+                me.paper.wheel.xaxis.maxticks = me.paper.wheel.xaxis.within ? me.paper.wheel.xaxis.maxticks + me.paper.wheel.delta : me.paper.wheel.xaxis.maxticks;
+                me.paper.wheel.yaxis.maxticks = me.paper.wheel.yaxis.within ? me.paper.wheel.yaxis.maxticks + me.paper.wheel.delta : me.paper.wheel.yaxis.maxticks;
+                if (me.paper.wheel.xaxis.within) {
+                    me.prepareXaxis(me.paper.wheel.xaxis.name);
+                    let xaxis = me.getXaxis(me.paper.wheel.xaxis.name);
+                    var plots = [];
+                    _.each(me.getBindsFromXaxis(xaxis), function(b) {
+                        plots.push(b.plotname);
+                    });
+                    _.each(_.uniq(plots), function(p) {
+                        me.drawPlot(p, true);
+                    });
+                    me.drawXaxis(me.paper.wheel.xaxis.name, true);
+                }
+                if (me.paper.wheel.yaxis.within) {
+                    me.prepareYaxis(me.paper.wheel.yaxis.name);
+                    let yaxis = me.getYaxis(me.paper.wheel.yaxis.name);
+                    var plots = [];
+                    _.each(me.getBindsFromYaxis(yaxis), function(b) {
+                        plots.push(b.plotname);
+                    });
+                    _.each(_.uniq(plots), function(p) {
+                        me.drawPlot(p, true);
+                    });
+                    me.drawYaxis(me.paper.wheel.yaxis.name, true);
+                }
+                return false;
+            }
+            if (me.dom.canvas.addEventListener) {
+                me.dom.canvas.addEventListener("mousewheel", mousewheelhandler, false);
+                me.dom.canvas.addEventListener("DOMMouseScroll", mousewheelhandler, false);
+            }
             let paperholder = paper.setup(me.dom.canvas);
             me.paper.project = paperholder.project;
             me.paper.mainLayer = paper.project.activeLayer;
@@ -677,23 +710,12 @@ module KairosCharter {
         private showWaiterProgress(message: string) : void {
             let me = this;
             me.desktop.statusbar.setText(message);            
-            // let containerw = me.getWidth();
-            // let containerh = me.getHeight();
-            // me.paper.waiterLayer.activate();
-            // me.paper.waiterGroup.removeChildren();
-            // me.paper.waiterGroup.addChild(new paper.PointText({ point: [containerw / 2, containerh / 2 + 3], content: message, fontSize: 10, fillColor: parsecolor("black"), justification: 'center' }));
-            // me.paper.mainLayer.emit('draw', {});
-            // me.paper.mainLayer.activate();
         }
 
         private hideWaiterLayerBox () : void {
             let me = this;
             postpone(0, function () {
                 me.desktop.statusbar.setText('');            
-                // me.paper.waiterLayer.activate();
-                // me.paper.waiterLayer.removeChildren();
-                // me.paper.mainLayer.activate();
-                // me.paper.mainLayer.emit('draw', {});
             });
         }
 
@@ -702,7 +724,6 @@ module KairosCharter {
             postpone(0, function () {
                 log.debug("Drawing dataset:", moid, bindid);
                 me.showWaiterProgress("Drawing dataset: " + moid);
-                //me.drawWaiterLayerBox();
                 let bind = me.getBind(bindid);
                 let dataset = bind.dataset;
                 _.each(dataset.getOrderedPaths(), function(id) {
@@ -1618,7 +1639,6 @@ module KairosCharter {
                                 _.each(me.getBindsFromXaxis(bind.xaxis), function(b) {
                                     plots.push(b.plotname);
                                 });
-                                //me.drawWaiterLayerBox();
                                 _.each(_.uniq(plots), function(p) {
                                     me.drawPlot(p, true);
                                 });
@@ -1715,7 +1735,15 @@ module KairosCharter {
                 if (mo.style !== undefined && mo.style.fill !== undefined) {
                     rectpath.fillColor = parsecolor(mo.style.fill, mo);
                 }
-
+                grp.on({
+                    'mouseenter': function (e) {
+                        me.paper.wheel.xaxis.within = true;
+                        me.paper.wheel.xaxis.name = moid;
+                    },
+                    'mouseleave': function (e) {
+                        me.paper.wheel.xaxis.within = false;
+                    }
+                });
                 if (xaxis.type === 'linear') {
                     if (xaxis.fctv().length > 1) {
                         grp.addChild(new paper.Path.Line({from: new paper.Point(containerxs, containerys), to: new paper.Point(containerxs + containerw, containerys), strokeWidth: 1, strokeColor: me.color(moid, "stroke")}));
@@ -1828,6 +1856,15 @@ module KairosCharter {
                 if (mo.style !== undefined && mo.style.fill !== undefined) {
                     rectpath.fillColor = parsecolor(mo.style.fill, mo);
                 }
+                grp.on({
+                    'mouseenter': function (e) {
+                        me.paper.wheel.yaxis.within = true;
+                        me.paper.wheel.yaxis.name = moid;                        
+                    },
+                    'mouseleave': function (e) {
+                        me.paper.wheel.yaxis.within = false;
+                    }
+                });
                 if (yaxis.type === 'linear') {
                     let orient = me.computeAxisPosition(moid, "y");
                     let lineproperties = yaxis.properties === undefined ? {} : yaxis.properties.line === undefined ? {} : yaxis.properties.line;
@@ -2096,7 +2133,7 @@ module KairosCharter {
                 let width = xaxis.type === 'polar' ? 360 : me.charttemplate.getObject(moid).w(); 
                 let borderpercent = xaxis.type === 'polar' ? 0 : 1;
                 xaxis.reftime = reftime;
-                let pz = xaxis.panzoom(xaxis.reftime, 12,  width, borderpercent, xaxis.translation, xaxis.zoom);
+                let pz = xaxis.panzoom(xaxis.reftime, me.paper.wheel.xaxis.maxticks,  width, borderpercent, xaxis.translation, xaxis.zoom);
                 if (xaxis.scaling === 'linear') {
                     xaxis.fx = pz.fx;
                     xaxis.rfx = pz.rfx;
@@ -2142,7 +2179,7 @@ module KairosCharter {
                 if (yaxis.maxvalue !== undefined && yaxis.maxvalue !== null) {
                     options.max = yaxis.maxvalue;
                 }
-                let nice = yaxis.bounddataset.getVMinVMax(options);
+                let nice = yaxis.bounddataset.getVMinVMax(options, me.paper.wheel.yaxis.maxticks);
                 yaxis.bmin = nice.nicemin;
                 yaxis.bmax = nice.nicemax;
                 yaxis.step = nice.nicestep;
