@@ -1720,7 +1720,7 @@ dhtmlxEvent(window,"load",function(){
             var width = w.cont.clientWidth;
             var sizeunit = (width - 132) / 9;
             var type = node.datasource.type;
-
+            
             var generalproperties = [];
             generalproperties.push({
                 type: "block",
