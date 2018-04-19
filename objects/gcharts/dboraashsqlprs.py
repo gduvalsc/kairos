@@ -1,8 +1,8 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "id": "DBORAASHSESWEV",
-            "title": "Top wait events for session: %(DBORAASHSESWEV)s",
+            "id": "DBORAASHSQLPRS",
+            "title": "Top SQL requests in parsing",
             "subtitle": "",
             "reftime": "DBORAASHREFTIME",
             "type": "gchart",
@@ -27,15 +27,18 @@ class UserObject(dict):
                                     "userfunctions": [
                                         "ashcoeff"
                                     ],
-                                    "info": null,
+                                    "info": {
+                                        "variable": "DBORAHELP",
+                                        "query": "DBORAHHELP"
+                                    },
                                     "onclick": null,
                                     "filterable": true,
-                                    "nocache": true,
+                                    "nocache": false,
                                     "pieces": [
                                         {
                                             "table": "ORAHAS",
-                                            "projection": "case when event is null then 'on cpu' when event is not null then event end",
-                                            "restriction": "session_id||' - '||program = '%(DBORAASHSESWEV)s'",
+                                            "projection": "sql_id",
+                                            "restriction": "session_type = 'FOREGROUND' and in_parse = 'Y' and sql_id != ''",
                                             "value": "kairos_count * 1.0 /ashcoeff()"
                                         }
                                     ]

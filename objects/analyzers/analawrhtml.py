@@ -18,6 +18,7 @@ class UserObject(dict):
                 {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdlat", "scope": "DBORALAT"},
                 {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdlaw", "scope": "DBORALAW"},
                 {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdlib", "scope": "DBORALIB"},
+                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdmdc", "scope": "DBORAMDC"},
                 {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdmtt", "scope": "DBORAMTT"},
                 {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdoss", "scope": "DBORAOSS"},
                 {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdpga", "scope": "DBORAPGA"},
@@ -80,6 +81,7 @@ class UserObject(dict):
                 {"action": s.athget, "regexp": 'Latch|Time', "tag": 'th', "context": "thlaw", "scope": "DBORALAW"},
                 {"action": s.athget, "regexp": '(Namespace|Requests|Reloads|Invali)', "tag": 'th', "context": "thlib", "scope": "DBORALIB"},
                 {"action": s.athget, "regexp": '', "tag": 'th', "context": "thmtt", "scope": "DBORAMTT"},
+                {"action": s.athget, "regexp": '', "tag": 'th', "context": "thmdc", "scope": "DBORAMDC"},
                 {"action": s.athget, "regexp": '', "tag": 'th', "context": "thoss", "scope": "DBORAOSS"},
                 {"action": s.athget, "regexp": '', "tag": 'th', "context": "thpga", "scope": "DBORAPGA"},
                 {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thpgb", "scope": "DBORAPGB"},
@@ -160,6 +162,7 @@ class UserObject(dict):
                 {"action": s.genstate('thtbs'), "regexp": 'Tablespace IO Stats', "tag": 'h3', "scope": "DBORATBS"},
                 {"action": s.genstate('thfil'), "regexp": 'File IO Stats', "tag": 'h3', "scope": "DBORAFIL"},
                 {"action": s.genstate('thbuf'), "regexp": 'Buffer Pool Statistics', "tag": 'h3', "scope": "DBORABUF"},
+                {"action": s.genstate('thmdc'), "regexp": 'Memory Dynamic Components', "tag": 'h3', "scope": "DBORAMDC"},
                 {"action": s.genstate('thmtt'), "regexp": 'Instance Recovery Stats', "tag": 'h3', "scope": "DBORAMTT"},
                 {"action": s.genstate('thbpa'), "regexp": 'Buffer Pool Advisory', "tag": 'h3', "scope": "DBORABPA"},
                 {"action": s.genstate('thpgb'), "regexp": 'PGA Aggr Summary', "tag": 'h3', "scope": "DBORAPGB"},
@@ -301,6 +304,18 @@ class UserObject(dict):
                     value = tof(y['Total']) / a.dur
                     stack.append(dict(timestamp=a.date, statistic=name, value=value))
                 a.emit('DBORASTA', d, stack)
+            if x == 'Memory Dynamic Components':
+                d=dict(timestamp='text',component='text',operation='text',size='real',vmin='real',vmax='real',opcount='real')
+                stack = []
+                for y in a.collected[x]:
+                    component = y['Component']
+                    size = tof(y['CurrentSize(Mb)'])
+                    vmin = tof(y['MinSize(Mb)'])
+                    vmax = tof(y['MaxSize(Mb)'])
+                    opcount = tof(y['OperCount']) / a.dur
+                    operation = y['LastOpTyp/Mod']
+                    stack.append(dict(timestamp=a.date, component=component, size=size, vmin=vmin, vmax=vmax, opcount=opcount, operation=operation))
+                a.emit('DBORAMDC', d, stack)
             if x == 'Instance Recovery Stats':
                 d = dict(timestamp='text', targetmttr='real', estdmttr='real', recovestdios='real', actualredoblks='real', targetredoblks='real', logszredoblks='real', logckpttimeoutredoblks='real', logckptintervalredoblks='real', optlogsz='real', estdracavailtime='real')
                 stack = []
@@ -935,8 +950,8 @@ class UserObject(dict):
                 for y in a.collected[x]:
                     type = y['DiskType']
                     cell = y['CellName']
-                    stime = tof(y['ServiceTime'])
-                    wtime = tof(y['WaitTime'])
+                    stime = tof(y['ServiceTime'].replace('us', '')) /1000 if 'us' in y['ServiceTime'] else tof(y['ServiceTime'])
+                    wtime = tof(y['WaitTime'].replace('us', '')) /1000 if 'us' in y['WaitTime'] else tof(y['WaitTime'])
                     stack.append(dict(timestamp=a.date, type=type, cell=cell, stime=stime, wtime=wtime))
                 a.emit('EXATOPCLLOSIOL', d, stack)
             if x == 'Exadata OS IO Latency - Top Disks':
@@ -946,8 +961,8 @@ class UserObject(dict):
                     type = y['DiskType']
                     disk = y['DiskName']
                     cell = y['CellName']
-                    stime = tof(y['ServiceTime'])
-                    wtime = tof(y['WaitTime'])
+                    stime = tof(y['ServiceTime'].replace('us', '')) /1000 if 'us' in y['ServiceTime'] else tof(y['ServiceTime'])
+                    wtime = tof(y['WaitTime'].replace('us', '')) /1000 if 'us' in y['WaitTime'] else tof(y['WaitTime'])
                     stack.append(dict(timestamp=a.date, type=type, cell=cell, disk=disk, stime=stime, wtime=wtime))
                 a.emit('EXATOPDSKOSIOL', d, stack)
 
@@ -972,6 +987,7 @@ class UserObject(dict):
             if a.scope.issubset({'DBORAWEB'}) and 'Background Wait Events' in a.collected and len(a.collected['Background Wait Events']): a.setContext('BREAK')
             if a.scope.issubset({'DBORAWEC'}) and 'Foreground Wait Class' in a.collected and len(a.collected['Foreground Wait Class']): a.setContext('BREAK')
             if a.scope.issubset({'DBORASTA'}) and 'Instance Activity Stats - Thread Activity' in a.collected and len(a.collected['Instance Activity Stats - Thread Activity']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORAMDC'}) and 'Memory Dynamic Components' in a.collected and len(a.collected['Memory Dynamic Components']): a.setContext('BREAK')
             if a.scope.issubset({'DBORAMTT'}) and 'Instance Recovery Stats' in a.collected and len(a.collected['Instance Recovery Stats']): a.setContext('BREAK')
             if a.scope.issubset({'DBORALIB'}) and 'Library Cache Activity' in a.collected and len(a.collected['Library Cache Activity']): a.setContext('BREAK')
             if a.scope.issubset({'DBORASQE'}) and 'SQL ordered by Elapsed Time' in a.collected and len(a.collected['SQL ordered by Elapsed Time']): a.setContext('BREAK')

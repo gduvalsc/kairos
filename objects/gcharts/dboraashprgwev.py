@@ -34,7 +34,7 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "ORAHAS",
-                                            "projection": "case when event = '' then 'on cpu' when event != '' then event end",
+                                            "projection": "case when event is null then 'on cpu' when event is not null then event end",
                                             "restriction": "program = '%(DBORAASHPRGWEV)s'",
                                             "value": "kairos_count * 1.0 /ashcoeff()"
                                         }

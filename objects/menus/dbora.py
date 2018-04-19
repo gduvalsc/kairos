@@ -315,6 +315,7 @@ class UserObject(dict):
                             "label": "DB Time overview",
                             "items": [
                                 { "type": "menuitem", "label": "DB Time", "action": "dispchart", "chart": "DBORAASHDBTIME" },
+                                { "type": "menuitem", "label": "DB Time model", "action": "dispchart", "chart": "DBORAASHDBTM" },
                                 { "type": "menuitem", "label": "Background DB Time", "action": "dispchart", "chart": "DBORAASHBDBTIME" },
                                 { "type": "menuitem", "label": "Foreground & Background DB Time", "action": "dispchart", "chart": "DBORAASHOV" },
                             ]
@@ -383,6 +384,7 @@ class UserObject(dict):
                             "items": [
                                 { "type": "menuitem", "label": " Top SQL requests", "action": "dispchart", "chart": "DBORAASHSQL" },
                                 { "type": "menuitem", "label": " Top SQL requests on CPU", "action": "dispchart", "chart": "DBORAASHSQLCPU" },
+                                { "type": "menuitem", "label": " Top SQL requests in Parsing", "action": "dispchart", "chart": "DBORAASHSQLPRS" },
                                 { "type": "menuitem", "label": " Top waiting SQL requests", "action": "dispchart", "chart": "DBORAASHSQLWAIT" },
                                 { "type": "menuitem", "label": " Top SQL operations", "action": "dispchart", "chart": "DBORAASHOPN" },
                                 { "type": "menuitem", "label": " PGA allocated - Top SQL requests", "action": "dispchart", "chart": "DBORAASHPGA2" },
@@ -395,6 +397,7 @@ class UserObject(dict):
                                         { "type": "menuitem", "label": " Top sql plan hash values", "action": "dispchoice", "choice": "DBORAASHSQLPHV" },
                                         { "type": "menuitem", "label": " Top execution plan operations", "action": "dispchoice", "choice": "DBORAASHSQLEPO" },
                                         { "type": "menuitem", "label": " Top execute IDs", "action": "dispchoice", "choice": "DBORAASHSQLXID" },
+                                        { "type": "menuitem", "label": " Time model", "action": "dispchoice", "choice": "DBORAASHSQLTM" },
                                         { "type": "menuitem", "label": " PGA allocated", "action": "dispchoice", "choice": "DBORAASHSQLPGA" },
                                         { "type": "menuitem", "label": " Temp space allocated", "action": "dispchoice", "choice": "DBORAASHSQLTMP" },
                                     ]

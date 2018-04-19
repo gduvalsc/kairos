@@ -1,8 +1,8 @@
 class UserObject(dict):
     def __init__(s):
         object = {
-            "id": "DBORAASHSESWEV",
-            "title": "Top wait events for session: %(DBORAASHSESWEV)s",
+            "id": "DBORAASHSQLTM",
+            "title": "Time model for SQL request: %(DBORAASHSQLTM)s",
             "subtitle": "",
             "reftime": "DBORAASHREFTIME",
             "type": "gchart",
@@ -34,8 +34,14 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "ORAHAS",
-                                            "projection": "case when event is null then 'on cpu' when event is not null then event end",
-                                            "restriction": "session_id||' - '||program = '%(DBORAASHSESWEV)s'",
+                                            "projection": "'IN_SQL_EXECUTION'::text",
+                                            "restriction": "sql_id = '%(DBORAASHSQLTM)s' and IN_SQL_EXECUTION = 'Y'",
+                                            "value": "kairos_count * 1.0 /ashcoeff()"
+                                        },
+                                        {
+                                            "table": "ORAHAS",
+                                            "projection": "'IN_PARSE'::text",
+                                            "restriction": "sql_id = '%(DBORAASHSQLTM)s' and IN_PARSE = 'Y'",
                                             "value": "kairos_count * 1.0 /ashcoeff()"
                                         }
                                     ]
