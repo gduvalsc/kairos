@@ -178,7 +178,7 @@ def get_method(service):
     return 'post' if service in post else 'get'
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action = 'version', version='KAIROS V4.4')
+parser.add_argument('--version', action = 'version', version='KAIROS V4.5')
 parser.add_argument(PA.name, action = 'store', dest=PA.target, default='', help='KAIROS user name to be authentified')
 parser.add_argument(PP.name, action = 'store', dest=PP.target, default='', help='KAIROS user password')
 parser.add_argument(PS.name, action = 'store', dest=PS.target, required=True, help='Service to be executed')

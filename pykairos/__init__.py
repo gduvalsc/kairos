@@ -649,7 +649,8 @@ class KairosWorker:
     @trace_call
     def igetcache(s, nid, nodesdb=None):
         ncache = Cache(nodesdb, objects=True)
-        x = ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' return id(c) as rid, c.database as database, c.name as name, c.queries as queries, to_char(cast(c.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, c.collections as collections")
+        #x = ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' return id(c) as rid, c.database as database, c.name as name, c.queries as queries, to_char(cast(c.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, c.collections as collections")
+        x = ncache.execute("select rid, database, name, queries, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from (match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' return id(c) as rid, c.database, c.name, c.queries, c.created, c.collections) as foo")
         r = Object()
         for rx in x.fetchall():
             r.rid = rx['rid']
@@ -664,7 +665,8 @@ class KairosWorker:
     @trace_call
     def igetsource(s, nid, nodesdb=None):
         ncache = Cache(nodesdb, objects=True)        
-        x = ncache.execute("match (n:nodes)-[:node_has_source]->(s:sources) where id(n) = '" + nid + "' return id(s) as rid, s.location as location, to_char(cast(s.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, s.collections as collections")
+        #x = ncache.execute("match (n:nodes)-[:node_has_source]->(s:sources) where id(n) = '" + nid + "' return id(s) as rid, s.location as location, to_char(cast(s.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, s.collections as collections")
+        x = ncache.execute("select rid, location, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from (match (n:nodes)-[:node_has_source]->(s:sources) where id(n) = '" + nid + "' return id(s) as rid, s.location, s.created, s.collections) as foo")
         r = Object()
         for rx in x.fetchall():
             r.rid = rx['rid']
@@ -843,7 +845,8 @@ class KairosWorker:
         data = []
         for db in [nodesdb, systemdb]:
             ncache = Cache(db, objects=True)
-            y = ncache.execute("match (o:objects " + where + ") return id(o) as rid, o.id, o.type, to_char(cast(o.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created")
+            #y = ncache.execute("match (o:objects " + where + ") return id(o) as rid, o.id, o.type, to_char(cast(o.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created")
+            y = ncache.execute("select rid, id, type, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created from (match (o:objects " + where + ") return id(o) as rid, o.id, o.type, o.created) as foo")
             for row in y.fetchall():
                 item = dict()
                 for x in row.keys(): item[x] = row[x]
@@ -857,7 +860,8 @@ class KairosWorker:
         data = []
         for db in [nodesdb, systemdb]:
             ncache = Cache(db, objects=True)
-            x = ncache.execute("match (o:objects " + where + ") return o.filename, o.content, to_char(cast(o.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created")
+            #x = ncache.execute("match (o:objects " + where + ") return o.filename, o.content, to_char(cast(o.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created")
+            x = ncache.execute("select filename, content, to_char(cast(created::jsonb::text), 'YYYY-MM-DD HH24:MI:SS.MS') as created from (match (o:objects " + where + ") return o.filename, o.content, o.created) as foo")
             for row in x.fetchall():
                 source = binascii.a2b_base64(row['content'])
                 filename = row['filename']
@@ -880,12 +884,13 @@ class KairosWorker:
     @trace_call
     def igetnodes(s, nodesdb=None, id=None, name=None, parent=None, root=False, child=None, countchildren=False, getsource=False, getcache=False):
         ncache = Cache(nodesdb, objects=True)
-        selector = "id(n) as rid, n.type, n.name, n.icon, n.status, to_char(cast(n.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, n.liveobject, n.aggregatorselector, n.aggregatorsort, n.aggregatortake, n.aggregatorskip, n.aggregatormethod, n.aggregatortimefilter, to_char(cast(n.aggregated as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as aggregated, n.producers"
-        if root: x = ncache.execute("match (n:nodes {name:'/'})-[:node_has_children]->(t:nodes {name:'Trash',status:'DELETED'}) return " + selector)
-        if name and parent: x = ncache.execute("match (p:nodes)-[:node_has_children]->(n:nodes {name:'" + name + "'}) where id(p)='" + parent + "' return " + selector)
-        if not name and parent: x = ncache.execute("match (p:nodes)-[:node_has_children]->(n:nodes) where id(p)='" + parent + "' return " + selector)
-        if not name and child: x = ncache.execute("match (n:nodes)-[:node_has_children]->(c:nodes) where id(c)='" + child + "' return " + selector)
-        if id: x = ncache.execute("match (n:nodes) where id(n)='" + id + "' return " + selector)
+        projection = "rid, type, name, icon, status, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, liveobject, aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip, aggregatormethod, aggrehatortimefilter, to_char(cast(aggregated), 'YYYY-MM-DD HH24:MI:SS.MS') as aggregated, producers"
+        selector = "id(n) as rid, n.type, n.name, n.icon, n.status, n.created, n.liveobject, n.aggregatorselector, n.aggregatorsort, n.aggregatortake, n.aggregatorskip, n.aggregatormethod, n.aggregatortimefilter, n.aggregated, n.producers"
+        if root: x = ncache.execute("select " + projection + " from (match (n:nodes {name:'/'})-[:node_has_children]->(t:nodes {name:'Trash',status:'DELETED'}) return " + selector + ") as foo")
+        if name and parent: x = ncache.execute("select " + projection + " from (match (p:nodes)-[:node_has_children]->(n:nodes {name:'" + name + "'}) where id(p)='" + parent + "' return " + selector + ") as foo")
+        if not name and parent: x = ncache.execute("select "+ projection + " from (match (p:nodes)-[:node_has_children]->(n:nodes) where id(p)='" + parent + "' return " + selector + ") as foo")
+        if not name and child: x = ncache.execute("select " + projection + " from (match (n:nodes)-[:node_has_children]->(c:nodes) where id(c)='" + child + "' return " + selector + ") as foo")
+        if id: x = ncache.execute("select " + projection + " from (match (n:nodes) where id(n)='" + id + "' return " + selector + ") as foo")
         selectednodes = [row for row in x.fetchall()]
         nodes=[]
         for row in selectednodes:
@@ -1327,6 +1332,7 @@ class KairosWorker:
         def nulllistener(col, d, v, n): pass
 
         def write_to_queue(col, d, v, n):
+            logging.debug('Writing to queue the following collection:' + col)
             if writeheader[col]:
                 record = json.dumps(dict(header='KAIROS_START', desc=d)) 
                 queues[col].put(record)
@@ -1637,7 +1643,8 @@ class KairosWorker:
         user = params['user'][0]
         db = 'kairos_user_' + user
         ncache = Cache(db, objects=True)
-        y = ncache.execute("match (s:settings) return cast(s.top as int) as top, s.colors, cast(s.keycode as int) as keycode, s.logging, s.nodesdb, cast(s.loglines as int) as loglines, s.systemdb, s.template, s.wallpaper, s.plotorientation")
+        #y = ncache.execute("match (s:settings) return cast(s.top as int) as top, s.colors, cast(s.keycode as int) as keycode, s.logging, s.nodesdb, cast(s.loglines as int) as loglines, s.systemdb, s.template, s.wallpaper, s.plotorientation")
+        y = ncache.execute("select top::jsonb::text::int as top, colors, keycode::jsonb::text::int as keycode, logging, nodesdb, loglines::jsonb::text::int as loglines systemdb, template, wallpaper, plotorientation from (match (s:settings) return s.top, s.colors, s.keycode, s.logging, s.nodesdb, s.loglines, s.systemdb, s.template, s.wallpaper, s.plotorientation) as foo")
         settings = dict()
         for row in y.fetchall():
             for x in row.keys(): settings[x] = row[x]
