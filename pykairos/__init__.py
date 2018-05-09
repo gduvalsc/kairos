@@ -525,6 +525,10 @@ class KairosWorker:
         app.router.add_get('/uploadnode', s.uploadnode)
         app.router.add_get('/uploadobject', s.uploadobject)
         app.router.add_get('/getid', s.getid)
+        app.router.add_get('/export', s.exportdatabase)
+        app.router.add_get('/import', s.importdatabase)
+        app.router.add_get('/cleardependentcaches', s.cleardependentcaches)
+        app.router.add_get('/builddependentcaches', s.builddependentcaches)
         app.router.add_post('/changepassword', s.changepassword)
         app.router.add_post('/uploadobject', s.uploadobject)
         app.router.add_post('/setobject', s.setobject)
@@ -581,34 +585,34 @@ class KairosWorker:
                 hcache.disconnect()
                 del collections[collection]
                 ncache = Cache(nodesdb, objects=True)
-                ncache.execute("match (c:caches) where id(c) = '" + rid + "' set c.collections = '" + json.dumps(collections) + "'")
+                ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + rid + "' set c.collections = '" + json.dumps(collections) + "'")
                 ncache.disconnect()
         
     @trace_call
     def ideletecache(s, nid, nodesdb=None):
         ncache = Cache(nodesdb, autocommit=True, objects=True)
-        x = ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' return id(c) as cid")
+        x = ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' return id(c) as cid")
         cids = [row['cid'] for row in x.fetchall()]
         if len(cids):
             cid = cids[0]
-            y = ncache.execute("match (c:caches) where id(c) = '" + cid + "' return c.name as name")
+            y = ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + cid + "' return c.name as name")
             schname = [row['name'] for row in y.fetchall()][0]
             ncache.execute("drop schema " + schname + " cascade")
-            ncache.execute("match (c:caches) where id(c) = '" + cid + "' detach delete c")
+            ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + cid + "' detach delete c")
         ncache.disconnect()
         
     @trace_call
     def ideletesource(s, nid, nodesdb=None):
         ncache = Cache(nodesdb, objects=True)
-        x = ncache.execute("match (n:nodes)-[:node_has_source]->(s:sources) where id(n) = '" + nid + "' return id(s) as sid")
+        x = ncache.execute("match (n:nodes)-[:node_has_source]->(s:sources) where to_jsonb(id(n)) = '" + nid + "' return id(s) as sid")
         sids = [row['sid'] for row in x.fetchall()]
         if len(sids):
             sid = sids[0]
-            y = ncache.execute("match (s:sources) where id(s) = '" + sid + "' return s.location as location")
+            y = ncache.execute("match (s:sources) where to_jsonb(id(s)) = '" + sid + "' return s.location as location")
             location = [row['location'] for row in y.fetchall()][0]
             try: os.unlink(location)
             except: pass
-            ncache.execute("match (s:sources) where id(s) = '" + sid + "' detach delete s")
+            ncache.execute("match (s:sources) where to_jsonb(id(s)) = '" + sid + "' detach delete s")
         ncache.disconnect()
 
     @trace_call
@@ -616,7 +620,7 @@ class KairosWorker:
         ncache = Cache(nodesdb, autocommit=True, objects=True)
         schname = 'cache_' + nid.replace('.', '_')
         ncache.execute("create schema " + schname)
-        ncache.execute("match (n:nodes) where id(n) = '" + nid + "' create ((n)-[:node_has_cache]->(c:caches {created:now(), database:'" + nodesdb + "', name:'" + schname + "', queries:'" + json.dumps(dict()) + "', collections:'" + json.dumps(dict()) + "'}))")
+        ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + nid + "' create ((n)-[:node_has_cache]->(c:caches {created:now(), database:'" + nodesdb + "', name:'" + schname + "', queries:'" + json.dumps(dict()) + "', collections:'" + json.dumps(dict()) + "'}))")
         ncache.disconnect()
         
     @trace_call
@@ -642,15 +646,14 @@ class KairosWorker:
         for member in ziparchive.list(): do(member)
         ziparchive.close()
         ncache = Cache(nodesdb, objects=True)        
-        ncache.execute("match (n:nodes) where id(n) = '" + nid + "' create ((n)-[:node_has_source]->(s:sources {created:now(), location: '" + filepath+ "', collections:'" + json.dumps(collections) + "'}))")
-        ncache.execute("match (n:nodes) where id(n) = '" + nid + "' set n.type=to_json('B'::text), n.icon=to_json('B'::text)")
+        ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + nid + "' create ((n)-[:node_has_source]->(s:sources {created:now(), location: '" + filepath+ "', collections:'" + json.dumps(collections) + "'}))")
+        ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + nid + "' set n.type=to_json('B'), n.icon=to_json('B')")
         ncache.disconnect()
         
     @trace_call
     def igetcache(s, nid, nodesdb=None):
         ncache = Cache(nodesdb, objects=True)
-        #x = ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' return id(c) as rid, c.database as database, c.name as name, c.queries as queries, to_char(cast(c.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, c.collections as collections")
-        x = ncache.execute("select rid, database, name, queries, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from (match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' return id(c) as rid, c.database, c.name, c.queries, c.created, c.collections) as foo")
+        x = ncache.execute("select rid, database, name, queries, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from (match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' return id(c) as rid, c.database, c.name, c.queries, c.created, c.collections) as foo")
         r = Object()
         for rx in x.fetchall():
             r.rid = rx['rid']
@@ -665,8 +668,7 @@ class KairosWorker:
     @trace_call
     def igetsource(s, nid, nodesdb=None):
         ncache = Cache(nodesdb, objects=True)        
-        #x = ncache.execute("match (n:nodes)-[:node_has_source]->(s:sources) where id(n) = '" + nid + "' return id(s) as rid, s.location as location, to_char(cast(s.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, s.collections as collections")
-        x = ncache.execute("select rid, location, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from (match (n:nodes)-[:node_has_source]->(s:sources) where id(n) = '" + nid + "' return id(s) as rid, s.location, s.created, s.collections) as foo")
+        x = ncache.execute("select rid, location, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from (match (n:nodes)-[:node_has_source]->(s:sources) where to_jsonb(id(n)) = '" + nid + "' return id(s) as rid, s.location, s.created, s.collections) as foo")
         r = Object()
         for rx in x.fetchall():
             r.rid = rx['rid']
@@ -725,7 +727,7 @@ class KairosWorker:
         ncache.execute("create elabel node_has_cache")
         ncache.execute("create vlabel sources")
         ncache.execute("create vlabel caches")
-        ncache.disconnect()        
+        ncache.disconnect()
         try: shutil.rmtree('/files/' + curdatabase)
         except: pass
         try: shutil.rmtree('/autoupload/' + curdatabase)
@@ -811,8 +813,8 @@ class KairosWorker:
         return dict(success=True, data=dict(msg=role + " role has been successfully removed!"))
 
     @trace_call
-    def ideleteuser(s, user=None):
-        if user=='admin': return dict(success=False, message='admin user cannot be removed!')
+    def ideleteuser(s, user=None, admin=False):
+        if user=='admin' and not admin: return dict(success=False, message='admin user cannot be removed!')
         dbuser = "kairos_user_" + user
         logging.info("Dropping " + dbuser + " database...")
         ncache = Cache(None, autocommit=True)
@@ -861,7 +863,7 @@ class KairosWorker:
         for db in [nodesdb, systemdb]:
             ncache = Cache(db, objects=True)
             #x = ncache.execute("match (o:objects " + where + ") return o.filename, o.content, to_char(cast(o.created as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created")
-            x = ncache.execute("select filename, content, to_char(cast(created::jsonb::text), 'YYYY-MM-DD HH24:MI:SS.MS') as created from (match (o:objects " + where + ") return o.filename, o.content, o.created) as foo")
+            x = ncache.execute("select filename, content, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created from (match (o:objects " + where + ") return o.filename, o.content, o.created) as foo")
             for row in x.fetchall():
                 source = binascii.a2b_base64(row['content'])
                 filename = row['filename']
@@ -884,13 +886,13 @@ class KairosWorker:
     @trace_call
     def igetnodes(s, nodesdb=None, id=None, name=None, parent=None, root=False, child=None, countchildren=False, getsource=False, getcache=False):
         ncache = Cache(nodesdb, objects=True)
-        projection = "rid, type, name, icon, status, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, liveobject, aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip, aggregatormethod, aggrehatortimefilter, to_char(cast(aggregated), 'YYYY-MM-DD HH24:MI:SS.MS') as aggregated, producers"
+        projection = "rid, type, name, icon, status, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, liveobject, aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip, aggregatormethod, aggregatortimefilter, to_char(cast(aggregated::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as aggregated, producers"
         selector = "id(n) as rid, n.type, n.name, n.icon, n.status, n.created, n.liveobject, n.aggregatorselector, n.aggregatorsort, n.aggregatortake, n.aggregatorskip, n.aggregatormethod, n.aggregatortimefilter, n.aggregated, n.producers"
         if root: x = ncache.execute("select " + projection + " from (match (n:nodes {name:'/'})-[:node_has_children]->(t:nodes {name:'Trash',status:'DELETED'}) return " + selector + ") as foo")
-        if name and parent: x = ncache.execute("select " + projection + " from (match (p:nodes)-[:node_has_children]->(n:nodes {name:'" + name + "'}) where id(p)='" + parent + "' return " + selector + ") as foo")
-        if not name and parent: x = ncache.execute("select "+ projection + " from (match (p:nodes)-[:node_has_children]->(n:nodes) where id(p)='" + parent + "' return " + selector + ") as foo")
-        if not name and child: x = ncache.execute("select " + projection + " from (match (n:nodes)-[:node_has_children]->(c:nodes) where id(c)='" + child + "' return " + selector + ") as foo")
-        if id: x = ncache.execute("select " + projection + " from (match (n:nodes) where id(n)='" + id + "' return " + selector + ") as foo")
+        if name and parent: x = ncache.execute("select " + projection + " from (match (p:nodes)-[:node_has_children]->(n:nodes {name:'" + name + "'}) where to_jsonb(id(p))='" + parent + "' return " + selector + ") as foo")
+        if not name and parent: x = ncache.execute("select "+ projection + " from (match (p:nodes)-[:node_has_children]->(n:nodes) where to_jsonb(id(p))='" + parent + "' return " + selector + ") as foo")
+        if not name and child: x = ncache.execute("select " + projection + " from (match (n:nodes)-[:node_has_children]->(c:nodes) where to_jsonb(id(c))='" + child + "' return " + selector + ") as foo")
+        if id: x = ncache.execute("select " + projection + " from (match (n:nodes) where to_jsonb(id(n))='" + id + "' return " + selector + ") as foo")
         selectednodes = [row for row in x.fetchall()]
         nodes=[]
         for row in selectednodes:
@@ -919,7 +921,7 @@ class KairosWorker:
                 except: pass
                 node['datasource']['collections'] = d
             if countchildren:
-                x = ncache.execute("select count(*) as count from (match (n:nodes)-[:node_has_children]->(c:nodes) where id(n)='" + node['id'] + "' return c) as foo")
+                x = ncache.execute("select count(*) as count from (match (n:nodes)-[:node_has_children]->(c:nodes) where to_jsonb(id(n))='" + node['id'] + "' return c) as foo")
                 for r in x.fetchall():
                     node['kids'] = r['count']
             if getsource:
@@ -957,7 +959,7 @@ class KairosWorker:
         if not name:
             x = ncache.execute("select to_char(now(), 'YYYY-MM-DD HH24:MI:SS.MS') as name")
             for row in x.fetchall(): name = row['name']
-        x = ncache.execute("match (p:nodes) where id(p)='" + id + "' create (p)-[:node_has_children]->(n:nodes {name:'" + name + "', type:'N', created:now(), status:'ACTIVE', icon:'N'}) return id(n) as rid") 
+        x = ncache.execute("match (p:nodes) where to_jsonb(id(p))='" + id + "' create (p)-[:node_has_children]->(n:nodes {name:'" + name + "', type:'N', created:now(), status:'ACTIVE', icon:'N'}) return id(n) as rid") 
         for row in x.fetchall():
             rid = row['rid']
         ncache.disconnect()              
@@ -972,20 +974,20 @@ class KairosWorker:
         if node['datasource']['type'] == 'T': return 'A trash cannot be removed!'
         ncache = Cache(nodesdb, objects=True)
         if node['status'] == 'DELETED':
-            x = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes) where id(n) = '" + id + "' return id(d) as rid")
+            x = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes) where to_jsonb(id(n)) = '" + id + "' return id(d) as rid")
             listnodes = [row['rid'] for row in x.fetchall()]
             listnodes.append(id)
             for rid in listnodes:
                 s.ideletesource(rid, nodesdb=nodesdb)
                 s.ideletecache(rid, nodesdb=nodesdb)
-                ncache.execute("match (n:nodes) where id(n) = '" + rid + "' detach delete n") 
+                ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + rid + "' detach delete n") 
         else:
-            ncache.execute("match (p:nodes)-[l:node_has_children]->(n:nodes) where id(n) = '" + id + "' detach delete l") 
-            ncache.execute("match (t:nodes {name:'Trash'}), (n:nodes) where id(n) = '" + id + "' create (t)-[:node_has_children]->(n)") 
-            x = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes) where id(n) = '" + id + "' return id(d) as rid") 
+            ncache.execute("match (p:nodes)-[l:node_has_children]->(n:nodes) where to_jsonb(id(n)) = '" + id + "' detach delete l") 
+            ncache.execute("match (t:nodes {name:'Trash'}), (n:nodes) where to_jsonb(id(n)) = '" + id + "' create (t)-[:node_has_children]->(n)") 
+            x = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes) where to_jsonb(id(n)) = '" + id + "' return id(d) as rid") 
             listnodes = [row['rid'] for row in x.fetchall()]
-            for rid in listnodes: ncache.execute("match (n:nodes) where id(n) = '" + rid + "' set n.status=to_json('DELETED'::text)")
-            ncache.execute("match (n:nodes) where id(n) = '" + id + "' set n.status=to_json('DELETED'::text)")
+            for rid in listnodes: ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + rid + "' set n.status=to_json('DELETED')")
+            ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + id + "' set n.status=to_json('DELETED')")
         ncache.disconnect()              
         return None
     
@@ -1030,7 +1032,7 @@ class KairosWorker:
         node = s.igetnodes(nodesdb=nodesdb, id=nid)[0]
         producers = s.iexpand(pattern=node['datasource']['aggregatorselector'], nodesdb=nodesdb, sort=node['datasource']['aggregatorsort'], skip=node['datasource']['aggregatorskip'], take=node['datasource']['aggregatortake'])
         ncache = Cache(nodesdb, objects=True)
-        ncache.execute("match (n:nodes) where id(n) = '" + nid + "' set n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now())")
+        ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + nid + "' set n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now())")
         ncache.disconnect()              
         for producer in node['datasource']['producers']:
             pid = producer['id']
@@ -1135,7 +1137,7 @@ class KairosWorker:
         hcache.disconnect()
         del cache.collections[collection]
         ncache = Cache(nodesdb, objects=True)
-        ncache.execute("match (c:caches) where id(c) = '" + cache.rid + "' set c.collections='" + json.dumps(cache.collections) + "'")
+        ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + cache.rid + "' set c.collections='" + json.dumps(cache.collections) + "'")
         ncache.disconnect()
 
     @trace_call
@@ -1472,7 +1474,7 @@ class KairosWorker:
             if ntype in ['B']: s.ibuildcolcachetypeB(node, cache=cache, collections=tcollections, analyzers=analyzers, nodesdb=nodesdb)
             logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with collections info: '" + str(tcollections) + "' ...")
             ncache = Cache(nodesdb, objects=True)
-            ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' set c.collections = '" + json.dumps(cache.collections) + "'")
+            ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' set c.collections = '" + json.dumps(cache.collections) + "'")
             ncache.disconnect()
         return todo
     
@@ -1516,7 +1518,7 @@ class KairosWorker:
                 hcache.disconnect()
                 logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with query info: '" + qid + "' ...")
                 ncache = Cache(nodesdb, objects=True)
-                ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where id(n) = '" + nid + "' set c.queries = '" + json.dumps(cache.queries) + "'")
+                ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' set c.queries = '" + json.dumps(cache.queries) + "'")
                 ncache.disconnect()
             else:
                 logging.info("Node: " + nid + ", Type: " + ntype + ", nothing to do for query cache: '" + qid + "' ...")
@@ -1626,7 +1628,7 @@ class KairosWorker:
             content = binascii.b2a_base64(source.encode())
             ncache = Cache(database, objects=True)
             ncache.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
-            ncache.execute("create (:objects {id:'" + id + "', type:'" + typeobj + "', created: now(), filename:'" + filename + "', content:'" + content.decode() + "'})")
+            ncache.execute("create (:objects {id:'" + id + "', type:'" + typeobj + "', created: now(), filename:'" + filename + "', content:'" + content.decode().replace('\n', '') + "'})")
             ncache.disconnect()
             return web.json_response(dict(success=True, data=dict(msg='Object: ' + id + ' of type: ' + typeobj + ' has been successfully saved!')))
         except:
@@ -1644,7 +1646,7 @@ class KairosWorker:
         db = 'kairos_user_' + user
         ncache = Cache(db, objects=True)
         #y = ncache.execute("match (s:settings) return cast(s.top as int) as top, s.colors, cast(s.keycode as int) as keycode, s.logging, s.nodesdb, cast(s.loglines as int) as loglines, s.systemdb, s.template, s.wallpaper, s.plotorientation")
-        y = ncache.execute("select top::jsonb::text::int as top, colors, keycode::jsonb::text::int as keycode, logging, nodesdb, loglines::jsonb::text::int as loglines systemdb, template, wallpaper, plotorientation from (match (s:settings) return s.top, s.colors, s.keycode, s.logging, s.nodesdb, s.loglines, s.systemdb, s.template, s.wallpaper, s.plotorientation) as foo")
+        y = ncache.execute("select top::jsonb::text::int as top, colors, keycode::jsonb::text::int as keycode, logging, nodesdb, loglines::jsonb::text::int as loglines, systemdb, template, wallpaper, plotorientation from (match (s:settings) return s.top, s.colors, s.keycode, s.logging, s.nodesdb, s.loglines, s.systemdb, s.template, s.wallpaper, s.plotorientation) as foo")
         settings = dict()
         for row in y.fetchall():
             for x in row.keys(): settings[x] = row[x]
@@ -1835,7 +1837,7 @@ class KairosWorker:
         content = binascii.b2a_base64(content)
         ncache = Cache(nodesdb, objects=True)
         ncache.execute("match (o:objects {id:'" + id + "', type:'" + typeobj + "'}) detach delete (o)")
-        ncache.execute("create (:objects {id:'" + id + "', type:'" + typeobj + "', created: now(), filename:'" + filename + "', content:'" + content.decode() + "'})")
+        ncache.execute("create (:objects {id:'" + id + "', type:'" + typeobj + "', created: now(), filename:'" + filename + "', content:'" + content.decode().replace('\n', '') + "'})")
         ncache.disconnect()
         return web.json_response(dict(success=True, state=True, name=filename, id=id, type=typeobj))
 
@@ -2039,7 +2041,7 @@ class KairosWorker:
         node = s.igetnodes(nodesdb=nodesdb, id=id)[0]
         list = []
         ncache = Cache(nodesdb, objects=True)
-        x = ncache.execute("match (n:nodes)-[:node_has_children]->(c:nodes {type: to_json('B')}) where id(n) = '" + id + "' return id(c) as rid")
+        x = ncache.execute("match (n:nodes)-[:node_has_children]->(c:nodes {type: to_json('B')}) where to_jsonb(id(n)) = '" + id + "' return id(c) as rid")
         list = [row['rid'] for row in x.fetchall()]
         return web.json_response(dict(success=True, data=list))
 
@@ -2157,14 +2159,14 @@ class KairosWorker:
             message = 'A trash cannot be renamed!'
             return web.json_response(dict(success=False, status='error', message=message))
         ncache = Cache(nodesdb, objects=True)
-        x = ncache.execute("match (p:nodes)-[:node_has_children]->(n:nodes) where id(n) = '" + id + "' return id(p) as pid")
+        x = ncache.execute("match (p:nodes)-[:node_has_children]->(n:nodes) where to_jsonb(id(n)) = '" + id + "' return id(p) as pid")
         parent=[row['pid'] for row in x.fetchall()][0]
         x = s.igetnodes(nodesdb=nodesdb, parent=parent, name=new)
         if len(x):
             message = new + " name already exists for parent: " + x[0]['name']
             ncache.disconnect()
             return web.json_response(dict(success=False, status='error', message=message))
-        ncache.execute("match (n:nodes) where id(n) = '" + id + "' set n.name=to_json('" + new + "'::text)")
+        ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + id + "' set n.name=to_json('" + new + "')")
         ncache.disconnect()
         node = s.igetnodes(nodesdb=nodesdb, id=id)[0]
         return web.json_response(dict(success=True, data=node))
@@ -2187,12 +2189,12 @@ class KairosWorker:
         root = s.igetnodes(nodesdb=nodesdb, root=True)[0]
         trash = s.igetnodes(nodesdb=nodesdb, parent=root['id'], name='Trash')[0]
         ncache = Cache(nodesdb, objects=True)
-        x = ncache.execute("match (t:nodes)-[:node_has_children*]->(d:nodes) where id(t) = '" + trash['id'] + "' return id(d) as rid")
+        x = ncache.execute("match (t:nodes)-[:node_has_children*]->(d:nodes) where to_jsonb(id(t)) = '" + trash['id'] + "' return id(d) as rid")
         listnodes = [row['rid'] for row in x.fetchall()]
         for rid in listnodes:
             s.ideletesource(rid, nodesdb=nodesdb)
             s.ideletecache(rid, nodesdb=nodesdb)
-            ncache.execute("match (n:nodes) where id(n) = '" + rid + "' detach delete n") 
+            ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + rid + "' detach delete n") 
         ncache.disconnect()
         return web.json_response(dict(success=True))
 
@@ -2210,11 +2212,11 @@ class KairosWorker:
             return web.json_response(dict(success=False, status='error', message=message))
         tonode = s.igetnodes(nodesdb=targetdb, id=pto)[0]
         ncache = Cache(targetdb, objects=True)
-        ncache.execute("match (a:nodes)-[r:node_has_children]->(f:nodes) where id(f) = '" + pfrom + "' detach delete r") 
-        ncache.execute("match (t:nodes), (f:nodes) where id(f) = '" + pfrom + "' and id(t) = '" + pto + "' create ((t)-[:node_has_children]->(f))")
-        x = ncache.execute("match (n:nodes) where id(n) = '" + pto+ "' return n.status as status")
+        ncache.execute("match (a:nodes)-[r:node_has_children]->(f:nodes) where to_jsonb(id(f)) = '" + pfrom + "' detach delete r") 
+        ncache.execute("match (t:nodes), (f:nodes) where to_jsonb(id(f)) = '" + pfrom + "' and to_jsonb(id(t)) = '" + pto + "' create ((t)-[:node_has_children]->(f))")
+        x = ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + pto+ "' return n.status as status")
         status = [row['status'] for row in x.fetchall()][0]
-        ncache.execute("match (t:nodes)-[:node_has_children*]->(d:nodes) where id(t) = '" + pfrom + "' set d.status=to_json('" + status + "'::text)")
+        ncache.execute("match (t:nodes)-[:node_has_children*]->(d:nodes) where to_jsonb(id(t)) = '" + pfrom + "' set d.status=to_json('" + status + "')")
         ncache.disconnect()
         node = s.igetnodes(nodesdb=targetdb, id=pfrom)[0]
         return web.json_response(dict(success=True, data=node))
@@ -2412,7 +2414,7 @@ class KairosWorker:
         producers = tnode['datasource']['producers']
         producers.append(dict(path=s.igetpath(nodesdb=origindb, id=fromid), id=fromid))
         ncache = Cache(targetdb, objects=True)
-        ncache.execute("match (n:nodes) where id(n) = '" + toid+ "' set n.type=to_json('C'::text), n.icon=to_json('C'::text), n.producers = '" + json.dumps(producers) + "'")
+        ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + toid+ "' set n.type=to_json('C'), n.icon=to_json('C'), n.producers = '" + json.dumps(producers) + "'")
         ncache.disconnect()
         tnode = s.igetnodes(nodesdb=targetdb, id=toid, getsource=True)[0]
         return web.json_response(dict(success=True, data=tnode))
@@ -2437,9 +2439,9 @@ class KairosWorker:
         producers.append(dict(path=s.igetpath(nodesdb=origindb, id=fromid), id=fromid))
         ncache = Cache(targetdb, objects=True)
         if 'aggregatorselector' not in tnode['datasource']:
-            ncache.execute("match (n:nodes) where id(n) = '" + toid+ "' set n.type=to_json('A'::text), n.icon=to_json('A'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + s.igetpath(nodesdb=origindb, id=fromid) + '$' + "'::text), n.aggregatortake=to_json(1), n.aggregatortimefilter=to_json('.'::text), n.aggregatorskip=to_json(0), n.aggregatorsort=to_json('desc'::text), n.aggregatormethod=to_json('$none'::text)")
+            ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + toid+ "' set n.type=to_json('A'), n.icon=to_json('A'), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + s.igetpath(nodesdb=origindb, id=fromid) + '$' + "'), n.aggregatortake=to_json(1), n.aggregatortimefilter=to_json('.'), n.aggregatorskip=to_json(0), n.aggregatorsort=to_json('desc'), n.aggregatormethod=to_json('$none')")
         else:
-            ncache.execute("match (n:nodes) where id(n) = '" + toid+ "' set n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + '$' + "'::text), n.aggregatortake=to_json(" + str(int(tnode['datasource']['aggregatortake']) +  1) + ")")            
+            ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + toid+ "' set n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + '$' + "'), n.aggregatortake=to_json(" + str(int(tnode['datasource']['aggregatortake']) +  1) + ")")            
         ncache.disconnect()
         tnode = s.igetnodes(nodesdb=targetdb, id=toid, getsource=True)[0]
         return web.json_response(dict(success=True, data=tnode))
@@ -2464,13 +2466,13 @@ class KairosWorker:
         if node['datasource']['type'] in ['A', 'N']:  
             producers = s.iexpand(pattern=aggregatorselector, nodesdb=nodesdb, sort=aggregatorsort, take=aggregatortake, skip=aggregatorskip)
             ncache = Cache(nodesdb, objects=True)
-            ncache.execute("match (n:nodes) where id(n) = '" + id+ "' set n.type=to_json('A'::text), n.icon=to_json('A'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'::text), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'::text), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'::text), n.aggregatormethod=to_json('" + aggregatormethod + "'::text)")
+            ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + id+ "' set n.type=to_json('A'), n.icon=to_json('A'), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'), n.aggregatormethod=to_json('" + aggregatormethod + "')")
             ncache.disconnect()
         if node['datasource']['type'] in ['L']:
             cproducers = dict()
             producers = s.iexpand(pattern=aggregatorselector, nodesdb=nodesdb, sort=aggregatorsort, take=aggregatortake, skip=aggregatorskip)
             ncache = Cache(nodesdb, objects=True)
-            ncache.execute("match (n:nodes) where id(n) = '" + id+ "' set n.type=to_json('L'::text), n.icon=to_json('L'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'::text), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'::text), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'::text), n.aggregatormethod=to_json('" + aggregatormethod + "'::text)")
+            ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + id+ "' set n.type=to_json('L'), n.icon=to_json('L'), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'), n.aggregatormethod=to_json('" + aggregatormethod + "')")
             ncache.disconnect()
             for p in producers:
                 pchilds = s.igetnodes(nodesdb=nodesdb, parent=p['id'])
@@ -2500,7 +2502,7 @@ class KairosWorker:
                 tpath = [x['path'] for x in cproducers[c['name']]]
                 aggregatorselector = '|'.join(tpath)
                 ncache = Cache(nodesdb, objects=True)
-                ncache.execute("match (n:nodes) where id(n) = '" + c['id'] + "' set n.type=to_json('A'::text), n.icon=to_json('A'::text), n.producers='" + json.dumps(cproducers[c['name']]) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'::text), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'::text), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'::text), n.aggregatormethod=to_json('" + aggregatormethod + "'::text)")
+                ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + c['id'] + "' set n.type=to_json('A'), n.icon=to_json('A'), n.producers='" + json.dumps(cproducers[c['name']]) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + aggregatorselector + "'), n.aggregatortake=to_json(" + str(aggregatortake) + "), n.aggregatortimefilter=to_json('" + aggregatortimefilter + "'), n.aggregatorskip=to_json(" + str(aggregatorskip) + "), n.aggregatorsort=to_json('" + aggregatorsort + "'), n.aggregatormethod=to_json('" + aggregatormethod + "')")
                 ncache.disconnect()
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True)[0]
         return web.json_response(dict(success=True, data=node))
@@ -2580,9 +2582,9 @@ class KairosWorker:
         producers.append(dict(path=s.igetpath(nodesdb=origindb, id=fromid), id=fromid))
         ncache = Cache(targetdb, objects=True)
         if 'aggregatorselector' not in tnode['datasource']:
-            ncache.execute("match (n:nodes) where id(n) = '" + toid + "' set n.type=to_json('L'::text), n.icon=to_json('L'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + s.igetpath(nodesdb=origindb, id=fromid) + "'::text), n.aggregatortake=to_json(1), n.aggregatortimefilter=to_json('.'::text), n.aggregatorskip=to_json(0), n.aggregatorsort=to_json('desc'::text), n.aggregatormethod=to_json('$none'::text)")
+            ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + toid + "' set n.type=to_json('L'), n.icon=to_json('L'), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + s.igetpath(nodesdb=origindb, id=fromid) + "'), n.aggregatortake=to_json(1), n.aggregatortimefilter=to_json('.'), n.aggregatorskip=to_json(0), n.aggregatorsort=to_json('desc'), n.aggregatormethod=to_json('$none')")
         else:
-            ncache.execute("match (n:nodes) where id(n) = '" + toid + "' set n.type=to_json('L'::text), n.icon=to_json('L'::text), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + "'::text), n.aggregatortake=to_json(" + str(int(tnode['datasource']['aggregatortake']) +  1) + ")")
+            ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + toid + "' set n.type=to_json('L'), n.icon=to_json('L'), n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now()), n.aggregatorselector=to_json('" + tnode['datasource']['aggregatorselector'] + '|' + s.igetpath(nodesdb=origindb, id=fromid) + "'), n.aggregatortake=to_json(" + str(int(tnode['datasource']['aggregatortake']) +  1) + ")")
         ncache.disconnect()
         tnode = s.igetnodes(nodesdb=targetdb, id=toid, getsource=True)[0]
         return web.json_response(dict(success=True, data=tnode))
@@ -2604,8 +2606,122 @@ class KairosWorker:
         cache = s.igetcache(id, nodesdb=nodesdb)
         (message, collections) = s.iapplyliveobject(id=id, cache=cache, liveobject=liveobject)
         ncache = Cache(nodesdb, objects=True)
-        ncache.execute("match (n:nodes) where id(n) = '" + id+ "' set n.type=to_json('D'::text), n.icon=to_json('D'::text), n.aggregated=to_json(now()), n.liveobject=to_json('" + loname + "'::text)")
+        ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + id+ "' set n.type=to_json('D'), n.icon=to_json('D'), n.aggregated=to_json(now()), n.liveobject=to_json('" + loname + "')")
         ncache.disconnect()
         node = s.igetnodes(nodesdb=nodesdb, id=id)[0]
         if message: return web.json_response(dict(success=False, message=message))
         else: return web.json_response(dict(success=True, data=node))
+
+    @intercept_logging_and_internal_error
+    @trace_call
+    def exportdatabase(s, request):
+        params = parse_qs(request.query_string)
+        nodesdb = params['nodesdb'][0]
+        try: shutil.rmtree('/export/' + nodesdb)
+        except: pass
+        os.mkdir('/export/' + nodesdb)
+        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'pg_dump ' + nodesdb + ' -f /export/' + nodesdb + '/database.sql'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if  ag.returncode:
+            message = "Unable to export database: " + nodesdb + " for an uknown reason!"
+            logging.error(message)
+            return web.json_response(dict(success=False, message=message))
+        ncache = Cache(nodesdb, objects=True)
+        x = ncache.execute("match (r:nodes {name:'/'})-[:node_has_children*]->(d:nodes {type:'B'}) return id(d) as rid")
+        rootdependents = set([row['rid'] for row in x.fetchall()])
+        ncache.disconnect()
+        for n in rootdependents:
+            path = s.igetpath(nodesdb=nodesdb, id=n)
+            archive = path.replace('/', '_')[1:] + '.zip'
+            ag = subprocess.run(['cp', '/files/' + nodesdb + '/' + n + '.zip', '/export/' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if  ag.returncode:
+                message = "Unable to copy file " + n + ".zip!"
+                logging.error(message)
+                return web.json_response(dict(success=False, message=message))
+            ag = subprocess.run(['ln', '/export/' + nodesdb + '/' + n + '.zip', '/export/' + nodesdb + '/' + archive], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if  ag.returncode:
+                message = "Unable to link file " + n + ".zip!"
+                logging.error(message)
+                return web.json_response(dict(success=False, message=message))
+        return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been exported sucessfully!")))
+
+    @intercept_logging_and_internal_error
+    @trace_call
+    def importdatabase(s, request):
+        params = parse_qs(request.query_string)
+        nodesdb = params['nodesdb'][0]
+        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -c "drop database ' + nodesdb + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if  ag.returncode:
+            message = "Unable to drop database: " + nodesdb + " during import!"
+            logging.error(message)
+            return web.json_response(dict(success=False, message=message))
+        shutil.rmtree('/files/' + nodesdb)
+        os.mkdir('/files/' + nodesdb)
+        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -c "create database ' + nodesdb + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if  ag.returncode:
+            message = "Unable to create database: " + nodesdb + " during import!"
+            logging.error(message)
+            return web.json_response(dict(success=False, message=message))
+        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -f /export/' + nodesdb + '/database.sql ' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if  ag.returncode:
+            message = "Error during import of database: " + nodesdb
+            logging.error(message)
+            return web.json_response(dict(success=False, message=message))
+        ncache = Cache(nodesdb, objects=True)
+        x = ncache.execute("match (r:nodes {name:'/'})-[:node_has_children*]->(d:nodes {type:'B'}) return id(d) as rid")
+        rootdependents = set([row['rid'] for row in x.fetchall()])
+        ncache.disconnect()
+        for n in rootdependents:
+            ag = subprocess.run(['cp', '/export/' + nodesdb + '/' + n + '.zip', '/files/' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if  ag.returncode:
+                message = "Unable to copy file " + n + ".zip!"
+                logging.error(message)
+                return web.json_response(dict(success=False, message=message))
+        return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been imported sucessfully!")))
+
+    @intercept_logging_and_internal_error
+    @trace_call
+    def cleardependentcaches(s, request):
+        params = parse_qs(request.query_string)
+        nodesdb = params['nodesdb'][0]
+        systemdb = params['systemdb'][0]
+        id = params['id'][0]
+        ncache = Cache(nodesdb, objects=True)
+        x = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes {type:'B'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+        bdependents = set([row['rid'] for row in x.fetchall()])
+        y = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes {type:'A'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+        adependents = set([row['rid'] for row in y.fetchall()])
+        ncache.disconnect()
+        for n in bdependents.union(adependents).union(set([id])):
+            try: s.ideletecache(n, nodesdb=nodesdb)
+            except:
+                message = "Error while trying to delete cache for node: " + n
+                logging.error(message)
+                return web.json_response(dict(success=False, message=message))
+        return web.json_response(dict(success=True, data=dict(msg="Caches have been cleared sucessfully!")))
+
+    @intercept_logging_and_internal_error
+    @trace_call
+    def builddependentcaches(s, request):
+        params = parse_qs(request.query_string)
+        nodesdb = params['nodesdb'][0]
+        systemdb = params['systemdb'][0]
+        id = params['id'][0]
+        ncache = Cache(nodesdb, objects=True)
+        x = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes {type:'B'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+        bdependents = set([row['rid'] for row in x.fetchall()])
+        y = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes {type:'A'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+        adependents = set([row['rid'] for row in y.fetchall()])
+        z = ncache.execute("match (d:nodes {type:'A'}) where to_jsonb(id(d))='" + id + "' return id(d) as rid")
+        amyself = set([row['rid'] for row in z.fetchall()])
+        t = ncache.execute("match (d:nodes {type:'B'}) where to_jsonb(id(d))='" + id + "' return id(d) as rid")
+        bmyself = set([row['rid'] for row in t.fetchall()])
+        ncache.disconnect()
+        for n in bdependents.union(adependents).union(amyself).union(bmyself):
+            try: 
+                node = s.igetnodes(nodesdb=nodesdb, id=n, getsource=True, getcache=True)[0]
+                s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
+            except:
+                message = "Error while trying to build cache for node: " + n
+                logging.error(message)
+                return web.json_response(dict(success=False, message=message))
+        return web.json_response(dict(success=True, data=dict(msg="Caches have been built sucessfully!")))

@@ -2162,12 +2162,18 @@ dhtmlxEvent(window,"load",function(){
 				{id: "run_chart", text: "Run chart"},
 				{id: "run_choice", text: "Run choice"},
 				{type: "separator"},
+				{id: "clear_dependent_caches", text: "Clear dependent caches"},
+				{id: "build_dependent_caches", text: "Build dependent caches"},
+				{type: "separator"},
 				{id: "display_collection", text: "Display collection"},
 				{type: "separator"},
                 {id: "download", text: "Download"},
                 {id: "downloadc", text: "Download children"},                
 				{id: "display_member", text: "Display member"},
 				{id: "unload", text: "Unload"},
+				{type: "separator"},
+				{id: "export", text: "Export database"},
+				{id: "import", text: "Import database"},
 				{type: "separator"},
 				{id: "empty_trash", text: "Empty trash"},
 			]
@@ -2187,6 +2193,10 @@ dhtmlxEvent(window,"load",function(){
         contextmenu.setItemImage("display_collection","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("display_member","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("unload","fa fa-cloud-download", "fa fa-cloud-download");
+        contextmenu.setItemImage("clear_dependent_caches","fas fa-angle-double-down", "fas fa-angle-double-down");
+        contextmenu.setItemImage("build_dependent_caches","fas fa-angle-double-up", "fas fa-angle-double-up");
+        contextmenu.setItemImage("export","fa fa-sign-out", "fa fa-sign-out");
+        contextmenu.setItemImage("import","fa fa-sign-in", "fa fa-sign-in");
         contextmenu.setItemImage("empty_trash","fa fa-trash-o", "fa fa-trash-o");
         menu.attachEvent("onClick", function(id) {
             if (menu.actions[id].action === "dispchart") {
@@ -2199,7 +2209,15 @@ dhtmlxEvent(window,"load",function(){
         tree.attachEvent("onSelect", function(id, select){
             if (select) {
                 var type = tree.getUserData(id, "type");
-                var contextmenuenabled = {upload: false, create_node: true, rename_node: false, delete_node: false, refresh_node: true, open_node: true, execute_query: false, run_chart: false, run_choice: false, download: false, downloadc: true, display_member: false, unload: false, empty_trash: false};
+                var contextmenuenabled = {upload: false, create_node: true, rename_node: false, delete_node: false, refresh_node: true, open_node: true, execute_query: false, run_chart: false, run_choice: false, download: false, downloadc: true, display_member: false, unload: false, export: false, import:false, clear_dependent_caches: false, build_dependent_caches: false, empty_trash: false};
+                if (id === rootid) {
+                    contextmenuenabled.export = true;
+                    contextmenuenabled.import = true;    
+                }
+                if (_.contains(["N", "B", "A", "L"], type)) {
+                    contextmenuenabled.clear_dependent_caches = true;
+                    contextmenuenabled.build_dependent_caches = true;
+                }
                 if (_.contains(["B", "N"], type)) {
                     contextmenuenabled.upload = true;
                 }
@@ -2430,6 +2448,42 @@ dhtmlxEvent(window,"load",function(){
                 if (fid === "unload") {
                     log.debug("Unload at node: " + id + " (" + tree.getItemText(id) + ")");
                     window.location.href = '/unload?id=' + encodeURIComponent(id) + '&nodesdb=' + desktop.settings.nodesdb + '&systemdb=' + desktop.settings.systemdb;
+                }
+                if (fid === "export") {
+                    log.debug("Export at node: " + id + " (" + tree.getItemText(id) + ")");
+                    waterfall([
+                        ajax_get_first_in_async_waterfall("export", {nodesdb: desktop.settings.nodesdb}),
+                        function (x) {
+                            alertify.success('<div style="font-size:150%;">' + x.msg + "</div>");
+                        }
+                    ]);
+                }
+                if (fid === "import") {
+                    log.debug("Import at node: " + id + " (" + tree.getItemText(id) + ")");
+                    waterfall([
+                        ajax_get_first_in_async_waterfall("import", {nodesdb: desktop.settings.nodesdb}),
+                        function (x) {
+                            alertify.success('<div style="font-size:150%;">' + x.msg + "</div>");
+                        }
+                    ]);
+                }
+                if (fid === "clear_dependent_caches") {
+                    log.debug("Clear dependent caches at node: " + id + " (" + tree.getItemText(id) + ")");
+                    waterfall([
+                        ajax_get_first_in_async_waterfall("cleardependentcaches", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id}),
+                        function (x) {
+                            alertify.success('<div style="font-size:150%;">' + x.msg + "</div>");
+                        }
+                    ]);
+                }
+                if (fid === "build_dependent_caches") {
+                    log.debug("Build dependent caches at node: " + id + " (" + tree.getItemText(id) + ")");
+                    waterfall([
+                        ajax_get_first_in_async_waterfall("builddependentcaches", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id}),
+                        function (x) {
+                            alertify.success('<div style="font-size:150%;">' + x.msg + "</div>");
+                        }
+                    ]);
                 }
                 if (fid === "empty_trash") {
                     log.debug("Empty trash");

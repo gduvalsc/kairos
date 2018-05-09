@@ -48,13 +48,25 @@ class UserObject(dict):
                                     "info": null,
                                     "onclick": null,
                                     "filterable": true,
-                                    "nocache": false,
+                                    "nocache": true,
                                     "pieces": [
                                         {
                                             "table": "EXATOPCLLOSIO",
-                                            "projection": "'Flash disk maximum capacity for cell'::text",
+                                            "projection": "'Flash disk maximum capacity for cell 1.5T'::text",
                                             "restriction": "",
                                             "value": "1372.0::real"
+                                        },
+                                        {
+                                            "table": "EXATOPCLLOSIO",
+                                            "projection": "'Flash disk maximum capacity for cell 2.9T'::text",
+                                            "restriction": "",
+                                            "value": "1372.0::real"
+                                        },
+                                        {
+                                            "table": "EXATOPCLLOSIO",
+                                            "projection": "'Flash disk maximum capacity for cell 186G'::text",
+                                            "restriction": "",
+                                            "value": "5488.0::real"
                                         }
                                     ]
                                 }

@@ -214,8 +214,9 @@ class UserObject(dict):
     def end(s, a):
         tof=lambda x: float(x.replace(',','').replace(u'\xa0','0')) if x!=u'' else 0.0
         toc=lambda x: x.replace('&quot;',"'").replace('&lt;',"<").replace('&gt;',">").replace(u'\xa0','')
+        logging.trace('All keys found in collected data: ' + str(sorted(a.collected.keys(),reverse=True)))
         for x in sorted(a.collected.keys(),reverse=True):
-            logging.error('xxxxxxxxx ' + x)
+            logging.trace('Found key in collected data: ' + x)
             line=-1
             if x =='zz9':
                 dmisc = dict(timestamp='text', sessions='real', avgelapsed='real', elapsed='int')
@@ -951,8 +952,8 @@ class UserObject(dict):
                 for y in a.collected[x]:
                     type = y['DiskType']
                     cell = y['CellName']
-                    stime = tof(y['ServiceTime'].replace('us', '')) /1000 if 'us' in y['ServiceTime'] else tof(y['ServiceTime'])
-                    wtime = tof(y['WaitTime'].replace('us', '')) /1000 if 'us' in y['WaitTime'] else tof(y['WaitTime'])
+                    stime = tof(y['ServiceTime'].replace('us', '')) /1000 if 'us' in y['ServiceTime'] else tof(y['ServiceTime'].replace('ms', ''))
+                    wtime = tof(y['WaitTime'].replace('us', '')) /1000 if 'us' in y['WaitTime'] else tof(y['WaitTime'].replace('ms', ''))
                     stack.append(dict(timestamp=a.date, type=type, cell=cell, stime=stime, wtime=wtime))
                 a.emit('EXATOPCLLOSIOL', d, stack)
             if x == 'Exadata OS IO Latency - Top Disks':
@@ -962,8 +963,8 @@ class UserObject(dict):
                     type = y['DiskType']
                     disk = y['DiskName']
                     cell = y['CellName']
-                    stime = tof(y['ServiceTime'].replace('us', '')) /1000 if 'us' in y['ServiceTime'] else tof(y['ServiceTime'])
-                    wtime = tof(y['WaitTime'].replace('us', '')) /1000 if 'us' in y['WaitTime'] else tof(y['WaitTime'])
+                    stime = tof(y['ServiceTime'].replace('us', '')) /1000 if 'us' in y['ServiceTime'] else tof(y['ServiceTime'].replace('ms', ''))
+                    wtime = tof(y['WaitTime'].replace('us', '')) /1000 if 'us' in y['WaitTime'] else tof(y['WaitTime'].replace('ms', ''))
                     stack.append(dict(timestamp=a.date, type=type, cell=cell, disk=disk, stime=stime, wtime=wtime))
                 a.emit('EXATOPDSKOSIOL', d, stack)
 
