@@ -71,7 +71,8 @@ docker create
         -P --privileged -v /sys/fs/cgroup:/sys/fs/cgroup 
         -p 2443:443
         -v /Users/gdsc/Documents/kairos_store/data:/home/agensgraph/data 
-        -v /Users/gdsc/Documents/kairos_store/files:/files 
+        -v /Users/gdsc/Documents/kairos_store/files:/files
+        -v /Users/gdsc/Documents/kairos_export:/export
         -v /Users/gdsc/Documents/kairos_autoupload:/autoupload 
         gdsc/kairos
 ```
