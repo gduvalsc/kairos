@@ -2620,16 +2620,17 @@ class KairosWorker:
         try: shutil.rmtree('/export/' + nodesdb)
         except: pass
         os.mkdir('/export/' + nodesdb)
-        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'pg_dump ' + nodesdb + ' -f /export/' + nodesdb + '/database.sql'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'pg_dump -F c -f /export/' + nodesdb + '/database.dump ' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if  ag.returncode:
             message = "Unable to export database: " + nodesdb + " for an uknown reason!"
             logging.error(message)
             return web.json_response(dict(success=False, message=message))
         ncache = Cache(nodesdb, objects=True)
-        x = ncache.execute("match (r:nodes {name:'/'})-[:node_has_children*]->(d:nodes {type:'B'}) return id(d) as rid")
-        rootdependents = set([row['rid'] for row in x.fetchall()])
+        bnodes = set()
+        x = ncache.execute("match (n:nodes {type:'B'}) return id(n) as rid")
+        bnodes = bnodes.union(set([row['rid'] for row in x.fetchall()]))
         ncache.disconnect()
-        for n in rootdependents:
+        for n in bnodes:
             path = s.igetpath(nodesdb=nodesdb, id=n)
             archive = path.replace('/', '_')[1:] + '.zip'
             ag = subprocess.run(['cp', '/files/' + nodesdb + '/' + n + '.zip', '/export/' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -2661,16 +2662,17 @@ class KairosWorker:
             message = "Unable to create database: " + nodesdb + " during import!"
             logging.error(message)
             return web.json_response(dict(success=False, message=message))
-        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -f /export/' + nodesdb + '/database.sql ' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'pg_restore -d ' + nodesdb + ' /export/' + nodesdb + '/database.dump'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if  ag.returncode:
             message = "Error during import of database: " + nodesdb
             logging.error(message)
             return web.json_response(dict(success=False, message=message))
         ncache = Cache(nodesdb, objects=True)
-        x = ncache.execute("match (r:nodes {name:'/'})-[:node_has_children*]->(d:nodes {type:'B'}) return id(d) as rid")
-        rootdependents = set([row['rid'] for row in x.fetchall()])
+        bnodes = set()
+        x = ncache.execute("match (n:nodes {type:'B'}) return id(n) as rid")
+        bnodes = bnodes.union(set([row['rid'] for row in x.fetchall()]))
         ncache.disconnect()
-        for n in rootdependents:
+        for n in bnodes:
             ag = subprocess.run(['cp', '/export/' + nodesdb + '/' + n + '.zip', '/files/' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
                 message = "Unable to copy file " + n + ".zip!"
@@ -2686,12 +2688,15 @@ class KairosWorker:
         systemdb = params['systemdb'][0]
         id = params['id'][0]
         ncache = Cache(nodesdb, objects=True)
-        x = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes {type:'B'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
-        bdependents = set([row['rid'] for row in x.fetchall()])
-        y = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes {type:'A'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
-        adependents = set([row['rid'] for row in y.fetchall()])
+        bdependents = set()
+        adependents = set()
+        for i in range(20):
+            x = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'B'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+            bdependents = bdependents.union(set([row['rid'] for row in x.fetchall()]))
+            y = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'A'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+            adependents = adependents.union(set([row['rid'] for row in y.fetchall()]))
         ncache.disconnect()
-        for n in bdependents.union(adependents).union(set([id])):
+        for n in bdependents.union(adependents):
             try: s.ideletecache(n, nodesdb=nodesdb)
             except:
                 message = "Error while trying to delete cache for node: " + n
@@ -2707,16 +2712,15 @@ class KairosWorker:
         systemdb = params['systemdb'][0]
         id = params['id'][0]
         ncache = Cache(nodesdb, objects=True)
-        x = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes {type:'B'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
-        bdependents = set([row['rid'] for row in x.fetchall()])
-        y = ncache.execute("match (n:nodes)-[:node_has_children*]->(d:nodes {type:'A'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
-        adependents = set([row['rid'] for row in y.fetchall()])
-        z = ncache.execute("match (d:nodes {type:'A'}) where to_jsonb(id(d))='" + id + "' return id(d) as rid")
-        amyself = set([row['rid'] for row in z.fetchall()])
-        t = ncache.execute("match (d:nodes {type:'B'}) where to_jsonb(id(d))='" + id + "' return id(d) as rid")
-        bmyself = set([row['rid'] for row in t.fetchall()])
+        bdependents = set()
+        adependents = set()
+        for i in range(20):
+            x = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'B'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+            bdependents = bdependents.union(set([row['rid'] for row in x.fetchall()]))
+            y = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'A'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+            adependents = adependents.union(set([row['rid'] for row in y.fetchall()]))
         ncache.disconnect()
-        for n in bdependents.union(adependents).union(amyself).union(bmyself):
+        for n in bdependents.union(adependents):
             try: 
                 node = s.igetnodes(nodesdb=nodesdb, id=n, getsource=True, getcache=True)[0]
                 s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
