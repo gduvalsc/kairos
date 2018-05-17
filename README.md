@@ -77,9 +77,10 @@ docker create
         gdsc/kairos
 ```
 
-The `KAIROS` container must remain a black box with no user data inside. For this, when the container is created, we have to specify (-v option) which directories are mounted within the container to access data. 3 directories are mounted externally:
+The `KAIROS` container must remain a black box with no user data inside. For this, when the container is created, we have to specify (-v option) which directories are mounted within the container to access data. 4 directories are mounted externally:
 -	/home/agensgraph/data
 -	/files
+-	/export
 -	/autoupload
 
 The `KAIROS` container is also listening on 1 port (443). This port must be routed (-p option) on  a port belonging to the physical machine hosting docker. 
