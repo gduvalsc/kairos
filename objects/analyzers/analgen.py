@@ -135,7 +135,7 @@ class UserObject(dict):
             [k, v] = p.split(a.sep2)
             d[k] = a.transform[tname][k](v)
         for k in a.desctable[tname]:
-            if k not in d: d[k] = None
+            if k not in d: d[k] = ''
         a.emit(tname, a.desctable[tname], d)
 
     def acompact(s, a, l ,g, m):

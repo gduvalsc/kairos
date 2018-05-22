@@ -1260,14 +1260,15 @@ class KairosWorker:
             divisor = dict()
             hcache = Cache(cache.database, schema=cache.name)
             if 'timestamp' in lgby:  
-                for x in hcache.execute(workrequest).fetchall(): divisor[x['timestamp'] + x ['kairos_nodeid']] = x['num'] 
-            for row in hcache.execute(request).fetchall():
-                record = ''
-                if 'timestamp' in lgby:
-                    for x in lavg: row[x] = row[x] * 1.0 / divisor[row['timestamp'] + row['kairos_nodeid']]
-                for k in tabledesc.keys(): record += '\\N\t' if row[k] == None else str(row[k]).replace('\t','\\t') + '\t'
-                record = record[:-1] + '\n'
-                queue.put(record)
+                for x in hcache.execute(workrequest).fetchall(): divisor[x['timestamp'] + x ['kairos_nodeid']] = x['num']
+            if len(lgby) > 0:
+                for row in hcache.execute(request).fetchall():
+                    record = ''
+                    if 'timestamp' in lgby:
+                        for x in lavg: row[x] = row[x] * 1.0 / divisor[row['timestamp'] + row['kairos_nodeid']]
+                    for k in tabledesc.keys(): record += '\\N\t' if row[k] == None else str(row[k]).replace('\t','\\t') + '\t'
+                    record = record[:-1] + '\n'
+                    queue.put(record)
             hcache.disconnect()
 
         @intercept_internal_error
@@ -1539,13 +1540,15 @@ class KairosWorker:
                 else: result.append(s.iqueryexecute(pnode, query=query, nodesdb=nodesdb, limit=limit))
         else:
             hcache = Cache(cache.database, schema=cache.name)
-            table = qid
-            if 'filterable' in query and query['filterable']:
-                for x in hcache.execute("select * from " + table + " where label in (select label from (select label, sum(value) weight from " + table + " group by label order by weight desc limit " + str(limit) + ") as foo)"):
-                    result.append(x)
-            else:
-                for x in hcache.execute("select * from " + table):
-                    result.append(x)
+            table = qid.lower()
+            for b in hcache.execute("select exists(select * from information_schema.tables where table_schema = current_schema() and table_name = '" + table + "') foo"): existstable = b['foo']
+            if existstable: 
+                if 'filterable' in query and query['filterable']:
+                    for x in hcache.execute("select * from " + table + " where label in (select label from (select label, sum(value) weight from " + table + " group by label order by weight desc limit " + str(limit) + ") as foo)"):
+                        result.append(x)
+                else:
+                    for x in hcache.execute("select * from " + table):
+                        result.append(x)
             hcache.disconnect()
         return result
   
