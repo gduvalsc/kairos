@@ -30,7 +30,7 @@ class UserObject(dict):
                                         "DBORARACTTFE"
                                     ],
                                     "userfunctions": [],
-                                    "filterable": false,
+                                    "filterable": true,
                                     "nocache": false,
                                     "pieces": [
                                         {

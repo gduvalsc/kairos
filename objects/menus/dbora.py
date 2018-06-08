@@ -334,6 +334,7 @@ class UserObject(dict):
                                         { "type": "menuitem", "label": " Top sessions", "action": "dispchoice", "choice": "DBORAASHWEVSES" },
                                         { "type": "menuitem", "label": " Top SQL requests", "action": "dispchoice", "choice": "DBORAASHWEVSQL" },
                                         { "type": "menuitem", "label": " Top SQL operations", "action": "dispchoice", "choice": "DBORAASHWEVOPN" },
+                                        { "type": "menuitem", "label": " Top P1 values", "action": "dispchoice", "choice": "DBORAASHWEVP1" },
                                     ]
                                 },
                             ]
