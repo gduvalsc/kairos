@@ -1096,7 +1096,8 @@ class KairosWorker:
         todo = dict()
         nid = node['id']
         ntype = node['datasource']['type']
-        try: timeout = int(os.environ['LIVECACHE_TIMEOUT'])
+        liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['liveobject'] + "', type:'liveobject'}")[0]
+        try: timeout = liveobject['retention']
         except: timeout = 60
         for collection in collections:
             logging.info("Node: " + nid + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
@@ -1420,7 +1421,7 @@ class KairosWorker:
         for collection in collections: cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
 
     @trace_call
-    def ibuildcolcachetypeD(s, node, cache=None, collection=None, liveobject=None):
+    def ibuildcolcachetypeD(s, node, cache=None, collection=None):
         nid = node['id']
         ntype = node['datasource']['type']
         logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
@@ -1469,9 +1470,7 @@ class KairosWorker:
                 if ntype in ['D']: s.idropcolcachetypeD(node, cache=cache, collection=collection)                
             for collection in tcollections:
                 if ntype in ['A']: s.ibuildcolcachetypeA(node, cache=cache, collection=collection, nodesdb=nodesdb, systemdb=systemdb, mapproducers=mapproducers)
-                if ntype in ['D']:
-                    liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['liveobject'] + "', type:'liveobject'}")[0]
-                    s.ibuildcolcachetypeD(node, cache=cache, collection=collection, liveobject=liveobject)
+                if ntype in ['D']: s.ibuildcolcachetypeD(node, cache=cache, collection=collection)
             if ntype in ['B']: s.ibuildcolcachetypeB(node, cache=cache, collections=tcollections, analyzers=analyzers, nodesdb=nodesdb)
             logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with collections info: '" + str(tcollections) + "' ...")
             ncache = Cache(nodesdb, objects=True)
