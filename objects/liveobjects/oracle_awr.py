@@ -11,6 +11,7 @@ class UserObject(dict):
     PASSWORD = 'manager'
     MINDATE = "select sysdate - 1 as mindate from dual"
     MAXDATE = "select to_date('20991231', 'YYYYMMDD') as maxdate from dual"
+    RETENTION = 60
 
 
     DEFS = {
@@ -81,6 +82,7 @@ class UserObject(dict):
             "options": "dbserver '//" + UserObject.IPADDRESS + ":" + UserObject.PORT + "/" + UserObject.CONTAINER + "'",
             "user": UserObject.USER,
             "password": UserObject.PASSWORD,
+            "retention": UserObject.RETENTION,
             "tables": {
                 "MASTERLIST": {
                     "request": "with %(iname)s, %(masterlist)s select * from masterlist" % UserObject.DEFS, 
