@@ -2,10 +2,21 @@ class UserObject(dict):
     
 # Oracle foreign data wrapper
 
+    ID = 'ORACLE_AWR'
+    IPADDRESS = 'orcl'
+    PORT = '1521'
+    CONTAINER = 'orcl'
+    INSTANCE = 'orcl'
+    USER = 'system'
+    PASSWORD = 'manager'
+    MINDATE = "select sysdate - 1 as mindate from dual"
+    MAXDATE = "select to_date('20991231', 'YYYYMMDD') as maxdate from dual"
+
+
     DEFS = {
-        "iname": "iname as (select 'orcl' name from dual)",
-        "mindate": "mindate as (select to_char(sysdate, 'YYYYMMDD') mindate from dual)",
-        "maxdate": "maxdate as (select '20991231235959' maxdate from dual)",
+        "iname": "iname as (select '" + INSTANCE + "' name from dual)",
+        "mindate": "mindate as (" + MINDATE + ")",
+        "maxdate": "maxdate as (" + MAXDATE + ")",
         "masterlist": "masterlist as (select dbid, instance_number, to_char(startup_time, 'YYYYMMDDHH24MISS') startup_time from dba_hist_database_instance, iname where instance_name = iname.name)",
         "deltas": "deltas as (select dbid, instance_number, to_char(startup_time, 'YYYYMMDDHH24MISS') startup_time, bid, eid, to_char(snap_time, 'YYYYMMDDHH24MISS')||'000' snap_time, round(((cast(snap_time as date) - cast(prev_snap_time as date)) * 1440 * 60), 0) elapsed  from (select end_interval_time snap_time, first_value(end_interval_time) over (order by end_interval_time asc rows between 1 preceding and current row) prev_snap_time, first_value(snap_id) over (order by end_interval_time asc rows between 1 preceding and current row) bid, snap_id eid, first_value(dbid) over (order by end_interval_time asc rows between 1 preceding and current row) prev_dbid, dbid, first_value(instance_number) over (order by end_interval_time asc rows between 1 preceding and current row) prev_instance_number, instance_number, first_value(startup_time) over (order by end_interval_time asc rows between 1 preceding and current row) prev_startup_time, startup_time from dba_hist_snapshot, mindate, maxdate  where to_char(end_interval_time, 'YYYYMMDDHH24MISS') >= mindate.mindate and to_char(end_interval_time, 'YYYYMMDDHH24MISS') < maxdate.maxdate) where dbid=prev_dbid and instance_number=prev_instance_number and startup_time=prev_startup_time and bid != eid )", 
         "validdeltas": "validdeltas as (select d.dbid, d.instance_number, d.startup_time, d.bid, d.eid, d.snap_time, d.elapsed from deltas d, masterlist m where d.dbid = m.dbid and d.instance_number = m.instance_number and d.startup_time = m.startup_time)",
@@ -65,11 +76,11 @@ class UserObject(dict):
     def __init__(s):
         object = {
             "type": "liveobject",
-            "id": "ORACLE_AWR",
+            "id": UserObject.ID,
             "extension": "oracle_fdw",
-            "options": "dbserver '//orcl:15211/orcl'",
-            "user": "system",
-            "password": "manager",
+            "options": "dbserver '//" + UserObject.IPADDRESS + ":" + UserObject.PORT + "/" + UserObject.CONTAINER + "'",
+            "user": UserObject.USER,
+            "password": UserObject.PASSWORD,
             "tables": {
                 "MASTERLIST": {
                     "request": "with %(iname)s, %(masterlist)s select * from masterlist" % UserObject.DEFS, 
