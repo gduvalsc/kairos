@@ -9,8 +9,8 @@ class UserObject(dict):
     INSTANCE = 'orcl'
     USER = 'system'
     PASSWORD = 'manager'
-    MINDATE = "select sysdate - 1 as mindate from dual"
-    MAXDATE = "select to_date('20991231', 'YYYYMMDD') as maxdate from dual"
+    MINDATE = "select to_char(sysdate - 1, 'YYYYMMDD') as mindate from dual"
+    MAXDATE = "select '20991231' as maxdate from dual"
     RETENTION = 60
 
 
