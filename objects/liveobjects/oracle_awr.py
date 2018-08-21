@@ -9,8 +9,8 @@ class UserObject(dict):
     INSTANCE = 'orcl'
     USER = 'system'
     PASSWORD = 'manager'
-    MINDATE = "select to_char(sysdate - 1, 'YYYYMMDD') as mindate from dual"
-    MAXDATE = "select '20991231' as maxdate from dual"
+    MINDATE = "select to_char(sysdate - 1, 'YYYYMMDDHH24MISS') as mindate from dual"
+    MAXDATE = "select '2099123235959' as maxdate from dual"
     RETENTION = 60
 
 
@@ -87,6 +87,14 @@ class UserObject(dict):
                 "MASTERLIST": {
                     "request": "with %(iname)s, %(masterlist)s select * from masterlist" % UserObject.DEFS, 
                     "description": {"dbid": "text", "instance_number": "text", "startup_time": "text"}
+                },
+                "MINDATE": {
+                    "request": "with %(mindate)s select * from mindate" % UserObject.DEFS, 
+                    "description": {"mindate": "text"}
+                },
+                "MAXDATE": {
+                    "request": "with %(maxdate)s select * from maxdate" % UserObject.DEFS, 
+                    "description": {"maxdate": "text"}
                 },
                 "DELTAS": {
                     "request": "with %(mindate)s, %(maxdate)s, %(deltas)s select * from deltas" % UserObject.DEFS, 

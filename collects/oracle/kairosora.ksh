@@ -157,7 +157,7 @@ function foraenv
 {
      ORAENVFILE=oraenv_$$.out
      export PATH=$PATH:/usr/local/bin
-     export ORACLE_SID=${LD_INSTANCENAME}
+     export ORACLE_SID=${INSTANCENAME}
      export ORAENV_ASK=NO
      export NLS_LANG=AMERICAN_AMERICA
      export NLS_DATE_LANGUAGE=AMERICAN
@@ -241,7 +241,7 @@ function fawr_oravers
 {
      sqlplus -s "$CONNECTSTRING" <<EOF
      set heading off feedback off pages 0 lines 5000 trimspool on verify off
-     select distinct substr(version,1,4) from dba_hist_database_instance where instance_name = '$INSTANCENAME';
+     select distinct substr(version,1,4) from dba_hist_database_instance where instance_name = '$LD_INSTANCENAME';
      exit
 EOF
 }
@@ -276,7 +276,7 @@ function fawr_dbid
 {
      sqlplus -s "$CONNECTSTRING" <<EOF
      set heading off feedback off pages 0 lines 5000 trimspool on verify off
-     select * from (select dbid from dba_hist_database_instance where instance_name = '$INSTANCENAME' order by startup_time desc) where rownum=1;
+     select * from (select dbid from dba_hist_database_instance where instance_name = '$LD_INSTANCENAME' order by startup_time desc) where rownum=1;
      exit
 EOF
 }
@@ -300,7 +300,7 @@ function fawr_instancenumber
 {
      sqlplus -s "$CONNECTSTRING" <<EOF
      set heading off feedback off pages 0 lines 5000 trimspool on verify off
-     select * from (select to_char(instance_number) from dba_hist_database_instance where instance_name='$INSTANCENAME' and dbid=$DBID order by startup_time desc) where rownum=1;
+     select * from (select to_char(instance_number) from dba_hist_database_instance where instance_name='$LD_INSTANCENAME' and dbid=$DBID order by startup_time desc) where rownum=1;
      exit
 EOF
 }
@@ -324,7 +324,7 @@ function fawr_dbname
 {
      sqlplus -s "$CONNECTSTRING" <<EOF
      set heading off feedback off pages 0 lines 5000 trimspool on verify off
-     select * from (select db_name from dba_hist_database_instance where instance_name='$INSTANCENAME' and dbid=$DBID order by startup_time desc) where rownum=1;
+     select * from (select db_name from dba_hist_database_instance where instance_name='$LD_INSTANCENAME' and dbid=$DBID order by startup_time desc) where rownum=1;
      exit
 EOF
 }
@@ -458,11 +458,11 @@ function fawr
           dbn=$(echo $i|cut -f 4 -d '@')
           inu=$(echo $i|cut -f 5 -d '@')
           vdbid=$(echo $i|cut -f 6 -d '@')
-          REPORT=rep_${INSTANCENAME}_$timestmp.${EXT}
+          REPORT=rep_${LD_INSTANCENAME}_$timestmp.${EXT}
           sqlplus  -s "$CONNECTSTRING"<< EOF >/dev/null
               define  inst_num     = $inu;
               define  num_days     = 1;
-              define  inst_name    = '$INSTANCENAME';
+              define  inst_name    = '$LD_INSTANCENAME';
               define  db_name      = $dbn;
               define  dbid         = $vdbid;
               define  begin_snap   = $bid;
@@ -489,7 +489,7 @@ function fawr2
 {
      SEP1=":,"
      SEP2=":="
-     REPORT=${INSTANCENAME}_dbahistsqlstat_${DAY}.lst
+     REPORT=${LD_INSTANCENAME}_dbahistsqlstat_${DAY}.lst
      fheader ${SEP1} ${SEP2} > $REPORT
      echo 'TYPE ORAHQS plan_hash_value text' >>$REPORT
      echo 'TYPE ORAHQS optimizer_cost text' >>$REPORT
@@ -531,7 +531,7 @@ function fawr2
      fdbahistsqlstat ${SEP1} ${SEP2} >> $REPORT
      tar rf ${TEMPFILE} ${REPORT}
      rm ${REPORT}
-     REPORT=${INSTANCENAME}_dbahistsysmetric_${DAY}.lst
+     REPORT=${LD_INSTANCENAME}_dbahistsysmetric_${DAY}.lst
      fheader ${SEP1} ${SEP2} > $REPORT
      echo 'TYPE ORAHSM intsize int' >>$REPORT
      echo 'TYPE ORAHSM group_id text' >>$REPORT
@@ -545,7 +545,7 @@ function fawr2
      rm ${REPORT}
      SEP1="|>!!<|,"
      SEP2="=_||_="
-     REPORT=${INSTANCENAME}_dbahistsqltext_${DAY}.lst
+     REPORT=${LD_INSTANCENAME}_dbahistsqltext_${DAY}.lst
      fheader ${SEP1} ${SEP2} > $REPORT
      echo 'TYPE ORAHQT command_type text' >>$REPORT
      echo 'TYPE ORAHQT con_dbid text' >>$REPORT
@@ -562,56 +562,106 @@ function fawr3
      for f in kairos_extr_*
      do
           SUFFIX=$(echo $f|sed -e 's/kairos_extr_//')
-          REPORT=${INSTANCENAME}_dbahistactivesesshistory_${DAY}_$SUFFIX.lst
+          REPORT=${LD_INSTANCENAME}_dbahistactivesesshistory_${DAY}_$SUFFIX.lst
           fheader ${SEP1} ${SEP2} > $REPORT
           echo 'TYPE ORAHAS action text' >>$REPORT
-          echo 'TYPE ORAHAS session_id text' >>$REPORT
-          echo 'TYPE ORAHAS sample_id text' >>$REPORT
-          echo 'TYPE ORAHAS session_serial text' >>$REPORT
-          echo 'TYPE ORAHAS user_id text' >>$REPORT
-          echo 'TYPE ORAHAS sql_child_number text' >>$REPORT
-          echo 'TYPE ORAHAS sql_plan_hash_value text' >>$REPORT
-          echo 'TYPE ORAHAS optimizer_env_hash_value text' >>$REPORT
-          echo 'TYPE ORAHAS force_matching_signature text' >>$REPORT
-          echo 'TYPE ORAHAS sql_opcode text' >>$REPORT
-          echo 'TYPE ORAHAS service_hash text' >>$REPORT
-          echo 'TYPE ORAHAS qc_session_id text' >>$REPORT
-          echo 'TYPE ORAHAS qc_instance_id text' >>$REPORT
-          echo 'TYPE ORAHAS qc_session_serial text' >>$REPORT
+          echo 'TYPE ORAHAS blocking_hangchain_info text' >>$REPORT
+          echo 'TYPE ORAHAS blocking_inst_id text' >>$REPORT
           echo 'TYPE ORAHAS blocking_session text' >>$REPORT
           echo 'TYPE ORAHAS blocking_session_serial text' >>$REPORT
-          echo 'TYPE ORAHAS event_id text' >>$REPORT
-          echo 'TYPE ORAHAS p1 text' >>$REPORT
-          echo 'TYPE ORAHAS p2 text' >>$REPORT
-          echo 'TYPE ORAHAS p3 text' >>$REPORT
-          echo 'TYPE ORAHAS xid text' >>$REPORT
-          echo 'TYPE ORAHAS current_obj text' >>$REPORT
-          echo 'TYPE ORAHAS current_file text' >>$REPORT
+          echo 'TYPE ORAHAS blocking_session_status text' >>$REPORT
+          echo 'TYPE ORAHAS capture_overhead text' >>$REPORT
+          echo 'TYPE ORAHAS client_id text' >>$REPORT
+          echo 'TYPE ORAHAS con_dbid text' >>$REPORT
+          echo 'TYPE ORAHAS con_id text' >>$REPORT
+          echo 'TYPE ORAHAS con_name text' >>$REPORT
+          echo 'TYPE ORAHAS consumer_group_id text' >>$REPORT
           echo 'TYPE ORAHAS current_block text' >>$REPORT
+          echo 'TYPE ORAHAS current_file text' >>$REPORT
+          echo 'TYPE ORAHAS current_obj text' >>$REPORT
           echo 'TYPE ORAHAS current_row text' >>$REPORT
+          echo 'TYPE ORAHAS dbop_exec_id text' >>$REPORT
+          echo 'TYPE ORAHAS dbop_name text' >>$REPORT
+          echo 'TYPE ORAHAS dbreplay_call_counter text' >>$REPORT
+          echo 'TYPE ORAHAS dbreplay_file_id text' >>$REPORT
+          echo 'TYPE ORAHAS delta_interconnect_io_bytes real' >>$REPORT
+          echo 'TYPE ORAHAS delta_read_io_bytes real' >>$REPORT
+          echo 'TYPE ORAHAS delta_read_io_requests real' >>$REPORT
+          echo 'TYPE ORAHAS delta_time real' >>$REPORT
+          echo 'TYPE ORAHAS delta_write_io_bytes real' >>$REPORT
+          echo 'TYPE ORAHAS delta_write_io_requests real' >>$REPORT
+          echo 'TYPE ORAHAS ecid text' >>$REPORT
+          echo 'TYPE ORAHAS event text' >>$REPORT
+          echo 'TYPE ORAHAS event_id text' >>$REPORT
           echo 'TYPE ORAHAS flags text' >>$REPORT
-          echo 'TYPE ORAHAS top_level_sql_opcode text' >>$REPORT
-          echo 'TYPE ORAHAS sql_plan_line_id text' >>$REPORT
-          echo 'TYPE ORAHAS sql_exec_id text' >>$REPORT
-          echo 'TYPE ORAHAS sql_exec_start text' >>$REPORT
+          echo 'TYPE ORAHAS force_matching_signature text' >>$REPORT
+          echo 'TYPE ORAHAS in_bind text' >>$REPORT
+          echo 'TYPE ORAHAS in_connection_mgmt text' >>$REPORT
+          echo 'TYPE ORAHAS in_cursor_close text' >>$REPORT
+          echo 'TYPE ORAHAS in_hard_parse text' >>$REPORT
+          echo 'TYPE ORAHAS in_java_execution text' >>$REPORT
+          echo 'TYPE ORAHAS in_parse text' >>$REPORT
+          echo 'TYPE ORAHAS in_plsql_compilation text' >>$REPORT
+          echo 'TYPE ORAHAS in_plsql_execution text' >>$REPORT
+          echo 'TYPE ORAHAS in_plsql_rpc text' >>$REPORT
+          echo 'TYPE ORAHAS in_sequence_load text' >>$REPORT
+          echo 'TYPE ORAHAS in_sql_execution text' >>$REPORT
+          echo 'TYPE ORAHAS is_captured text' >>$REPORT
+          echo 'TYPE ORAHAS is_replayed text' >>$REPORT
+          echo 'TYPE ORAHAS is_sqlid_current text' >>$REPORT
+          echo 'TYPE ORAHAS machine text' >>$REPORT
+          echo 'TYPE ORAHAS module text' >>$REPORT
+          echo 'TYPE ORAHAS optimizer_env_hash_value text' >>$REPORT
+          echo 'TYPE ORAHAS p1 text' >>$REPORT
+          echo 'TYPE ORAHAS p1text text' >>$REPORT
+          echo 'TYPE ORAHAS p2 text' >>$REPORT
+          echo 'TYPE ORAHAS p2text text' >>$REPORT
+          echo 'TYPE ORAHAS p3 text' >>$REPORT
+          echo 'TYPE ORAHAS p3text text' >>$REPORT
+          echo 'TYPE ORAHAS pga_allocated real' >>$REPORT
           echo 'TYPE ORAHAS plsql_entry_object_id text' >>$REPORT
           echo 'TYPE ORAHAS plsql_entry_subprogram_id text' >>$REPORT
           echo 'TYPE ORAHAS plsql_object_id text' >>$REPORT
           echo 'TYPE ORAHAS plsql_subprogram_id text' >>$REPORT
-          echo 'TYPE ORAHAS seq text' >>$REPORT
-          echo 'TYPE ORAHAS wait_class_id text' >>$REPORT
-          echo 'TYPE ORAHAS blocking_inst_id text' >>$REPORT
-          echo 'TYPE ORAHAS top_level_call text' >>$REPORT
-          echo 'TYPE ORAHAS consumer_group_id text' >>$REPORT
-          echo 'TYPE ORAHAS remote_instance text' >>$REPORT
-          echo 'TYPE ORAHAS time_model text' >>$REPORT
           echo 'TYPE ORAHAS port text' >>$REPORT
-          echo 'TYPE ORAHAS dbreplay_file_id text' >>$REPORT
-          echo 'TYPE ORAHAS dbop_exec_id text' >>$REPORT
-          echo 'TYPE ORAHAS con_dbid text' >>$REPORT
-          echo 'TYPE ORAHAS con_id text' >>$REPORT
-          echo 'TYPE ORAHAS pga_allocated real' >>$REPORT
+          echo 'TYPE ORAHAS program text' >>$REPORT
+          echo 'TYPE ORAHAS qc_instance_id text' >>$REPORT
+          echo 'TYPE ORAHAS qc_session_id text' >>$REPORT
+          echo 'TYPE ORAHAS qc_session_serial text' >>$REPORT
+          echo 'TYPE ORAHAS remote_instance text' >>$REPORT
+          echo 'TYPE ORAHAS replay_overhead text' >>$REPORT
+          echo 'TYPE ORAHAS sample_id text' >>$REPORT
+          echo 'TYPE ORAHAS seq text' >>$REPORT
+          echo 'TYPE ORAHAS service_hash text' >>$REPORT
+          echo 'TYPE ORAHAS session_id text' >>$REPORT
+          echo 'TYPE ORAHAS session_serial text' >>$REPORT
+          echo 'TYPE ORAHAS session_state text' >>$REPORT
+          echo 'TYPE ORAHAS session_type text' >>$REPORT
+          echo 'TYPE ORAHAS sql_child_number text' >>$REPORT
+          echo 'TYPE ORAHAS sql_exec_id text' >>$REPORT
+          echo 'TYPE ORAHAS sql_exec_start text' >>$REPORT
+          echo 'TYPE ORAHAS sql_id text' >>$REPORT
+          echo 'TYPE ORAHAS sql_opcode text' >>$REPORT
+          echo 'TYPE ORAHAS sql_opname text' >>$REPORT
+          echo 'TYPE ORAHAS sql_plan_hash_value text' >>$REPORT
+          echo 'TYPE ORAHAS sql_plan_line_id text' >>$REPORT
+          echo 'TYPE ORAHAS sql_plan_operation text' >>$REPORT
+          echo 'TYPE ORAHAS sql_plan_options text' >>$REPORT
           echo 'TYPE ORAHAS temp_space_allocated real' >>$REPORT
+          echo 'TYPE ORAHAS time_model text' >>$REPORT
+          echo 'TYPE ORAHAS time_waited real' >>$REPORT
+          echo 'TYPE ORAHAS tm_delta_cpu_time real' >>$REPORT
+          echo 'TYPE ORAHAS tm_delta_db_time real' >>$REPORT
+          echo 'TYPE ORAHAS tm_delta_time real' >>$REPORT
+          echo 'TYPE ORAHAS top_level_call text' >>$REPORT
+          echo 'TYPE ORAHAS top_level_call_name text' >>$REPORT
+          echo 'TYPE ORAHAS top_level_sql_id text' >>$REPORT
+          echo 'TYPE ORAHAS top_level_sql_opcode text' >>$REPORT
+          echo 'TYPE ORAHAS user_id text' >>$REPORT
+          echo 'TYPE ORAHAS wait_class text' >>$REPORT
+          echo 'TYPE ORAHAS wait_class_id text' >>$REPORT
+          echo 'TYPE ORAHAS wait_time real' >>$REPORT
+          echo 'TYPE ORAHAS xid text' >>$REPORT
           cat $f >>$REPORT
           tar rf ${TEMPFILE} ${REPORT}
           rm ${REPORT}
@@ -1349,7 +1399,7 @@ function fbash
      for f in kairos_extr_*
      do
           SUFFIX=$(echo $f|sed -e 's/kairos_extr_//')
-          REPORT=${INSTANCENAME}_bashhistactivesesshistory_${DAY}_$SUFFIX.lst
+          REPORT=${LD_INSTANCENAME}_bashhistactivesesshistory_${DAY}_$SUFFIX.lst
           fheader ${SEP1} ${SEP2} > $REPORT
           echo 'TYPE ORAHAS action text' >>$REPORT
           echo 'TYPE ORAHAS session_id text' >>$REPORT
@@ -1496,7 +1546,7 @@ if [[ ${GLOBAL} -ne 1 ]]
 then
    if [[ ${STDBY} -ne 1 ]]
    then
-     PREFIX=$DIR/kairos_${GROUP}_${INSTANCENAME}_${WEEKDAY}
+     PREFIX=$DIR/kairos_${GROUP}_${LD_INSTANCENAME}_${WEEKDAY}
    else
      PREFIX=$DIR/kairos_${GROUP}_${STDBYINSTANCENAME}_${WEEKDAY}
    fi

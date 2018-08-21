@@ -118,7 +118,6 @@ def intercept_internal_error(func):
 
 class Object: pass
 
-
 class Parallel:
     def __init__(s, action, workers=multiprocessing.cpu_count()):
         s.limit = int(workers)
@@ -165,6 +164,15 @@ class Cache:
         c = s.agens.cursor()
         c.copy_from(buffer, table, columns=description)
         logging.debug('Request completed!')
+    def exists(s, table):
+        result = False
+        x = s.execute("select 1 from information_schema.tables where table_schema = '" + s.schema + "' and table_name = '" + table + "'")
+        for rx in x.fetchall(): result = True
+        return result
+    def commit(s):
+        if not s.autocommit: s.agens.commit()
+    def rollback(s):
+        if not s.autocommit: s.agens.rollback()
     def disconnect(s):
         if not s.autocommit: s.agens.commit()
         s.agens.close()
@@ -266,49 +274,58 @@ class Analyzer:
         logging.trace(json.dumps(d))
     def analyze(s, stream, name):
         logging.trace(s.name + ' - Scope: ' + str(s.scope))
-        if "content" in s.configurator and s.configurator["content"] == "xml": s.analyzexml(stream.decode(), name)
-        elif "content" in s.configurator and s.configurator["content"] == "json": s.analyzejson(stream.decode(), name)
-        else: s.analyzestr(stream.decode(errors="ignore"), name)
+        if "content" in s.configurator and s.configurator["content"] == "xml": return s.analyzexml(stream.decode(), name)
+        elif "content" in s.configurator and s.configurator["content"] == "json": return s.analyzejson(stream.decode(), name)
+        else: return s.analyzestr(stream.decode(errors="ignore"), name)
     def analyzestr(s, stream, name):
+        status = Object()
+        status.error = None
         logging.trace(s.name + ' - Analyzing stream ' + name)
         s.context = ''
         s.stats = dict(lines=0, ger=0, sger=0, cer=0, scer=0, oer=0, soer=0, rec=0)
-        if "BEGIN" in s.contextrules:
-            logging.trace(s.name + ' - Calling BEGIN at line ' + str(s.stats["lines"]))
-            s.contextrules["BEGIN"]["action"](s)
-        for ln in stream.split('\n'):
-            ln=ln.rstrip('\r')
-            if s.context == 'BREAK': break
-            s.stats['lines'] += 1
-            for r in s.rules:
-                s.stats['ger'] += 1
-                p = r["regexp"].search(ln)
-                if not p: continue
-                s.stats['sger'] += 1
-                logging.trace(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
-                r["action"](s, ln, p.group, name)
-            if s.context == '':
-                outr = s.outcontextrules[0:1] if s.behaviour == 'NEW' else s.outcontextrules
-                for r in outr:           
-                    s.stats['oer'] += 1
+        try:
+            if "BEGIN" in s.contextrules:
+                logging.trace(s.name + ' - Calling BEGIN at line ' + str(s.stats["lines"]))
+                s.contextrules["BEGIN"]["action"](s)
+            for ln in stream.split('\n'):
+                ln=ln.rstrip('\r')
+                if s.context == 'BREAK': break
+                s.stats['lines'] += 1
+                for r in s.rules:
+                    s.stats['ger'] += 1
                     p = r["regexp"].search(ln)
                     if not p: continue
-                    s.outcontextrules = s.outcontextrules[1:] if s.behaviour == 'NEW' else s.outcontextrules                 
-                    s.stats['soer'] += 1
+                    s.stats['sger'] += 1
                     logging.trace(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
                     r["action"](s, ln, p.group, name)
-                    break
-            if s.context in s.contextrules:
-                r = s.contextrules[s.context]
-                s.stats['cer'] += 1
-                p = r["regexp"].search(ln)
-                if not p: continue
-                s.stats['scer'] += 1
-                logging.trace(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
-                r["action"](s, ln, p.group, name)
-        if "END" in s.contextrules:
-            logging.trace(s.name + ' - Calling END at line ' + str(s.stats["lines"]))
-            s.contextrules["END"]["action"](s)
+                if s.context == '':
+                    outr = s.outcontextrules[0:1] if s.behaviour == 'NEW' else s.outcontextrules
+                    for r in outr:           
+                        s.stats['oer'] += 1
+                        p = r["regexp"].search(ln)
+                        if not p: continue
+                        s.outcontextrules = s.outcontextrules[1:] if s.behaviour == 'NEW' else s.outcontextrules                 
+                        s.stats['soer'] += 1
+                        logging.trace(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
+                        r["action"](s, ln, p.group, name)
+                        break
+                if s.context in s.contextrules:
+                    r = s.contextrules[s.context]
+                    s.stats['cer'] += 1
+                    p = r["regexp"].search(ln)
+                    if not p: continue
+                    s.stats['scer'] += 1
+                    logging.trace(s.name + ' - Calling ' + r["action"].__name__ + ' at line ' + str(s.stats["lines"]) + ' containing: |' + ln + '|')
+                    r["action"](s, ln, p.group, name)
+            if "END" in s.contextrules:
+                logging.trace(s.name + ' - Calling END at line ' + str(s.stats["lines"]))
+                s.contextrules["END"]["action"](s)
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(s.name + ' - ' + name + ' - ' + message)
+            logging.error(s.name + ' at line: ' + ln)
+            status.error = message
         logging.info(s.name + ' - Summary for member ' + name);
         logging.info(s.name + ' -    Analyzed lines              : ' + str(s.stats["lines"]))
         logging.info(s.name + ' -    Evaluated rules (global)    : ' + str(s.stats["ger"]))
@@ -318,13 +335,17 @@ class Analyzer:
         logging.info(s.name + ' -    Evaluated rules (context)   : ' + str(s.stats["cer"]))
         logging.info(s.name + ' -    Satisfied rules (context)   : ' + str(s.stats["scer"]))
         logging.info(s.name + ' -    Emitted records             : ' + str(s.stats["rec"]))
+        return status
     def analyzejson(s, stream, name):
+        status = Object()
+        status.error = None        
         logging.trace(s.name + ' - Analyzing stream' + name)
         s.stats = dict(lines=0, er=0, ser=0, rec=0)
         d = json.loads(stream)
         for x in d['data']: s.emit(d['collection'], d['desc'], x)
         logging.info(s.name + ' - Summary for member ' + name);
         logging.info(s.name + ' -    Emitted records  : ' + str(s.stats["rec"]))
+        return status
     def lxmltext1(s, e):
         r = e.text.replace('\n','').replace('\r','').lstrip().rstrip() if type(e.text) == type('') else ''
         if not r and e.tag in  ['td', 'h3']:
@@ -336,6 +357,8 @@ class Analyzer:
     def lxmltext2(s, e):
         return e.text_content().replace('\n','').replace('\r','').lstrip().rstrip()
     def analyzexml(s, stream, name):
+        status = Object()
+        status.error = None        
         logging.trace(s.name + ' - Analyzing xml stream' + name)
         s.context = ''
         s.stats = dict(patterns=0, ger=0, sger=0, cer=0, scer=0, oer=0, soer=0, rec=0)
@@ -396,6 +419,7 @@ class Analyzer:
         logging.info(s.name + ' -    Evaluated rules (context)   : ' + str(s.stats["cer"]))
         logging.info(s.name + ' -    Satisfied rules (context)   : ' + str(s.stats["scer"]))
         logging.info(s.name + ' -    Emitted records             : ' + str(s.stats["rec"]))
+        return status
 
         
 class NotifyEventHandler(pyinotify.ProcessEvent):
@@ -590,16 +614,26 @@ class KairosWorker:
         
     @trace_call
     def ideletecache(s, nid, nodesdb=None):
-        ncache = Cache(nodesdb, autocommit=True, objects=True)
-        x = ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' return id(c) as cid")
-        cids = [row['cid'] for row in x.fetchall()]
-        if len(cids):
-            cid = cids[0]
-            y = ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + cid + "' return c.name as name")
-            schname = [row['name'] for row in y.fetchall()][0]
-            ncache.execute("drop schema " + schname + " cascade")
-            ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + cid + "' detach delete c")
-        ncache.disconnect()
+        status = Object()
+        status.error = None
+        logging.info("Node: " + nid + ", dropping all caches ...")
+        try:
+            ncache = Cache(nodesdb, autocommit=True, objects=True)
+            x = ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' return id(c) as cid")
+            cids = [row['cid'] for row in x.fetchall()]
+            if len(cids):
+                cid = cids[0]
+                y = ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + cid + "' return c.name as name")
+                schname = [row['name'] for row in y.fetchall()][0]
+                ncache.execute("drop schema " + schname + " cascade")
+                ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + cid + "' detach delete c")
+            ncache.disconnect()
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
         
     @trace_call
     def ideletesource(s, nid, nodesdb=None):
@@ -1022,257 +1056,273 @@ class KairosWorker:
     def icheckcolcachetypeA(s, node, cache=None, collections=None, nodesdb=None, systemdb=None):
         nid = node['id']
         ntype = node['datasource']['type']
-        todo = dict()
-        mapproducers = dict()
+        status = Object()
+        status.error = None
+        status.todo = dict()
+        status.mapproducers = dict()
         datepart = dict()
-        for collection in collections:
-            mapproducers[collection] = dict(deleted=dict(), created=dict(), updated=dict(), unchanged=dict())
-            datepart[collection] = dict()
-            for part in cache.collections[collection]: mapproducers[collection]['deleted'][part] = dict(id=part)
-        node = s.igetnodes(nodesdb=nodesdb, id=nid)[0]
-        producers = s.iexpand(pattern=node['datasource']['aggregatorselector'], nodesdb=nodesdb, sort=node['datasource']['aggregatorsort'], skip=node['datasource']['aggregatorskip'], take=node['datasource']['aggregatortake'])
-        ncache = Cache(nodesdb, objects=True)
-        ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + nid + "' set n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now())")
-        ncache.disconnect()              
-        for producer in node['datasource']['producers']:
-            pid = producer['id']
-            for collection in collections:        
-                datepart[collection][pid] = cache.collections[collection][pid] if pid in cache.collections[collection] else None
-                if pid in mapproducers[collection]['deleted']:
-                    del mapproducers[collection]['deleted'][pid]
-                    mapproducers[collection]['unchanged'][pid] = producer
-                else: mapproducers[collection]['created'][pid] = producer
-                if datepart[collection][pid] == None and pid in mapproducers[collection]['unchanged']:
-                    del mapproducers[collection]['unchanged'][pid]
-                    mapproducers[collection]['updated'][pid] = producer
-            pnode = s.igetnodes(nodesdb=nodesdb, id=producer['id'], getsource=True, getcache=True)[0]
-            pdone = s.ibuildcollectioncache(pnode, collections=collections, systemdb=systemdb, nodesdb=nodesdb)
-            pcache = s.igetcache(pnode['id'], nodesdb=nodesdb)
-            ptype = pnode['datasource']['type']
+        try:
             for collection in collections:
-                if pdone[collection] and pid in mapproducers[collection]['unchanged']:
-                    del mapproducers[collection]['unchanged'][pid]
-                    mapproducers[collection]['updated'][pid] = producer
-                for p in pcache.collections[collection]:
-                    if datepart[collection][pid] != None and pcache.collections[collection][p] > datepart[collection][pid] and pid in mapproducers[collection]['unchanged']:
-                        del mapproducers[collection]['unchanged'][pid]
-                        mapproducers[collection]['updated'][pid] = producer
-                #if ptype in 'D': mapproducers[collection]['updated'][pid] = producer
-                todo[collection] = True if len(mapproducers[collection]['deleted']) + len(mapproducers[collection]['created']) + len(mapproducers[collection]['updated']) > 0 else False
-        for collection in collections:
-            message = "Node: " + nid + ", Type: " + ntype + ", Collection: '" + collection + "'"
-            message += ", Producers: (Unchanged: "
-            for x in mapproducers[collection]['unchanged']: message += str(x) + ','
-            message += " Updated: "
-            for x in mapproducers[collection]['updated']: message += str(x) + ','
-            message += " New: "
-            for x in mapproducers[collection]['created']: message += str(x) + ','
-            message += " Deleted: "
-            for x in mapproducers[collection]['deleted']: message += str(x) + ','
-            message += ")"
-            logging.info(message)
-        return (todo, mapproducers)
+                status.mapproducers[collection] = dict(deleted=dict(), created=dict(), updated=dict(), unchanged=dict())
+                datepart[collection] = dict()
+                for part in cache.collections[collection]: status.mapproducers[collection]['deleted'][part] = dict(id=part)
+            node = s.igetnodes(nodesdb=nodesdb, id=nid)[0]
+            producers = s.iexpand(pattern=node['datasource']['aggregatorselector'], nodesdb=nodesdb, sort=node['datasource']['aggregatorsort'], skip=node['datasource']['aggregatorskip'], take=node['datasource']['aggregatortake'])
+            ncache = Cache(nodesdb, objects=True)
+            ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + nid + "' set n.producers='" + json.dumps(producers) + "', n.aggregated=to_json(now())")
+            ncache.disconnect()              
+            for producer in node['datasource']['producers']:
+                pid = producer['id']
+                for collection in collections:        
+                    datepart[collection][pid] = cache.collections[collection][pid] if pid in cache.collections[collection] else None
+                    if pid in status.mapproducers[collection]['deleted']:
+                        del status.mapproducers[collection]['deleted'][pid]
+                        status.mapproducers[collection]['unchanged'][pid] = producer
+                    else: status.mapproducers[collection]['created'][pid] = producer
+                    if datepart[collection][pid] == None and pid in status.mapproducers[collection]['unchanged']:
+                        del status.mapproducers[collection]['unchanged'][pid]
+                        status.mapproducers[collection]['updated'][pid] = producer
+                pnode = s.igetnodes(nodesdb=nodesdb, id=producer['id'], getsource=True, getcache=True)[0]
+                bstatus = s.ibuildcollectioncache(pnode, collections=collections, systemdb=systemdb, nodesdb=nodesdb)
+                pdone = bstatus.todo
+                pcache = s.igetcache(pnode['id'], nodesdb=nodesdb)
+                ptype = pnode['datasource']['type']
+                for collection in collections:
+                    if pdone[collection] and pid in status.mapproducers[collection]['unchanged']:
+                        del status.mapproducers[collection]['unchanged'][pid]
+                        status.mapproducers[collection]['updated'][pid] = producer
+                    for p in pcache.collections[collection]:
+                        if datepart[collection][pid] != None and pcache.collections[collection][p] > datepart[collection][pid] and pid in status.mapproducers[collection]['unchanged']:
+                            del status.mapproducers[collection]['unchanged'][pid]
+                            status.mapproducers[collection]['updated'][pid] = producer
+                    #if ptype in 'D': status.mapproducers[collection]['updated'][pid] = producer
+                    status.todo[collection] = True if len(status.mapproducers[collection]['deleted']) + len(status.mapproducers[collection]['created']) + len(status.mapproducers[collection]['updated']) > 0 else False
+            for collection in collections:
+                message = "Node: " + nid + ", Type: " + ntype + ", Collection: '" + collection + "'"
+                message += ", Producers: (Unchanged: "
+                for x in status.mapproducers[collection]['unchanged']: message += str(x) + ','
+                message += " Updated: "
+                for x in status.mapproducers[collection]['updated']: message += str(x) + ','
+                message += " New: "
+                for x in status.mapproducers[collection]['created']: message += str(x) + ','
+                message += " Deleted: "
+                for x in status.mapproducers[collection]['deleted']: message += str(x) + ','
+                message += ")"
+                logging.info(message)
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
 
     @trace_call
     def icheckcolcachetypeB(s, node, cache=None, collections=None, nodesdb=None, systemdb=None):
-        todo = dict()
-        analyzers = dict ()
-        nid = node['id']
-        ntype = node['datasource']['type']
-        for collection in collections:
-            logging.info("Node: " + nid + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
-            todo[collection] = False
-            analyzername = node ['datasource']['collections'][collection]['analyzer']
-            analyzer = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + analyzername + "', type:'analyzer'}")[0]
-            datepart = cache.collections[collection][nid] if collection in cache.collections and nid in cache.collections[collection] else None
-            todo[collection] = True if datepart == None else todo[collection]
-            todo[collection] = True if datepart != None and node['datasource']['uploaded'] > datepart else todo[collection]
-            todo[collection] = True if datepart != None and analyzer['created'] > datepart else todo[collection]
-            analyzers[collection] = analyzer
-        return (todo, analyzers)
+        status = Object()
+        status.error = None
+        status.todo = dict()
+        status.analyzers = dict ()
+        try:
+            nid = node['id']
+            ntype = node['datasource']['type']
+            for collection in collections:
+                logging.info("Node: " + nid + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
+                status.todo[collection] = False
+                analyzername = node ['datasource']['collections'][collection]['analyzer']
+                analyzer = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + analyzername + "', type:'analyzer'}")[0]
+                datepart = cache.collections[collection][nid] if collection in cache.collections and nid in cache.collections[collection] else None
+                status.todo[collection] = True if datepart == None else status.todo[collection]
+                status.todo[collection] = True if datepart != None and node['datasource']['uploaded'] > datepart else status.todo[collection]
+                status.todo[collection] = True if datepart != None and analyzer['created'] > datepart else status.todo[collection]
+                status.analyzers[collection] = analyzer
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
 
     @trace_call
     def icheckcolcachetypeD(s, node, cache=None, collections=None, nodesdb=None, systemdb=None):
-        todo = dict()
-        nid = node['id']
-        ntype = node['datasource']['type']
-        liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['liveobject'] + "', type:'liveobject'}")[0]
-        try: timeout = liveobject['retention']
-        except: timeout = 60
-        for collection in collections:
-            logging.info("Node: " + nid + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
-            todo[collection] = False
-            datepart = cache.collections[collection][nid] if nid in cache.collections[collection] else None
-            todo[collection] = True if datepart == None else todo[collection]
-            todo[collection] = True if datepart != None and (datetime.now() - datetime.strptime(datepart, '%Y-%m-%d %H:%M:%S.%f')).seconds > timeout else todo[collection]                   
-        return todo
+        status = Object()
+        status.error = None
+        status.todo = dict()
+        try:
+            nid = node['id']
+            ntype = node['datasource']['type']
+            liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['liveobject'] + "', type:'liveobject'}")[0]
+            try: timeout = liveobject['retention']
+            except: timeout = 60
+            for collection in collections:
+                logging.info("Node: " + nid + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
+                status.todo[collection] = False
+                datepart = cache.collections[collection][nid] if nid in cache.collections[collection] else None
+                status.todo[collection] = True if datepart == None else status.todo[collection]
+                status.todo[collection] = True if datepart != None and (datetime.now() - datetime.strptime(datepart, '%Y-%m-%d %H:%M:%S.%f')).seconds > timeout else status.todo[collection]                   
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
 
     @trace_call
     def idropcolcachetypeA(s, node, cache=None, collection=None, mapproducers=None):
-        exclude = [str(x) for x in mapproducers[collection]['unchanged'].keys()]
-        hcache = Cache(cache.database, schema=cache.name)
-        if len(exclude) == 0: hcache.execute("drop table if exists " + collection)
-        if len(exclude) == 1: hcache.execute("delete from " + collection + " where kairos_nodeid not in ('" + exclude[0] + "')")
-        if len(exclude) > 1: hcache.execute("delete from " + collection + " where kairos_nodeid not in " + str(tuple(exclude)))
-        hcache.disconnect()
-        for x in mapproducers[collection]['deleted'] : del cache.collections[collection][x]
+        status = Object()
+        status.error = None
+        try:
+            exclude = [str(x) for x in mapproducers[collection]['unchanged'].keys()]
+            hcache = Cache(cache.database, schema=cache.name)
+            if len(exclude) == 0: hcache.execute("drop table if exists " + collection)
+            if len(exclude) == 1: 
+                if hcache.exists(collection): hcache.execute("delete from " + collection + " where kairos_nodeid not in ('" + exclude[0] + "')")
+            if len(exclude) > 1: 
+                if hcache.exists(collection): hcache.execute("delete from " + collection + " where kairos_nodeid not in " + str(tuple(exclude)))
+            hcache.disconnect()
+            for x in mapproducers[collection]['deleted'] : del cache.collections[collection][x]
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
 
     @trace_call
     def idropcolcachetypeB(s, node, cache=None, collection=None):
-        hcache = Cache(cache.database, schema=cache.name)
-        hcache.execute("drop table if exists " + collection)
-        hcache.disconnect()
+        status = Object()
+        status.error = None
+        try:
+            hcache = Cache(cache.database, schema=cache.name)
+            hcache.execute("drop table if exists " + collection)
+            hcache.disconnect()
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
 
     @trace_call
     def idropcolcachetypeD(s, node, cache=None, collection=None):
-        hcache = Cache(cache.database, schema=cache.name)
-        hcache.execute("drop table if exists " + collection)
-        hcache.disconnect()
+        status = Object()
+        status.error = None
+        try:
+            hcache = Cache(cache.database, schema=cache.name)
+            hcache.execute("drop table if exists " + collection)
+            hcache.disconnect()
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
 
     @trace_call
     def idropcollectioncache(s, node, collection=None, nodesdb=None):
-        nid = node['id']
-        cache = s.igetcache(nid, nodesdb=nodesdb)
-        hcache = Cache(cache.database, schema=cache.name)
-        hcache.execute("drop table if exists " + collection)
-        hcache.disconnect()
-        del cache.collections[collection]
-        ncache = Cache(nodesdb, objects=True)
-        ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + cache.rid + "' set c.collections='" + json.dumps(cache.collections) + "'")
-        ncache.disconnect()
+        status = Object()
+        status.error = None
+        try:
+            nid = node['id']
+            logging.info("Node: " + nid + ", dropping collection cache: '" + collection + "' ...")
+            cache = s.igetcache(nid, nodesdb=nodesdb)
+            if hasattr(cache, 'database'):
+                hcache = Cache(cache.database, schema=cache.name)
+                hcache.execute("drop table if exists " + collection)
+                hcache.disconnect()
+            if hasattr(cache, 'collections'):
+                if collection in cache.collections: del cache.collections[collection]
+                ncache = Cache(nodesdb, objects=True)
+                ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + cache.rid + "' set c.collections='" + json.dumps(cache.collections) + "'")
+                ncache.disconnect()
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
 
     @trace_call
     def ibuildcolcachetypeA(s, node, cache=None, collection=None, mapproducers=None, nodesdb=None, systemdb=None):
-        return s.ibuildcolcachetypeA2(node, cache=cache, collection=collection, mapproducers=mapproducers, nodesdb=nodesdb, systemdb=systemdb)
-
-    @trace_call
-    def ibuildcolcachetypeA1(s, node, cache=None, collection=None, mapproducers=None, nodesdb=None, systemdb=None):
-        nid = node['id']
-        ntype = node['datasource']['type']
-        logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
-        hcache = Cache(cache.database, schema=cache.name)
-        function = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['aggregatormethod'] + "', type:'aggregator'}")[0]
-        meet = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id: 'meet', type: 'function'}")[0]
-        hcache.execute(function["function"])
-        hcache.execute(meet["function"])
-        hcache.execute("drop table if exists aggregator")
-        hcache.execute("create table aggregator as select '" + node['datasource']['aggregatormethod'] + "'::text as method")
-        producers = list(mapproducers[collection]['updated'].keys())
-        producers.extend(list(mapproducers[collection]['created'].keys()))
-        for producer in producers:
-            logging.info("Node: " + nid + ", Type: " + ntype + ", building partition for producer: '" + producer + "' ...")
-            pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]
-            inschname = pnode['datasource']['cache']['name']
+        status = Object()
+        status.error = None
+        try:
+            nid = node['id']
+            ntype = node['datasource']['type']
+            logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
+            hcache = Cache(cache.database, schema=cache.name)
+            function = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['aggregatormethod'] + "', type:'aggregator'}")[0]
+            meet = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id: 'meet', type: 'function'}")[0]
+            hcache.execute(function["function"])
+            hcache.execute(meet["function"])
+            hcache.execute("drop table if exists aggregator")
+            hcache.execute("create table aggregator as select '" + node['datasource']['aggregatormethod'] + "'::text as method")
+            producers = list(mapproducers[collection]['updated'].keys())
+            producers.extend(list(mapproducers[collection]['created'].keys()))
             x = hcache.execute("select distinct table_name from information_schema.columns where table_schema='" + cache.name + "'")
             schdesc = [row['table_name'] for row in x.fetchall()]
-            x = hcache.execute("select distinct table_name from information_schema.columns where table_schema='" + inschname + "'")
-            inschdesc = [row['table_name'] for row in x.fetchall()]
-            if collection.lower() not in inschdesc: continue
-            if collection.lower() not in schdesc: hcache.execute("create table " + collection.lower() + " as select * from " + inschname + "." + collection.lower() + " limit 0")
+            for producer in producers:
+                pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]
+                inschname = pnode['datasource']['cache']['name']
+                x = hcache.execute("select distinct table_name from information_schema.columns where table_schema='" + inschname + "'")
+                inschdesc = [row['table_name'] for row in x.fetchall()]
+                if collection.lower() not in inschdesc: continue
+                if collection.lower() not in schdesc: 
+                    hcache.execute("create table " + collection.lower() + " as select * from " + inschname + "." + collection.lower() + " limit 0")
+                    break
+            # At this point the new collection is created but empty
+
             tabledesc = OrderedDict()
             x = hcache.execute("select column_name, data_type from information_schema.columns where table_name = '" + collection.lower() + "' and table_schema = '" + cache.name + "'")
             for row in x.fetchall(): tabledesc[row['column_name']] = row['data_type']
-            lgby = []
-            lavg = []
-            lsum = []
-            where = ' '
-            for k in tabledesc:
-                if tabledesc[k]=='text': lgby.append(k)
-                if tabledesc[k]=='integer': lsum.append(k)
-                if tabledesc[k]=='bigint': lsum.append(k)
-                if tabledesc[k]=='real': lavg.append(k)
-            listf = []
-            for x in lgby: listf.append(x)
-            for x in lavg: listf.append(x)
-            for x in lsum: listf.append(x)
-            timestamp = True if 'timestamp' in lgby else False
-            if timestamp:
-                where = " where " + cache.name + ".meet(timestamp,'" + node['datasource']['aggregatortimefilter'] + "') or timestamp='00000000000000000'"
-            subrequest = "select " + ",".join(listf) + " from " + inschname + "." + collection.lower() + where
-            request = 'insert into ' + collection.lower() + '(' + ','.join(listf) + ') select '
-            for x in lgby:
-                if x=='timestamp': request += function["name"] + '(timestamp) as timestamp, '
-                else: request += x + ', '
-            for x in lavg:
-                request += "avg(coalesce(" + x + ")) as " + x + ", "
-            for x in lsum:
-                request += 'sum(' + x + ') as ' + x + ', '
-            request = request[:-2] + ' from (' + subrequest + ') as foo group by '
-            for x in lgby: request = request + function["name"] + '(timestamp), ' if x == 'timestamp' else request + x + ', '
-            request = request[:-2]
-            hcache.execute(request)
-            cache.collections[collection][pnode['id']] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
-        hcache.disconnect()
+            hcache.disconnect()
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
 
-    @intercept_internal_error
-    @trace_call
-    def ibuildcolcachetypeA2(s, node, cache=None, collection=None, mapproducers=None, nodesdb=None, systemdb=None):
-        nid = node['id']
-        ntype = node['datasource']['type']
-        logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
-        hcache = Cache(cache.database, schema=cache.name)
-        function = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['aggregatormethod'] + "', type:'aggregator'}")[0]
-        meet = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id: 'meet', type: 'function'}")[0]
-        hcache.execute(function["function"])
-        hcache.execute(meet["function"])
-        hcache.execute("drop table if exists aggregator")
-        hcache.execute("create table aggregator as select '" + node['datasource']['aggregatormethod'] + "'::text as method")
-        producers = list(mapproducers[collection]['updated'].keys())
-        producers.extend(list(mapproducers[collection]['created'].keys()))
-        x = hcache.execute("select distinct table_name from information_schema.columns where table_schema='" + cache.name + "'")
-        schdesc = [row['table_name'] for row in x.fetchall()]
-        for producer in producers:
-            pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]
-            inschname = pnode['datasource']['cache']['name']
-            x = hcache.execute("select distinct table_name from information_schema.columns where table_schema='" + inschname + "'")
-            inschdesc = [row['table_name'] for row in x.fetchall()]
-            if collection.lower() not in inschdesc: continue
-            if collection.lower() not in schdesc: 
-                hcache.execute("create table " + collection.lower() + " as select * from " + inschname + "." + collection.lower() + " limit 0")
-                break
-        # At this point the new collection is created but empty
-
-        tabledesc = OrderedDict()
-        x = hcache.execute("select column_name, data_type from information_schema.columns where table_name = '" + collection.lower() + "' and table_schema = '" + cache.name + "'")
-        for row in x.fetchall(): tabledesc[row['column_name']] = row['data_type']
-        hcache.disconnect()
         
         queue = multiprocessing.Queue()
+        error_queue = multiprocessing.Queue()
 
-        @intercept_internal_error
         def write_to_queue(producer):
-            logging.info("Node: " + nid + ", Type: " + ntype + ", building partition for producer: '" + producer + "' ...")
-            pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]
-            inschname = pnode['datasource']['cache']['name']
-            lgby = [k for k in tabledesc if tabledesc[k] == 'text']
-            lavg = [k for k in tabledesc if tabledesc[k] == 'real']
-            lsum = [k for k in tabledesc if tabledesc[k] in ['integer', 'bigint']]
-            listf = tabledesc.keys()
-            where = " where meet(timestamp,'" + node['datasource']['aggregatortimefilter'] + "') or timestamp='00000000000000000'" if 'timestamp' in lgby else ' '
-            subrequest = "select * from " + inschname + "." + collection.lower() + where
-            request = "select "
-            for x in lgby: request = request + function["name"] + '(timestamp) as timestamp, ' if x == "timestamp" else request + x + ', '
-            for x in lavg: request += 'sum(coalesce(' + x + ', 0)) as ' + x + ', '
-            for x in lsum: request += 'sum(' + x + ') as ' + x + ', '
-            request = request[:-2] + ' from (' + subrequest + ') as foo group by '
-            for x in lgby: request = request + function["name"] + '(timestamp), ' if x == 'timestamp' else request + x + ', '
-            request = request[:-2]
-            workrequest = 'select ' + function["name"] + '(timestamp) as timestamp, kairos_nodeid, count(*) num from (select distinct timestamp, kairos_nodeid from ' + inschname  + '.' + collection + where +') as foo group by ' + function["name"] + '(timestamp), kairos_nodeid'
-            divisor = dict()
-            hcache = Cache(cache.database, schema=cache.name)
-            if 'timestamp' in lgby:  
-                for x in hcache.execute(workrequest).fetchall(): divisor[x['timestamp'] + x ['kairos_nodeid']] = x['num']
-            if len(lgby) > 0:
-                for row in hcache.execute(request).fetchall():
-                    record = ''
-                    if 'timestamp' in lgby:
-                        for x in lavg: row[x] = row[x] * 1.0 / divisor[row['timestamp'] + row['kairos_nodeid']]
-                    for k in tabledesc.keys(): record += '\\N\t' if row[k] == None else str(row[k]).replace('\t','\\t') + '\t'
-                    record = record[:-1] + '\n'
-                    queue.put(record)
-            hcache.disconnect()
+            try:
+                logging.info("Node: " + nid + ", Type: " + ntype + ", building partition for producer: '" + producer + "' ...")
+                pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]
+                inschname = pnode['datasource']['cache']['name']
+                lgby = [k for k in tabledesc if tabledesc[k] == 'text']
+                lavg = [k for k in tabledesc if tabledesc[k] == 'real']
+                lsum = [k for k in tabledesc if tabledesc[k] in ['integer', 'bigint']]
+                listf = tabledesc.keys()
+                where = " where meet(timestamp,'" + node['datasource']['aggregatortimefilter'] + "') or timestamp='00000000000000000'" if 'timestamp' in lgby else ' '
+                subrequest = "select * from " + inschname + "." + collection.lower() + where
+                request = "select "
+                for x in lgby: request = request + function["name"] + '(timestamp) as timestamp, ' if x == "timestamp" else request + x + ', '
+                for x in lavg: request += 'sum(coalesce(' + x + ', 0)) as ' + x + ', '
+                for x in lsum: request += 'sum(' + x + ') as ' + x + ', '
+                request = request[:-2] + ' from (' + subrequest + ') as foo group by '
+                for x in lgby: request = request + function["name"] + '(timestamp), ' if x == 'timestamp' else request + x + ', '
+                request = request[:-2]
+                workrequest = 'select ' + function["name"] + '(timestamp) as timestamp, kairos_nodeid, count(*) num from (select distinct timestamp, kairos_nodeid from ' + inschname  + '.' + collection + where +') as foo group by ' + function["name"] + '(timestamp), kairos_nodeid'
+                divisor = dict()
+                hcache = Cache(cache.database, schema=cache.name)
+                if 'timestamp' in lgby:  
+                    for x in hcache.execute(workrequest).fetchall(): divisor[x['timestamp'] + x ['kairos_nodeid']] = x['num']
+                if len(lgby) > 0:
+                    for row in hcache.execute(request).fetchall():
+                        record = ''
+                        if 'timestamp' in lgby:
+                            for x in lavg: row[x] = row[x] * 1.0 / divisor[row['timestamp'] + row['kairos_nodeid']]
+                        for k in tabledesc.keys(): record += '\\N\t' if row[k] == None else str(row[k]).replace('\n','\\n').replace('\t','\\t').replace('\r', '') + '\t'
+                        record = record[:-1] + '\n'
+                        queue.put(record)
+                hcache.disconnect()
+            except:
+                tb = sys.exc_info()
+                message = str(tb[1])
+                logging.error(message)
+                error_queue.put(producer)
 
-        @intercept_internal_error
         def read_from_queue(col):
             hcache = Cache(cache.database, schema=cache.name)
             buffer = io.StringIO()
@@ -1282,24 +1332,44 @@ class KairosWorker:
             except: limit = 10000
             globalcounter = 0
             while True:
-                record = queue.get()
-                if record == 'KAIROS_DONE': break
-                bufferempty = False
-                counter += 1 
-                buffer.write(record)
-                if counter == limit:
-                    buffer.seek(0)
-                    logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
-                    hcache.copy(buffer, col, tuple(tabledesc.keys()))
+                try:
+                    record = queue.get()
+                    if record == 'KAIROS_DONE': break
+                    bufferempty = False
+                    counter += 1
+                    logging.debug('Buffer content at line: ' + str(counter) + ', record: ' + str(record))
+                    buffer.write(record)
+                    if counter == limit:
+                        buffer.seek(0)
+                        logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
+                        hcache.copy(buffer, col, tuple(tabledesc.keys()))
+                        hcache.commit()
+                        buffer = io.StringIO()
+                        globalcounter += counter
+                        counter = 0
+                        bufferempty = True
+                except:
+                    tb = sys.exc_info()
+                    message = str(tb[1])
+                    logging.error(message)
+                    error_queue.put(col)
+                    hcache.rollback()
                     buffer = io.StringIO()
-                    globalcounter += counter
                     counter = 0
                     bufferempty = True
             if not bufferempty:
-                buffer.seek(0)
-                logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
-                hcache.copy(buffer, col, tuple(tabledesc.keys()))
-                globalcounter += counter
+                try:
+                    buffer.seek(0)
+                    logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
+                    hcache.copy(buffer, col, tuple(tabledesc.keys()))
+                    hcache.commit()
+                    globalcounter += counter
+                except:
+                    tb = sys.exc_info()
+                    message = str(tb[1])
+                    logging.error(message)
+                    error_queue.put(col)
+                    hcache.rollback()
             logging.info("Collection: " + col + ": " + str(globalcounter) + " records have been written! ")
             hcache.disconnect()
 
@@ -1308,30 +1378,53 @@ class KairosWorker:
         
         limit = multiprocessing.cpu_count() if limit==0 else limit
 
-        pr = Parallel(read_from_queue, workers=1)
-        pr.push(collection)
-        pw = Parallel(write_to_queue, workers = limit)
-        for p in producers: pw.push(p)
-        pw.join()
-        queue.put('KAIROS_DONE')
-        pr.join()
-        for producer in producers:
-            pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]             
-            cache.collections[collection][pnode['id']] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+        try:
+            pr = Parallel(read_from_queue, workers=1)
+            pr.push(collection)
+            pw = Parallel(write_to_queue, workers = limit)
+            for p in producers: pw.push(p)
+            pw.join()
+            queue.put('KAIROS_DONE')
+            pr.join()
+            if not error_queue.empty():
+                message = 'At least one error found during collection cache building! See KAIROS.LOG for more information!'
+                status.error = message
+            else:
+                for producer in producers:
+                    pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]             
+                    cache.collections[collection][pnode['id']] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+            queue.close()
+            queue.join_thread()
+            error_queue.close()
+            error_queue.join_thread()
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
 
-    @intercept_internal_error
     @trace_call
     def ibuildcolcachetypeB(s, node, cache=None, collections=None, analyzers=None, nodesdb=None):
-        nid = node['id']
-        queues = dict()
-        writeheader = dict()
-        readheader = dict()
-        members = dict()
-        for collection in collections:
-            queues[collection] = multiprocessing.Queue()
-            writeheader[collection] = True
-            readheader[collection] = True
-            for member in node['datasource']['collections'][collection]['members']: members[member]=analyzers[collection]
+        status = Object()
+        status.error = None
+        try:
+            nid = node['id']
+            queues = dict()
+            writeheader = dict()
+            readheader = dict()
+            members = dict()
+            queues['ERROR_QUEUE'] = multiprocessing.Queue()
+            for collection in collections:
+                queues[collection] = multiprocessing.Queue()
+                writeheader[collection] = True
+                readheader[collection] = True
+                for member in node['datasource']['collections'][collection]['members']: members[member]=analyzers[collection]
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
 
         def nulllistener(col, d, v, n): pass
 
@@ -1349,7 +1442,6 @@ class KairosWorker:
                 record = record[:-1] + '\n'
                 queues[col].put(record)
 
-        @intercept_internal_error
         def read_from_queue(col):
             hcache = Cache(cache.database, schema=cache.name)
             buffer = io.StringIO()
@@ -1359,37 +1451,57 @@ class KairosWorker:
             except: limit = 10000
             globalcounter = 0
             while True:
-                record = queues[col].get()
-                if record == 'KAIROS_DONE': break
-                try: record = json.loads(record)
-                except: pass
-                if type(record) == type(dict()) and 'header' in record and record['header'] == 'KAIROS_START':
-                    if readheader[col]:
-                        record['desc']['kairos_nodeid'] = 'text'
-                        request = 'create table ' + col + '('
-                        description= sorted(record['desc'].keys())
-                        for k in description: request += k + ' ' + record['desc'][k] +  ', '
-                        request = request[:-2] + ')'
-                        hcache.execute(request)
-                        readheader[col] = False
-                else:
-                    bufferempty = False
-                    counter += 1
-                    logging.debug('Stacking record: ' + str(record))
-                    buffer.write(record)
-                    if counter == limit:
-                        buffer.seek(0)
-                        logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
-                        hcache.copy(buffer, col, tuple(description))
-                        buffer = io.StringIO()
-                        globalcounter += counter
-                        counter = 0
-                        bufferempty = True
+                try:
+                    record = queues[col].get()
+                    if record == 'KAIROS_DONE': break
+                    try: record = json.loads(record)
+                    except: pass
+                    if type(record) == type(dict()) and 'header' in record and record['header'] == 'KAIROS_START':
+                        if readheader[col]:
+                            record['desc']['kairos_nodeid'] = 'text'
+                            request = 'create table ' + col + '('
+                            description= sorted(record['desc'].keys())
+                            for k in description: request += k + ' ' + record['desc'][k] +  ', '
+                            request = request[:-2] + ')'
+                            hcache.execute(request)
+                            hcache.commit()
+                            readheader[col] = False
+                    else:
+                        bufferempty = False
+                        counter += 1
+                        logging.debug('Buffer content at line: ' + str(counter) + ', record: ' + str(record))
+                        buffer.write(record)
+                        if counter == limit:
+                            buffer.seek(0)
+                            logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
+                            hcache.copy(buffer, col, tuple(description))
+                            hcache.commit()
+                            buffer = io.StringIO()
+                            globalcounter += counter
+                            counter = 0
+                            bufferempty = True
+                except:
+                    tb = sys.exc_info()
+                    message = str(tb[1])
+                    logging.error(message)
+                    queues['ERROR_QUEUE'].put(col)
+                    hcache.rollback()
+                    buffer = io.StringIO()
+                    counter = 0
+                    bufferempty = True
             if not bufferempty:
-                buffer.seek(0)
-                logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
-                hcache.copy(buffer, col, tuple(description))
-                globalcounter += counter
+                try:
+                    buffer.seek(0)
+                    logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
+                    hcache.copy(buffer, col, tuple(description))
+                    hcache.commit()
+                    globalcounter += counter
+                except:
+                    tb = sys.exc_info()
+                    message = str(tb[1])
+                    queues['ERROR_QUEUE'].put(col)
+                    logging.error(message)
+                    hcache.rollback()
             logging.info("Collection: " + col + ": " + str(globalcounter) + " records have been written! ")
             hcache.disconnect()
 
@@ -1404,152 +1516,233 @@ class KairosWorker:
             if member in members:
                 analyzer = Analyzer(members[member], set(collections), listen, nid)
                 logging.info('Analyzing member: ' + member + '...')
-                analyzer.analyze(archive.read(member), member)
+                status = analyzer.analyze(archive.read(member), member)
+                if status.error: queues['ERROR_QUEUE'].put(member)
                 return None
         try: limit = int(os.environ['PARALLEL'])
         except: limit = 0
         limit = multiprocessing.cpu_count() if limit==0 else limit
 
-        pr = Parallel(read_from_queue, workers=len(collections))
-        for collection in collections: pr.push(collection)
-        pw = Parallel(do, workers = limit)
-        for e in archive.list(): pw.push(e)
-        pw.join()
-        archive.close()
-        for collection in collections: queues[collection].put('KAIROS_DONE')
-        pr.join()
-        for collection in collections: cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+        try:
+            pr = Parallel(read_from_queue, workers=len(collections))
+            for collection in collections: pr.push(collection)
+            pw = Parallel(do, workers = limit)
+            for e in archive.list(): pw.push(e)
+            pw.join()
+            archive.close()
+            for collection in collections: queues[collection].put('KAIROS_DONE')
+            pr.join()
+            if not queues['ERROR_QUEUE'].empty():
+                message = 'At least one error found during collection cache building! See KAIROS.LOG for more information!'
+                status.error = message
+            else:
+                for collection in collections: cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+            for collection in collections: 
+                queues[collection].close()
+                queues[collection].join_thread()
+            queues['ERROR_QUEUE'].close()
+            queues['ERROR_QUEUE'].join_thread()
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
 
     @trace_call
     def ibuildcolcachetypeD(s, node, cache=None, collection=None):
-        nid = node['id']
-        ntype = node['datasource']['type']
-        logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
-        hcache = Cache(cache.database, schema=cache.name)
-        hcache.execute("create table " + collection + " as select '" + nid + "'::text as kairos_nodeid, * from foreign_" +collection)
-        hcache.disconnect()
-        cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+        status = Object()
+        status.error = None
+        try:
+            nid = node['id']
+            ntype = node['datasource']['type']
+            logging.info("Node: " + nid + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
+            hcache = Cache(cache.database, schema=cache.name)
+            hcache.execute("create table " + collection + " as select '" + nid + "'::text as kairos_nodeid, * from foreign_" +collection)
+            hcache.disconnect()
+            cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
 
     @trace_call
     def icheckcollectioncache(s, node, cache=None, collections=None, nodesdb=None, systemdb=None):
-        todo = dict()
-        mapproducers = dict()
-        analyzers = dict()
-        nid = node['id']
-        ntype = node['datasource']['type']
-        if ntype in ['C', 'L']:
-            for producer in node['datasource']['producers']:
-                pnode = s.igetnodes(nodesdb=nodesdb, id=producer['id'], getsource=True, getcache=True)[0]
-                s.ibuildcollectioncache(pnode, collections=collections, systemdb=systemdb, nodesdb=nodesdb)
-            for collection in collections: todo[collection] = False
-        if ntype in ['A', 'B', 'D']:
-            for collection in collections:
-                if collection not in cache.collections: cache.collections[collection] = dict()
-        if ntype in ['A']: (todo, mapproducers) = s.icheckcolcachetypeA(node, cache=cache, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
-        if ntype in ['B']: (todo, analyzers) = s.icheckcolcachetypeB(node, cache=cache, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
-        if ntype in ['D']: todo = s.icheckcolcachetypeD(node, cache=cache, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
-        return (todo, mapproducers, analyzers)
+        status = Object()
+        status.error = None
+        status.todo = dict()
+        status.mapproducers = dict()
+        status.analyzers = dict()
+        try:
+            nid = node['id']
+            ntype = node['datasource']['type']
+            if ntype in ['C', 'L']:
+                for producer in node['datasource']['producers']:
+                    pnode = s.igetnodes(nodesdb=nodesdb, id=producer['id'], getsource=True, getcache=True)[0]
+                    bstatus = s.ibuildcollectioncache(pnode, collections=collections, systemdb=systemdb, nodesdb=nodesdb)
+                    status.error = bstatus.error if bstatus.error else status.error
+                for collection in collections: status.todo[collection] = False
+            if ntype in ['A', 'B', 'D']:
+                for collection in collections:
+                    if collection not in cache.collections: cache.collections[collection] = dict()
+            if ntype in ['A']: 
+                astatus = s.icheckcolcachetypeA(node, cache=cache, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
+                status.error = astatus.error
+                status.todo = astatus.todo
+                status.mapproducers = astatus.mapproducers
+            if ntype in ['B']: 
+                bstatus = s.icheckcolcachetypeB(node, cache=cache, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
+                status.error = bstatus.error
+                status.todo = bstatus.todo
+                status.analyzers = bstatus.analyzers
+            if ntype in ['D']: 
+                dstatus = s.icheckcolcachetypeD(node, cache=cache, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
+                status.error = dstatus.error
+                status.todo = dstatus.todo
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
 
     @trace_call
     def ibuildcollectioncache(s, node, collections=None, nodesdb=None, systemdb=None):
-        nid = node['id']
-        ntype = node['datasource']['type']
-        nodecache = node['datasource']['cache']
-        if 'name' not in nodecache: s.icreatecache(nid, nodesdb=nodesdb)
-        cache = s.igetcache(nid, nodesdb=nodesdb)
-        if '*' in collections: collections = {k for k in node['datasource']['collections']}
-        (todo, mapproducers, analyzers) = s.icheckcollectioncache(node, cache=cache, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
-        if True in todo.values():
-            tcollections = [k for k in todo if todo[k]]
-            logging.info("Node: " + nid + ", Type: " + ntype + ", building collection cache: '" + str(tcollections) + "' ...")
-            dbname = cache.name
-            for collection in tcollections:
-                logging.info("Node: " + nid + ", Type: " + ntype + ", removing obsolete parts of old collection cache: '" + collection + "' ...")
-                if ntype in ['A']: s.idropcolcachetypeA(node, mapproducers=mapproducers, cache=cache, collection=collection)
-                if ntype in ['B']: s.idropcolcachetypeB(node, cache=cache, collection=collection)
-                if ntype in ['D']: s.idropcolcachetypeD(node, cache=cache, collection=collection)                
-            for collection in tcollections:
-                if ntype in ['A']: s.ibuildcolcachetypeA(node, cache=cache, collection=collection, nodesdb=nodesdb, systemdb=systemdb, mapproducers=mapproducers)
-                if ntype in ['D']: s.ibuildcolcachetypeD(node, cache=cache, collection=collection)
-            if ntype in ['B']: s.ibuildcolcachetypeB(node, cache=cache, collections=tcollections, analyzers=analyzers, nodesdb=nodesdb)
-            logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with collections info: '" + str(tcollections) + "' ...")
-            ncache = Cache(nodesdb, objects=True)
-            ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' set c.collections = '" + json.dumps(cache.collections) + "'")
-            ncache.disconnect()
-        return todo
+        status = Object()
+        status.error = None
+        try:
+            nid = node['id']
+            ntype = node['datasource']['type']
+            nodecache = node['datasource']['cache']
+            if 'name' not in nodecache: s.icreatecache(nid, nodesdb=nodesdb)
+            cache = s.igetcache(nid, nodesdb=nodesdb)
+            if '*' in collections: collections = {k for k in node['datasource']['collections']}
+            cstatus = s.icheckcollectioncache(node, cache=cache, collections=collections, nodesdb=nodesdb, systemdb=systemdb)
+            status.error = cstatus.error if cstatus.error else status.error
+            status.todo = cstatus.todo
+            if True in status.todo.values():
+                tcollections = [k for k in status.todo if status.todo[k]]
+                logging.info("Node: " + nid + ", Type: " + ntype + ", building collection cache: '" + str(tcollections) + "' ...")
+                dbname = cache.name
+                for collection in tcollections:
+                    logging.info("Node: " + nid + ", Type: " + ntype + ", removing obsolete parts of old collection cache: '" + collection + "' ...")
+                    if ntype in ['A']: 
+                        astatus = s.idropcolcachetypeA(node, mapproducers=cstatus.mapproducers, cache=cache, collection=collection)
+                        status.error = astatus.error if astatus.error else status.error
+                    if ntype in ['B']: 
+                        bstatus = s.idropcolcachetypeB(node, cache=cache, collection=collection)
+                        status.error = bstatus.error if bstatus.error else status.error
+                    if ntype in ['D']: 
+                        dstatus = s.idropcolcachetypeD(node, cache=cache, collection=collection)                
+                        status.error = dstatus.error if dstatus.error else status.error
+                for collection in tcollections:
+                    if ntype in ['A']: 
+                        astatus = s.ibuildcolcachetypeA(node, cache=cache, collection=collection, nodesdb=nodesdb, systemdb=systemdb, mapproducers=cstatus.mapproducers)
+                        status.error = astatus.error if astatus.error else status.error
+                    if ntype in ['D']: 
+                        dstatus = s.ibuildcolcachetypeD(node, cache=cache, collection=collection)
+                        status.error = dstatus.error if dstatus.error else status.error
+                if ntype in ['B']: 
+                    bstatus = s.ibuildcolcachetypeB(node, cache=cache, collections=tcollections, analyzers=cstatus.analyzers, nodesdb=nodesdb)
+                    status.error = bstatus.error if bstatus.error else status.error
+                logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with collections info: '" + str(tcollections) + "' ...")
+                ncache = Cache(nodesdb, objects=True)
+                ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' set c.collections = '" + json.dumps(cache.collections) + "'")
+                ncache.disconnect()
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
     
     @trace_call
     def ibuildquerycache(s, node, query=None, nodesdb=None, systemdb=None):
-        nid = node['id']
-        qid = query['id']
-        ntype = node['datasource']['type']
-        logging.info("Node: " + nid + ", Type: " + ntype + ", checking query cache: '" + qid + "' ...")
-        cache = s.igetcache(nid, nodesdb=nodesdb)
-        message = None
-        if ntype in ['C', 'L']:
-            for producer in node['datasource']['producers']:
-                pnode = s.igetnodes(nodesdb=nodesdb, id=producer['id'], getsource=True, getcache=True)[0]
-                message = s.ibuildquerycache(pnode, query=query, systemdb=systemdb, nodesdb=nodesdb)
-                if message: return message
-        if ntype in ['A', 'B', 'D']:
-            todo = True if qid not in cache.queries else False
-            todo = True if "nocache" in query and query["nocache"] else todo
-            for collection in query['collections']:
-                for part in cache.collections[collection]:
-                    todo = True if qid in cache.queries and cache.queries[qid] < cache.collections[collection][part] else todo
-            if todo:
-                hcache = Cache(cache.database, schema=cache.name)
-                table = qid
-                logging.info("Node: " + nid + ", Type: " + ntype + ", removing old query cache: '" + qid + "' ...")
-                hcache.execute("drop table if exists " + table)
-                logging.info("Node: " + nid + ", Type: " + ntype + ", building new query cache: '" + qid + "' ...")
-                if 'userfunctions' in query:
-                    for ufn in query['userfunctions']:
-                        uf = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + ufn + "', type:'function'}")[0]
-                        hcache.execute(uf["function"])
-                global kairos
-                kairos['node'] = node
-                try: hcache.execute("create table " + table + " as select * from (" + query['request'] + ") as foo")
-                except:
-                    tb = sys.exc_info()
-                    message = str(tb[1])
-                    return message
-                cache.queries[qid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
-                hcache.disconnect()
-                logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with query info: '" + qid + "' ...")
-                ncache = Cache(nodesdb, objects=True)
-                ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' set c.queries = '" + json.dumps(cache.queries) + "'")
-                ncache.disconnect()
-            else:
-                logging.info("Node: " + nid + ", Type: " + ntype + ", nothing to do for query cache: '" + qid + "' ...")
-            return message
+        status = Object()
+        status.error = None
+        try:
+            nid = node['id']
+            qid = query['id']
+            ntype = node['datasource']['type']
+            logging.info("Node: " + nid + ", Type: " + ntype + ", checking query cache: '" + qid + "' ...")
+            cache = s.igetcache(nid, nodesdb=nodesdb)
+            if ntype in ['C', 'L']:
+                for producer in node['datasource']['producers']:
+                    pnode = s.igetnodes(nodesdb=nodesdb, id=producer['id'], getsource=True, getcache=True)[0]
+                    status = s.ibuildquerycache(pnode, query=query, systemdb=systemdb, nodesdb=nodesdb)
+                    if status.error: return status
+            if ntype in ['A', 'B', 'D']:
+                todo = True if qid not in cache.queries else False
+                todo = True if "nocache" in query and query["nocache"] else todo
+                for collection in query['collections']:
+                    for part in cache.collections[collection]:
+                        todo = True if qid in cache.queries and cache.queries[qid] < cache.collections[collection][part] else todo
+                if todo:
+                    hcache = Cache(cache.database, schema=cache.name)
+                    table = qid
+                    logging.info("Node: " + nid + ", Type: " + ntype + ", removing old query cache: '" + qid + "' ...")
+                    hcache.execute("drop table if exists " + table)
+                    logging.info("Node: " + nid + ", Type: " + ntype + ", building new query cache: '" + qid + "' ...")
+                    if 'userfunctions' in query:
+                        for ufn in query['userfunctions']:
+                            uf = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + ufn + "', type:'function'}")[0]
+                            hcache.execute(uf["function"])
+                    global kairos
+                    kairos['node'] = node
+                    hcache.execute("create table " + table + " as select * from (" + query['request'] + ") as foo")
+                    cache.queries[qid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+                    hcache.disconnect()
+                    logging.info("Node: " + nid + ", Type: " + ntype + ", updating cache with query info: '" + qid + "' ...")
+                    ncache = Cache(nodesdb, objects=True)
+                    ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' set c.queries = '" + json.dumps(cache.queries) + "'")
+                    ncache.disconnect()
+                else:
+                    logging.info("Node: " + nid + ", Type: " + ntype + ", nothing to do for query cache: '" + qid + "' ...")
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
    
     @trace_call
     def iqueryexecute(s, node, query=None, nodesdb=None, limit=None):
-        result = []
-        nid = node['id']
-        qid = query['id']
-        ntype = node['datasource']['type']
-        logging.info("Node: " + nid + ", Type: " + ntype + ", executing query: '" + qid + "' ...")
-        cache = s.igetcache(nid, nodesdb=nodesdb)
-        if ntype in ['C', 'L']:
-            for producer in node['datasource']['producers']:
-                pnode = s.igetnodes(nodesdb=nodesdb, id=producer['id'], getsource=True, getcache=True)[0]
-                if ntype in ['L']: result = s.iqueryexecute(pnode, query=query, nodesdb=nodesdb, limit=limit)
-                else: result.append(s.iqueryexecute(pnode, query=query, nodesdb=nodesdb, limit=limit))
-        else:
-            hcache = Cache(cache.database, schema=cache.name)
-            table = qid.lower()
-            for b in hcache.execute("select exists(select * from information_schema.tables where table_schema = current_schema() and table_name = '" + table + "') foo"): existstable = b['foo']
-            if existstable: 
-                if 'filterable' in query and query['filterable']:
-                    for x in hcache.execute("select * from " + table + " where label in (select label from (select label, sum(value) weight from " + table + " group by label order by weight desc limit " + str(limit) + ") as foo)"):
-                        result.append(x)
-                else:
-                    for x in hcache.execute("select * from " + table):
-                        result.append(x)
-            hcache.disconnect()
-        return result
+        status = Object()
+        status.error = None
+        status.result = []
+        try:
+            nid = node['id']
+            qid = query['id']
+            ntype = node['datasource']['type']
+            logging.info("Node: " + nid + ", Type: " + ntype + ", executing query: '" + qid + "' ...")
+            cache = s.igetcache(nid, nodesdb=nodesdb)
+            if ntype in ['C', 'L']:
+                for producer in node['datasource']['producers']:
+                    pnode = s.igetnodes(nodesdb=nodesdb, id=producer['id'], getsource=True, getcache=True)[0]
+                    estatus = s.iqueryexecute(pnode, query=query, nodesdb=nodesdb, limit=limit)
+                    status.error = estatus.error if estatus.error else status.error
+                    if ntype in ['L']: status.result = estatus.result
+                    else: status.result.append(estatus.result)
+            else:
+                hcache = Cache(cache.database, schema=cache.name)
+                table = qid.lower()
+                for b in hcache.execute("select exists(select * from information_schema.tables where table_schema = current_schema() and table_name = '" + table + "') foo"): existstable = b['foo']
+                if existstable: 
+                    if 'filterable' in query and query['filterable']:
+                        for x in hcache.execute("select * from " + table + " where label in (select label from (select label, sum(value) weight from " + table + " group by label order by weight desc limit " + str(limit) + ") as foo)"):
+                            status.result.append(x)
+                    else:
+                        for x in hcache.execute("select * from " + table):
+                            status.result.append(x)
+                hcache.disconnect()
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        return status
   
     @trace_call
     def iexpand(s, pattern=None, sort=None, nodesdb=None, skip=0, take=1):
@@ -2333,13 +2526,13 @@ class KairosWorker:
         for v in variables: kairos[v] = variables[v]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
         query = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + query + "', type:'query'}")[0]
-        s.ibuildcollectioncache(node, collections=query['collections'], systemdb=systemdb, nodesdb=nodesdb)
-        message = s.ibuildquerycache(node, query=query, systemdb=systemdb, nodesdb=nodesdb)
-        if not message: result = s.iqueryexecute(node, query=query, nodesdb=nodesdb, limit=limit)
-        if message:
-            return web.json_response(dict(success=False, status='error', message=message))
-        else:
-            return web.json_response(dict(success=True, data=result))
+        status = s.ibuildcollectioncache(node, collections=query['collections'], systemdb=systemdb, nodesdb=nodesdb)
+        if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
+        status = s.ibuildquerycache(node, query=query, systemdb=systemdb, nodesdb=nodesdb)
+        if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
+        status = s.iqueryexecute(node, query=query, nodesdb=nodesdb, limit=limit)
+        if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
+        else: return web.json_response(dict(success=True, data=status.result))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -2350,9 +2543,11 @@ class KairosWorker:
         id = params['id'][0]
         collection = params['collection'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        s.ibuildcollectioncache(node, collections=[collection], systemdb=systemdb, nodesdb=nodesdb)
-        result = s.iqueryexecute(node, query=dict(id=collection), nodesdb=nodesdb)
-        return web.json_response(dict(success=True, data=result))
+        status = s.ibuildcollectioncache(node, collections=[collection], systemdb=systemdb, nodesdb=nodesdb)
+        if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
+        status = s.iqueryexecute(node, query=dict(id=collection), nodesdb=nodesdb)
+        if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
+        else: return web.json_response(dict(success=True, data=status.result))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -2363,8 +2558,9 @@ class KairosWorker:
         collection = params['collection'][0]
         id = params['id'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        s.ibuildcollectioncache(node, collections={collection}, systemdb=systemdb, nodesdb=nodesdb)
-        return web.json_response(dict(success=True))
+        status = s.ibuildcollectioncache(node, collections={collection}, systemdb=systemdb, nodesdb=nodesdb)
+        if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
+        else: return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -2374,8 +2570,9 @@ class KairosWorker:
         systemdb = params['systemdb'][0]
         id = params['id'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
-        s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
-        return web.json_response(dict(success=True))
+        status = s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
+        if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
+        else: return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -2383,8 +2580,9 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0]
-        s.ideletecache(id, nodesdb=nodesdb)
-        return web.json_response(dict(success=True))
+        status = s.ideletecache(id, nodesdb=nodesdb)
+        if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
+        else: return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -2392,10 +2590,11 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0] 
-        collection = params['collection'][0] 
+        collection = params['collection'][0]
         node = s.igetnodes(nodesdb=nodesdb, id=id)[0]
-        s.idropcollectioncache(node, collection=collection, nodesdb=nodesdb)
-        return web.json_response(dict(success=True))
+        status = s.idropcollectioncache(node, collection=collection, nodesdb=nodesdb)
+        if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
+        else: return web.json_response(dict(success=True))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -2524,6 +2723,8 @@ class KairosWorker:
         zip = Arcfile(fname, 'w:zip')
         cut = 10000
         done = s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
+        status = s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
+        done = status.todo
         node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]        
         hcache = Cache(node['datasource']['cache']['database'], schema=node['datasource']['cache']['name'])
         for collection in node['datasource']['collections']:
@@ -2622,6 +2823,7 @@ class KairosWorker:
         try: shutil.rmtree('/export/' + nodesdb)
         except: pass
         os.mkdir('/export/' + nodesdb)
+        logging.info("Trying to export database ...")
         ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'pg_dump -F c -f /export/' + nodesdb + '/database.dump ' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if  ag.returncode:
             message = "Unable to export database: " + nodesdb + " for an uknown reason!"
@@ -2635,6 +2837,7 @@ class KairosWorker:
         for n in bnodes:
             path = s.igetpath(nodesdb=nodesdb, id=n)
             archive = path.replace('/', '_')[1:] + '.zip'
+            logging.info("Trying to export file  /files/" + nodesdb + "/" + n + ".zip...")
             ag = subprocess.run(['cp', '/files/' + nodesdb + '/' + n + '.zip', '/export/' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
                 message = "Unable to copy file " + n + ".zip!"
@@ -2645,13 +2848,16 @@ class KairosWorker:
                 message = "Unable to link file " + n + ".zip!"
                 logging.error(message)
                 return web.json_response(dict(success=False, message=message))
+        logging.info("Export done ...")
         return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been exported sucessfully!")))
 
     @intercept_logging_and_internal_error
     @trace_call
     def importdatabase(s, request):
         params = parse_qs(request.query_string)
+        logging.info("Trying to import database ...")
         nodesdb = params['nodesdb'][0]
+        logging.info("Trying to drop database " + nodesdb + "...")
         ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -c "drop database ' + nodesdb + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if  ag.returncode:
             message = "Unable to drop database: " + nodesdb + " during import!"
@@ -2659,11 +2865,13 @@ class KairosWorker:
             return web.json_response(dict(success=False, message=message))
         shutil.rmtree('/files/' + nodesdb)
         os.mkdir('/files/' + nodesdb)
+        logging.info("Trying to create database " + nodesdb + "...")
         ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -c "create database ' + nodesdb + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if  ag.returncode:
             message = "Unable to create database: " + nodesdb + " during import!"
             logging.error(message)
             return web.json_response(dict(success=False, message=message))
+        logging.info("Trying to restore database " + nodesdb + "...")
         ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'pg_restore -d ' + nodesdb + ' /export/' + nodesdb + '/database.dump'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if  ag.returncode:
             message = "Error during import of database: " + nodesdb
@@ -2675,59 +2883,74 @@ class KairosWorker:
         bnodes = bnodes.union(set([row['rid'] for row in x.fetchall()]))
         ncache.disconnect()
         for n in bnodes:
+            logging.info("Trying to create file  /files/" + nodesdb + "/" + n + ".zip...")
             ag = subprocess.run(['cp', '/export/' + nodesdb + '/' + n + '.zip', '/files/' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
                 message = "Unable to copy file " + n + ".zip!"
                 logging.error(message)
                 return web.json_response(dict(success=False, message=message))
+        logging.info("Import done ...")
         return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been imported sucessfully!")))
 
-    @intercept_logging_and_internal_error
     @trace_call
     def cleardependentcaches(s, request):
+        status = Object()
+        status.error = None
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
         id = params['id'][0]
-        ncache = Cache(nodesdb, objects=True)
-        bdependents = set()
-        adependents = set()
-        for i in range(20):
-            x = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'B'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
-            bdependents = bdependents.union(set([row['rid'] for row in x.fetchall()]))
-            y = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'A'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
-            adependents = adependents.union(set([row['rid'] for row in y.fetchall()]))
-        ncache.disconnect()
-        for n in bdependents.union(adependents):
-            try: s.ideletecache(n, nodesdb=nodesdb)
-            except:
-                message = "Error while trying to delete cache for node: " + n
-                logging.error(message)
-                return web.json_response(dict(success=False, message=message))
-        return web.json_response(dict(success=True, data=dict(msg="Caches have been cleared sucessfully!")))
+        try:
+            ncache = Cache(nodesdb, objects=True)
+            bdependents = set()
+            adependents = set()
+            for i in range(20):
+                x = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'B'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+                bdependents = bdependents.union(set([row['rid'] for row in x.fetchall()]))
+                y = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'A'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+                adependents = adependents.union(set([row['rid'] for row in y.fetchall()]))
+            ncache.disconnect()
+            for n in bdependents.union(adependents):
+                estatus = s.ideletecache(n, nodesdb=nodesdb)
+                status.error = estatus.error if estatus.error else status.error
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        if status.error: return web.json_response(dict(success=False, message="Caches may been cleared with errors!"))
+        else: return web.json_response(dict(success=True, data=dict(msg="Caches have been cleared sucessfully!")))
 
-    @intercept_logging_and_internal_error
     @trace_call
     def builddependentcaches(s, request):
+        status = Object()
+        status.error = None
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
         id = params['id'][0]
-        ncache = Cache(nodesdb, objects=True)
-        bdependents = set()
-        adependents = set()
-        for i in range(20):
-            x = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'B'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
-            bdependents = bdependents.union(set([row['rid'] for row in x.fetchall()]))
-            y = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'A'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
-            adependents = adependents.union(set([row['rid'] for row in y.fetchall()]))
-        ncache.disconnect()
-        for n in bdependents.union(adependents):
-            try: 
+        try:
+            ncache = Cache(nodesdb, objects=True)
+            bdependents = set()
+            adependents = set()
+            for i in range(20):
+                x = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'B'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+                bdependents = bdependents.union(set([row['rid'] for row in x.fetchall()]))
+                y = ncache.execute("match (n:nodes)-[:node_has_children*" + str(i) + "]->(d:nodes {type:'A'}) where to_jsonb(id(n))='" + id + "' return id(d) as rid")
+                adependents = adependents.union(set([row['rid'] for row in y.fetchall()]))
+            ncache.disconnect()
+            for n in bdependents.union(adependents):
                 node = s.igetnodes(nodesdb=nodesdb, id=n, getsource=True, getcache=True)[0]
-                s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
-            except:
-                message = "Error while trying to build cache for node: " + n
-                logging.error(message)
-                return web.json_response(dict(success=False, message=message))
-        return web.json_response(dict(success=True, data=dict(msg="Caches have been built sucessfully!")))
+                bstatus = s.ibuildcollectioncache(node, collections={'*'}, systemdb=systemdb, nodesdb=nodesdb)
+                if bstatus.error: 
+                    message = "Error while trying to build cache for node: " + n
+                    logging.error(message)
+                    logging.error(bstatus.error)
+                    status.error = bstatus.error
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        if status.error: return web.json_response(dict(success=False, message="Caches may have been built with errors!"))
+        else: return web.json_response(dict(success=True, data=dict(msg="Caches have been built sucessfully!")))
