@@ -183,16 +183,17 @@ class Arcfile:
         opmode=mode.split(':')
         s.type='tarfile'
         if opmode[0] in ['r','a']:
-            if not zipfile.is_zipfile(file) and not tarfile.is_tarfile(file): raise TypeError
             if zipfile.is_zipfile(file):
                 s.archive=zipfile.ZipFile(file,mode)
                 s.type='zipfile'
-            else: s.archive=tarfile.open(file,mode)
+            else:
+                file.seek(0)
+                s.archive=tarfile.open(fileobj=file)
         else:
             if len(opmode)>1 and opmode[1] in ['zip']:
                 s.type='zipfile'
                 s.archive=zipfile.ZipFile(file,opmode[0],zipfile.ZIP_DEFLATED)
-            else: s.archive=tarfile.open(file,mode)
+            else: s.archive=tarfile.open(name='stream', mode='w+b', fileobj=file)
     def close(s):
         return s.archive.close()
     def list(s):
@@ -2823,6 +2824,7 @@ class KairosWorker:
         try: shutil.rmtree('/export/' + nodesdb)
         except: pass
         os.mkdir('/export/' + nodesdb)
+        os.chmod('/export/' + nodesdb, 0o777)
         logging.info("Trying to export database ...")
         ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'pg_dump -F c -f /export/' + nodesdb + '/database.dump ' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if  ag.returncode:
