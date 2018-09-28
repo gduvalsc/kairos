@@ -2508,7 +2508,7 @@ dhtmlxEvent(window,"load",function(){
         ]);
     };
 
-    var dispchart = function (node, chart, layoutpiece, wlayout) {
+    var dispchart0 = function (node, chart, layoutpiece, wlayout) {
         log.debug('Getting chart, template & colors');
         log.debug('Starting chart display');
         var uniquecid = _.uniqueId('chart');
@@ -2699,6 +2699,27 @@ dhtmlxEvent(window,"load",function(){
         }
     };
 
+    var dispchart1 = function (node, chart) {
+        log.debug('Preparing window to receive chart...');
+        var uniquecid = _.uniqueId('');
+        var wchart = null;
+        wchart = create_window("chart", node.name + ' - ' + chart);
+        waterfall([
+            ajax_get_first_in_async_waterfall("runchart", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, chart: chart, sessid: uniquecid, width: wchart.cell.clientWidth, height: wchart.cell.clientHeight}),
+            function (x) {
+                wchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto">' + x.html + '</div>');
+            }
+        ]);
+    };
+
+    var dispchart = function (node, chart, layoutpiece, wlayout) {
+        if (desktop.user !== 'kairosdev') {
+            dispchart0(node, chart, layoutpiece, wlayout);
+        } else {
+            dispchart1(node, chart);
+        }
+    };
+    
     var dispchoice = function (node, choice) {
         parallel({
             choice: ajax_get_in_async_parallel("getchoice", {choice: choice, systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb, variables: JSON.stringify(desktop.variables)}),

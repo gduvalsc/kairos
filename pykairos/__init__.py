@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
-import string, random, ssl, logging, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, psycopg2, psycopg2.extras, psycopg2.extensions, queue, multiprocessing, multiprocessing.connection, io, time
+import string, random, ssl, logging, os, binascii, subprocess, zipfile, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, psycopg2, psycopg2.extras, psycopg2.extensions, queue, multiprocessing, multiprocessing.connection, io, time, plotly, pandas
 from collections import *
 from datetime import datetime
 from aiohttp import web, WSCloseCode, WSMsgType, MultiDict
@@ -554,6 +554,7 @@ class KairosWorker:
         app.router.add_get('/import', s.importdatabase)
         app.router.add_get('/cleardependentcaches', s.cleardependentcaches)
         app.router.add_get('/builddependentcaches', s.builddependentcaches)
+        app.router.add_get('/runchart', s.runchart)
         app.router.add_post('/changepassword', s.changepassword)
         app.router.add_post('/uploadobject', s.uploadobject)
         app.router.add_post('/setobject', s.setobject)
@@ -2956,3 +2957,43 @@ class KairosWorker:
             status.error = message
         if status.error: return web.json_response(dict(success=False, message="Caches may have been built with errors!"))
         else: return web.json_response(dict(success=True, data=dict(msg="Caches have been built sucessfully!")))
+
+    @trace_call
+    def runchart(s, request):
+        status = Object()
+        status.error = None
+        params = parse_qs(request.query_string)
+        try:
+            nodesdb = params['nodesdb'][0]
+            systemdb = params['systemdb'][0]
+            id = params['id'][0]
+            chart = params['chart'][0]
+            sessid = params['sessid'][0]
+            width = int(params['width'][0])
+            height = int(params['height'][0])
+
+
+            trace1 = plotly.graph_objs.Scatter(x=[1, 2, 3], y=[4, 5, 6], name='yaxis1 data')
+            trace2 = plotly.graph_objs.Scatter(x=[2, 3, 4], y=[40, 50, 60], name='yaxis2 data',yaxis='y2')
+            trace3 = plotly.graph_objs.Scatter(x=[4, 5, 6], y=[40000, 50000, 60000], name='yaxis3 data', yaxis='y3')
+            trace4 = plotly.graph_objs.Scatter(x=[5, 6, 7], y=[400000, 500000, 600000], name='yaxis4 data',yaxis='y4')
+            data = [trace1, trace2, trace3, trace4]
+            layout = plotly.graph_objs.Layout(
+                title='multiple y-axes example', 
+                width=width, 
+                xaxis=dict(domain=[0.3, 0.7]),
+                yaxis=dict(title='yaxis title',titlefont=dict(color='#1f77b4'),tickfont=dict(color='#1f77b4')),
+                yaxis2=dict(title='yaxis2 title',titlefont=dict(color='#ff7f0e'),tickfont=dict(color='#ff7f0e'),anchor='free',overlaying='y',side='left',position=0.15),
+                yaxis3=dict(title='yaxis4 title',titlefont=dict(color='#d62728'),tickfont=dict(color='#d62728'),anchor='x',overlaying='y',side='right'),
+                yaxis4=dict(title='yaxis5 title',titlefont=dict(color='#9467bd'),tickfont=dict(color='#9467bd'),anchor='free',overlaying='y',side='right',position=0.8)
+                )
+            fig = plotly.graph_objs.Figure(data=data, layout=layout)
+            html = plotly.offline.plot(fig, output_type='div')
+
+        except:
+            tb = sys.exc_info()
+            message = str(tb[1])
+            logging.error(message)
+            status.error = message
+        if status.error: return web.json_response(dict(success=False, message="Runchart function completed with errors!"))
+        else: return web.json_response(dict(success=True, data=dict(html=html)))
