@@ -24,6 +24,7 @@ class UserObject(dict):
                 {"action": s.tthtml, "regexp": '.<[Tt][Ii][Tt][Ll][Ee]>TTSTATS REPORT'},
                 {"action": s.sar, "regexp": '^(AIX|SunOS|HP-UX|Linux)[ \t]+(.+?)[ \t]+.*[ \t]+[0-9][0-9]/[0-9][0-9]/2?0?[0-9][0-9].*$'},
                 {"action": s.snapper, "regexp": '^ +ActSes +%Thread'},
+                {"action": s.snapper, "regexp": 'No active sessions captured during the sampling period'},
                 {"action": s.stop, "regexp": '^'}
             ]
         }

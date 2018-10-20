@@ -2705,7 +2705,7 @@ dhtmlxEvent(window,"load",function(){
         var wchart = null;
         wchart = create_window("chart", node.name + ' - ' + chart);
         waterfall([
-            ajax_get_first_in_async_waterfall("runchart", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, chart: chart, sessid: uniquecid, width: wchart.cell.clientWidth, height: wchart.cell.clientHeight}),
+            ajax_get_first_in_async_waterfall("runchart", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, chart: chart, sessid: uniquecid, width: wchart.cell.clientWidth, height: wchart.cell.clientHeight, top: desktop.settings.top, plotorientation: desktop.settings.plotorientation, colors: desktop.settings.colors, variables: JSON.stringify(desktop.variables)}),
             function (x) {
                 wchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto">' + x.html + '</div>');
             }

@@ -50,7 +50,7 @@ PQY = Parameter('--query', 'query')
 
 def get_parameters(parser, args, service):
 
-    handled_services = ['buildallcollectioncaches', 'buildcollectioncache', 'changepassword', 'checkserverconfig', 'clearcollectioncache', 'creategrant', 'createnode', 'createrole', 'createuser', 'createsystem', 'deletegrant', 'deletenode', 'deleteobject', 'deleterole', 'deleteuser', 'displaycollection', 'dropcollectioncache', 'emptytrash', 'executequery', 'getcollections', 'getid', 'getmenus', 'getnode', 'getobject', 'getsettings', 'listdatabases', 'listgrants', 'listobjects', 'listnodesdb', 'listroles', 'listsystemdb', 'listusers', 'renamenode', 'updatesettings', 'uploadnode', 'uploadobject']
+    handled_services = ['buildallcollectioncaches', 'buildcollectioncache', 'changepassword', 'checkserverconfig', 'clearcollectioncache', 'creategrant', 'createnode', 'createrole', 'createuser', 'createsystem', 'deletegrant', 'deletenode', 'deleteobject', 'deleterole', 'deleteuser', 'displaycollection', 'dropcollectioncache', 'emptytrash', 'executequery', 'getcollections', 'getid', 'getmenus', 'getnode', 'getobject', 'getsettings', 'gettree', 'listdatabases', 'listgrants', 'listobjects', 'listnodesdb', 'listroles', 'listsystemdb', 'listusers', 'renamenode', 'updatesettings', 'uploadnode', 'uploadobject']
     admin_services = ['listusers', 'createuser', 'deleteuser', 'listroles', 'createrole', 'deleterole', 'listgrants', 'creategrant', 'deletegrant']
 
     if service not in handled_services:
@@ -84,6 +84,7 @@ def get_parameters(parser, args, service):
     if service == 'getnode': mandatory = [PA, PP, PNO, PID]
     if service == 'getobject': mandatory = [PA, PP, PID, PTY, PDA]
     if service == 'getsettings': mandatory = [PA, PP]
+    if service == 'gettree': mandatory = [PNO, PID]
     if service == 'listdatabases': mandatory = [PA, PP]
     if service == 'listgrants': mandatory = [PA, PP]
     if service == 'listnodesdb': mandatory = [PA, PP]
@@ -93,7 +94,7 @@ def get_parameters(parser, args, service):
     if service == 'listusers': mandatory = [PA, PP]
     if service == 'renamenode': mandatory = [PA, PP, PNO, PID, PNE]
     if service == 'updatesettings': mandatory = [PA, PP, PNO, PSY, PLO, PLG, PTE, PCO, PWA, PTP, PKE, PPL]
-    if service == 'uploadnode': mandatory = [PA, PP, PNO, PFI, PID, PSY]
+    if service == 'uploadnode': mandatory = [PNO, PFI, PSY]
     if service == 'uploadobject': mandatory = [PNO, PFI]
 
     for m in mandatory:
@@ -150,6 +151,7 @@ def get_parameters(parser, args, service):
     if service == 'getnode': parameters = dict(id=vars(args)[PID.target], nodesdb=vars(args)[PNO.target])
     if service == 'getobject': parameters = dict(id=vars(args)[PID.target], type=vars(args)[PTY.target], database=vars(args)[PDA.target])
     if service == 'getsettings': parameters = dict(user=vars(args)[PA.target])
+    if service == 'gettree': parameters = dict(nodesdb=vars(args)[PNO.target],id=vars(args)[PID.target])
     if service == 'listdatabases': parameters = dict()
     if service == 'listgrants': parameters = dict()
     if service == 'listobjects': parameters = dict(nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
@@ -162,7 +164,6 @@ def get_parameters(parser, args, service):
     if service == 'uploadnode':
         parameters = aiohttp.FormData()
         parameters.add_field('nodesdb', vars(args)[PNO.target])
-        parameters.add_field('id', vars(args)[PID.target])
         parameters.add_field('systemdb', vars(args)[PSY.target])
         parameters.add_field('file', open(vars(args)[PFI.target], 'rb'), filename=os.path.basename(vars(args)[PFI.target]), content_type=magic.from_file(vars(args)[PFI.target], mime=True))
     if service == 'uploadobject':
@@ -214,12 +215,17 @@ loop = asyncio.get_event_loop()
 params = list(parameters.items()) if method == 'get' else parameters
 loop.run_until_complete(main(loop, method, 'https://localhost/' + args.service, params))
 
-if not result['success']:
-    message = json.dumps(result, indent=4, sort_keys=True)
-    print(message)
-    syslog.syslog(message)
-    exit(1)
-else: 
+if 'success' not in result:
     message = json.dumps(result, indent=4, sort_keys=True)
     print(message)
     exit(0)
+else:
+    if not result['success']:
+        message = json.dumps(result, indent=4, sort_keys=True)
+        print(message)
+        syslog.syslog(message)
+        exit(1)
+    else:
+        message = json.dumps(result, indent=4, sort_keys=True)
+        print(message)
+        exit(0)
