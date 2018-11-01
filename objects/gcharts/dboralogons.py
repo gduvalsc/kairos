@@ -8,6 +8,37 @@ class UserObject(dict):
             "type": "gchart",
             "yaxis": [
                 {
+                    "title": "# of sessions",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "renderers": [
+                        {
+                            "type": "L",
+                            "datasets": [
+                                {
+                                    "groupby": "sum",
+                                    "projection": "label",
+                                    "collections": [
+                                        "DBORAMISC"
+                                    ],
+                                    "userfunctions": [],
+                                    "filterable": false,
+                                    "nocache": false,
+                                    "pieces": [
+                                        {
+                                            "table": "DBORAMISC",
+                                            "projection": "'sessions'::text",
+                                            "restriction": "",
+                                            "value": "sessions"
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
                     "title": "# of transactions per second",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
@@ -51,10 +82,10 @@ class UserObject(dict):
                     "scaling": "LINEAR",
                     "properties": {
                         "line": {
-                            "stroke": "red"
+                            "stroke": "#4db8ff"
                         },
                         "text": {
-                            "fill": "red"
+                            "fill": "#4db8ff"
                         }
                     },
                     "renderers": [
@@ -76,37 +107,6 @@ class UserObject(dict):
                                             "projection": "'logon rate'::text",
                                             "restriction": "statistic in ('logons cumulative')",
                                             "value": "value"
-                                        }
-                                    ]
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "title": "# of sessions",
-                    "position": "LEFT",
-                    "scaling": "LINEAR",
-                    "properties": {},
-                    "renderers": [
-                        {
-                            "type": "L",
-                            "datasets": [
-                                {
-                                    "groupby": "sum",
-                                    "projection": "label",
-                                    "collections": [
-                                        "DBORAMISC"
-                                    ],
-                                    "userfunctions": [],
-                                    "filterable": false,
-                                    "nocache": false,
-                                    "pieces": [
-                                        {
-                                            "table": "DBORAMISC",
-                                            "projection": "'sessions'::text",
-                                            "restriction": "",
-                                            "value": "sessions"
                                         }
                                     ]
                                 }

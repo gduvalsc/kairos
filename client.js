@@ -18,7 +18,7 @@
 
 dhtmlxEvent(window,"load",function(){
 
-    var VERSION = "4.8";
+    var VERSION = "5.0";
     var ajaxcpt = 0;
     var desktop = {};
     desktop.variables = {};
@@ -1108,6 +1108,10 @@ dhtmlxEvent(window,"load",function(){
             _.each(['off', 'fatal', 'error', 'warn', 'info', 'debug', 'trace', 'all'], function (l) {
                 listlogging.push({text: l, value: l, selected: l === desktop.settings.logging ? true : false});
             });
+            var compatibility = [];
+            _.each(['V4', 'V5', 'LAST'], function (l) {
+                compatibility.push({text: l, value: l, selected: l === desktop.settings.compatibility ? true : false});
+            });
             var listloglines = [];
             _.each(_.range(100, 10000, 100), function (n) {
                 listloglines.push({text: n, value: n, selected: n === desktop.settings.loglines ? true : false});
@@ -1115,10 +1119,6 @@ dhtmlxEvent(window,"load",function(){
             var listtop = [];
             _.each(_.range(1, 101), function (n) {
                 listtop.push({text: n, value: n, selected: n === desktop.settings.top ? true : false});
-            });
-            var listkeycode = [];
-            _.each(_.range(256), function (n) {
-                listkeycode.push({text: n, value: n, selected: n === desktop.settings.keycode ? true : false});
             });
 
             var settingsdata = [
@@ -1131,27 +1131,32 @@ dhtmlxEvent(window,"load",function(){
                     {type: "select", label: "Wallpaper", options: listwallpapers, name: "wallpaper"},
                     {type: "select", label: "Plot orientation", options: plotorientation, name: "plotorientation"},
                     {type: "select", label: "Logging", options: listlogging, name: "logging"},
+                    {type: "select", label: "Compatibility", options: compatibility, name: "compatibility"},
                     {type: "select", label: "Log lines to display", options: listloglines, name: "loglines"},
                     {type: "select", label: "Request labels limit", options: listtop, name: "top"},
-                    //{type: "select", label: "Keycode", options: listkeycode, name: "keycode"}
                 ]},
                 {type: "button", value: "Update settings", name: "updatesettings", width: 460}
             ];
             var settingsform = wsettings.attachForm();
             settingsform.cross_and_load(settingsdata);
             settingsform.attachEvent("onButtonClick", function(){
-                waterfall([
-                    ajax_get_first_in_async_waterfall("updatesettings", {user: desktop.user, systemdb: settingsform.getItemValue("systemdb"), nodesdb: settingsform.getItemValue("nodesdb"), loglines: settingsform.getItemValue("loglines"), template: settingsform.getItemValue("template"), colors: settingsform.getItemValue("color"), wallpaper: settingsform.getItemValue("wallpaper"), top: settingsform.getItemValue("top"), keycode: 0, plotorientation: settingsform.getItemValue("plotorientation"), logging: settingsform.getItemValue("logging")}),
-                    function (x) {
-                        waterfall([
-                            ajax_get_first_in_async_waterfall("getsettings", {user: desktop.user}),
-                            function (y) {
-                                desktop.settings = y.settings;
-                                wsettings.close();
-                            }
-                        ]);
-                    }
-                ]);
+                if (settingsform.getItemValue('plotorientation') === 'vertical' && settingsform.getItemValue('compatibility') !== 'V4') {
+                    alertify.error('<div style="font-size:150%;">' + "Vertical plotorientation is not yet compatible with LAST compatibility !" + "</div>");
+                } else {
+                    waterfall([
+                        ajax_get_first_in_async_waterfall("updatesettings", {user: desktop.user, systemdb: settingsform.getItemValue("systemdb"), nodesdb: settingsform.getItemValue("nodesdb"), loglines: settingsform.getItemValue("loglines"), template: settingsform.getItemValue("template"), colors: settingsform.getItemValue("color"), wallpaper: settingsform.getItemValue("wallpaper"), top: settingsform.getItemValue("top"), plotorientation: settingsform.getItemValue("plotorientation"), logging: settingsform.getItemValue("logging"), compatibility: settingsform.getItemValue("compatibility")}),
+                        function (x) {
+                            waterfall([
+                                ajax_get_first_in_async_waterfall("getsettings", {user: desktop.user}),
+                                function (y) {
+                                    desktop.settings = y.settings;
+                                    wsettings.close();
+                                }
+                            ]);
+                        }
+                    ]);
+    
+                }
             });
         });
     };
@@ -1560,7 +1565,6 @@ dhtmlxEvent(window,"load",function(){
         };
 
         refresh();
-
     };
 
     var manage_grants = function () {
@@ -2663,14 +2667,6 @@ dhtmlxEvent(window,"load",function(){
             wchart.kairosg.destroy();
             prepare_and_draw(wchart.descchart, wchart.resultqueries);
         });
-        wchart.attachEvent("onMaximize", function () {
-            //wchart.kairosg.destroy();
-            prepare_and_draw(wchart.descchart, wchart.resultqueries);
-        });
-        wchart.attachEvent("onMinimize", function () {
-            wchart.kairosg.destroy();
-            prepare_and_draw(wchart.descchart, wchart.resultqueries);
-        });
         if (wlayout !== undefined) {
             wlayout.attachEvent("onResizeFinish", function () {
                 wchart.kairosg.destroy();
@@ -2704,16 +2700,64 @@ dhtmlxEvent(window,"load",function(){
         var uniquecid = _.uniqueId('');
         var wchart = null;
         wchart = create_window("chart", node.name + ' - ' + chart);
-        waterfall([
-            ajax_get_first_in_async_waterfall("runchart", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, chart: chart, sessid: uniquecid, width: wchart.cell.clientWidth, height: wchart.cell.clientHeight, top: desktop.settings.top, plotorientation: desktop.settings.plotorientation, colors: desktop.settings.colors, variables: JSON.stringify(desktop.variables)}),
-            function (x) {
-                wchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto">' + x.html + '</div>');
-            }
-        ]);
+        var runchart = function() {
+            wchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto;text-align:center;"><img src="resources/ajax-loader.gif" alt="Work in progress..."></div>');
+            waterfall([
+                ajax_get_first_in_async_waterfall("runchart", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, chart: chart, width: wchart.cell.clientWidth, height: wchart.cell.clientHeight, top: desktop.settings.top, plotorientation: desktop.settings.plotorientation, colors: desktop.settings.colors, variables: JSON.stringify(desktop.variables)}),
+                function (x) {
+                    wchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto;text-align:center;"></div>');
+                    var chartdiv = document.getElementById(uniquecid);
+                    Plotly.newPlot(chartdiv, x.chart.figure);
+                    chartdiv.on('plotly_click', function(data){
+                        item = data.points[0].data.legendgroup;
+                        if (x.chart.events[item].onclick !== null) {
+                            desktop.variables[x.chart.events[item].onclick.variable] = item;
+                            if (x.chart.events[item].onclick.action === 'dispchart') {
+                                dispchart(node, x.chart.events[item].onclick.chart);
+                            }
+                        }
+                        if (x.chart.events[item].info !== null) {
+                            desktop.variables[x.chart.events[item].info.variable] = item;
+                            waterfall([
+                                ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, query: x.chart.events[item].info.query, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)}),
+                                function (y) {
+                                    alertify.set({ delay: 15000 });
+                                    var key = node.datasource.type === 'C' ? y[0][0].key : y[0].key;
+                                    var value = node.datasource.type === 'C' ? y[0][0].value : y[0].value;
+                                    alertify.log(key + "<hr/>" + value);
+                                }
+                            ]);
+                        }
+                    });
+                    chartdiv.on('plotly_hover', function(data){
+                        item = data.points[0].data.legendgroup;
+                        if (x.chart.events[item].onclick !== null) {
+                            _.each(document.getElementsByClassName('nsewdrag'), function (v,k) {
+                                v.style.cursor = "pointer";
+                            });
+                        }
+                        if (x.chart.events[item].info !== null) {
+                            _.each(document.getElementsByClassName('nsewdrag'), function (v,k) {
+                                v.style.cursor = "help";
+                            });
+                        }
+                    });
+                    chartdiv.on('plotly_unhover', function(){
+                        _.each(document.getElementsByClassName('nsewdrag'), function (v,k) {
+                            v.style.cursor = "";
+                        });
+                });
+                }
+            ]);
+        };
+        wchart.attachEvent("onResizeFinish", function () {
+            runchart();
+        });
+        runchart();
     };
 
     var dispchart = function (node, chart, layoutpiece, wlayout) {
-        if (desktop.user !== 'kairosdev') {
+        if (desktop.settings.compatibility === 'V4') {
             dispchart0(node, chart, layoutpiece, wlayout);
         } else {
             dispchart1(node, chart);

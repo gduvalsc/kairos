@@ -8,6 +8,25 @@ class UserObject(dict):
             "type": "chart",
             "yaxis": [
                 {
+                    "title": "# of sessions",
+                    "position": "LEFT",
+                    "scaling": "LINEAR",
+                    "properties": {},
+                    "renderers": [
+                        {
+                            "type": "L",
+                            "datasets": [
+                                {
+                                    "query": "DBORALOGONS$$1",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
                     "title": "# of transactions per second",
                     "position": "RIGHT",
                     "scaling": "LINEAR",
@@ -24,7 +43,7 @@ class UserObject(dict):
                             "type": "C",
                             "datasets": [
                                 {
-                                    "query": "DBORALOGONS$$1",
+                                    "query": "DBORALOGONS$$2",
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
@@ -39,31 +58,12 @@ class UserObject(dict):
                     "scaling": "LINEAR",
                     "properties": {
                         "line": {
-                            "stroke": "red"
+                            "stroke": "#4db8ff"
                         },
                         "text": {
-                            "fill": "red"
+                            "fill": "#4db8ff"
                         }
                     },
-                    "renderers": [
-                        {
-                            "type": "L",
-                            "datasets": [
-                                {
-                                    "query": "DBORALOGONS$$2",
-                                    "timestamp": "timestamp",
-                                    "label": "label",
-                                    "value": "value"
-                                }
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "title": "# of sessions",
-                    "position": "LEFT",
-                    "scaling": "LINEAR",
-                    "properties": {},
                     "renderers": [
                         {
                             "type": "L",

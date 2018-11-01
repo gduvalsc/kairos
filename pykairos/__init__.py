@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
-import string, random, ssl, logging, os, binascii, subprocess, zipfile, gzip, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, psycopg2, psycopg2.extras, psycopg2.extensions, queue, multiprocessing, multiprocessing.connection, io, time, plotly, pandas, hashlib
+import string, random, ssl, logging, os, binascii, subprocess, zipfile, gzip, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, psycopg2, psycopg2.extras, psycopg2.extensions, queue, multiprocessing, multiprocessing.connection, io, time, plotly, pandas, hashlib, pymemcache
 from collections import *
 from datetime import datetime
 from aiohttp import web, WSCloseCode, WSMsgType, MultiDict
@@ -25,6 +25,168 @@ logging.trace = lambda m: logging.log(logging.TRACE, m)
 
 global kairos
 kairos=dict()
+
+def getfontsize(width, binf=1000, bsup=2000, vinf=0, vsup=0):
+    if width <= binf: return int(vinf)
+    if width >= bsup: return int(vsup)
+    return int(vinf + ((vsup - vinf) / (bsup - binf)) * (width - binf))
+
+def getyposition(yaxis, width, numleftyaxis=1, binf=1000, bsup=2000, vinf=0.08, vsup=0.05):
+    begposition = yaxis['position']
+    if begposition == 0: return begposition
+    if begposition == 0.05 and numleftyaxis == 1: return 0
+    if begposition == 0.05:
+        if width <= binf: return vinf
+        if width >= bsup: return vsup
+        return vinf + ((vsup -vinf) / (bsup - binf) * (width - binf))
+    if begposition == 0.90:
+        if width <= binf: return 1 - (2 * vinf)
+        if width >= bsup: return 1 - (2 * vsup)
+        return 1 - (2 * (vinf + ((vsup -vinf) / (bsup - binf) * (width - binf))))
+    if begposition == 0.95:
+        if width <= binf: return 1 - vinf
+        if width >= bsup: return 1 - vsup
+        return 1 - (1 * (vinf + ((vsup -vinf) / (bsup - binf) * (width - binf))))
+
+def getaposition(width, index=0, numleftyaxis=1, numrightyaxis=0, numxaxis=1, binf=1000, bsup=2000, vinf=0.08, vsup=0.05):
+    cols = numxaxis
+    nbseparators = cols - 1
+    lengthseparator = 0.02
+    lengthseparators = lengthseparator * nbseparators
+    lengthaxis = vinf if width <= binf else vsup if width >= bsup else vinf + ((vsup -vinf) / (bsup - binf) * (width - binf))
+    lengthaxis = 0 if numleftyaxis + numrightyaxis == 0 else lengthaxis
+    availablespace = 1 - ((numleftyaxis + numrightyaxis - 1) * lengthaxis) - 2 * lengthseparator
+    lengthdomain = (availablespace - lengthseparators) / cols 
+    positiondomain = (numleftyaxis - 1) * lengthaxis + lengthseparator + index * (lengthdomain + lengthseparator) 
+    return positiondomain + lengthdomain / 2
+
+def getdomain(width, index=0, numleftyaxis=1, numrightyaxis=0, numxaxis=1, binf=1000, bsup=2000, vinf=0.08, vsup=0.05):
+    cols = numxaxis
+    nbseparators = cols - 1
+    lengthseparator = 0.02
+    lengthseparators = lengthseparator * nbseparators
+    lengthaxis = vinf if width <= binf else vsup if width >= bsup else vinf + ((vsup -vinf) / (bsup - binf) * (width - binf))
+    lengthaxis = 0 if numleftyaxis + numrightyaxis == 0 else lengthaxis
+    availablespace = 1 - ((numleftyaxis + numrightyaxis - 1) * lengthaxis) - 2 * lengthseparator
+    lengthdomain = (availablespace - lengthseparators) / cols 
+    positiondomain = (numleftyaxis - 1) * lengthaxis + lengthseparator + index * (lengthdomain + lengthseparator)
+    return [positiondomain, positiondomain+lengthdomain]
+
+def gettimestampdf(d, co, plotorientation):
+    converttime = lambda x: datetime.strptime(x, '%Y%m%d%H%M%S000')
+    if  'timestamp' not in d[0] and plotorientation == 'horizontal':
+        co['cols'] = len(d)
+        co['isarray'] = True
+    if  'timestamp' not in d[0] and plotorientation == 'vertical': 
+        co['rows'] = len(d)
+        co['isarray'] = True
+    ret = []
+    if co['isarray']:
+        for x in d:
+            r = pandas.DataFrame(data=x)
+            r['timestamp'] = r['timestamp'].apply(converttime)
+            r = r.set_index('timestamp').sort_index()
+            ret.append(r)
+    else:
+        r = pandas.DataFrame(data=d)
+        r['timestamp'] = r['timestamp'].apply(converttime)
+        r = r.set_index('timestamp').sort_index()
+        ret.append(r)
+    return ret
+
+def paddeddf(t, d):
+    r = t.copy()
+    r['a'] = 0
+    r['b'] = d['value']
+    r['value'] = r['a'] + r['b'].fillna(0)
+    return r
+
+def getnewaxis(co, reftimedf, axistype=None, options=None, index=0):
+    if axistype == 'y' and index not in co['alreadyright']: co['alreadyright'][index] = False
+    if axistype == 'y' and index not in co['alreadyleft']: co['alreadyleft'][index] = False
+    d = co['yaxis'] if axistype == 'y' else co['xaxis']
+    l = len(d)
+    d[l] = dict()
+    d[l]['name'] = axistype + 'axis' if l == 0 else  axistype + 'axis' + str(l + 1)
+    d[l]['smallname'] = axistype if l == 0 else axistype + str(l + 1)
+    d[l]['options'] = dict()
+    if axistype == 'y':
+        d[l]['options']['title'] = options['title']
+        d[l]['options']['showline'] = True
+        if 'properties' in options and 'line' in options['properties'] and 'stroke' in options['properties']['line']: 
+            d[l]['options']['tickfont'] = dict(color = options['properties']['line']['stroke'])
+            d[l]['options']['color'] = options['properties']['line']['stroke']
+        if 'properties' in options and 'text' in options['properties'] and 'fill' in options['properties']['text']: 
+            d[l]['options']['titlefont'] = dict(color = options['properties']['text']['fill'])
+        d[l]['options']['side'] = options['position'].lower()
+        d[l]['options']['rangemode'] = 'tozero'
+        d[l]['options']['anchor'] = 'free'
+        if d[l]['options']['side'] == 'left' and not co['alreadyleft'][index]: d[l]['options']['position'] = 0.05
+        if d[l]['options']['side'] == 'left' and co['alreadyleft'][index]: 
+            d[l]['options']['position'] = 0.00
+            d[l]['options']['overlaying'] = 'y'
+        if d[l]['options']['side'] == 'right' and not co['alreadyright'][index]: 
+            d[l]['options']['overlaying'] = 'y'
+            d[l]['options']['position'] = 0.95
+        if d[l]['options']['side'] == 'right' and co['alreadyright'][index]: 
+            d[l]['options']['overlaying'] = 'y'
+            d[l]['options']['position'] = 0.90
+        if d[l]['options']['side'] == 'left': co['alreadyleft'][index] = True
+        if d[l]['options']['side'] == 'right': co['alreadyright'][index] = True
+        rows = co['rows']
+        nbseparators = rows - 1
+        lengthseparator = 0.02
+        lengthseparators = lengthseparator * nbseparators
+        lengthdomain = (1 - lengthseparators) / rows 
+        positiondomain = 0.0 + index * (lengthdomain + lengthseparator)
+        d[l]['options']['domain'] = [positiondomain, positiondomain + lengthdomain]
+    else:
+        cols = co['cols']
+        nbseparators = cols - 1
+        lengthseparator = 0.02
+        lengthseparators = lengthseparator * nbseparators
+        lengthdomain = (0.8 - lengthseparators) / cols 
+        positiondomain = 0.1 + index * (lengthdomain + lengthseparator)
+        d[l]['options']['domain'] = [positiondomain, positiondomain + lengthdomain]
+        d[l]['options']['range'] = [reftimedf[index].index.min(),reftimedf[index].index.max()]
+    return l
+
+def settrace(co, r, dataframe=None, label=None, yaxisindex=0, index=0, alreadyinlegend = None, groupname=None, plotorientation=None, colors=None):
+    getcolor = lambda x: colors[x] if x in colors else '#' + hashlib.md5(x.encode('utf-8')).hexdigest()[0:6]
+    param = dict()
+    param['x'] = dataframe.index
+    param['y'] = dataframe['value']
+    param['name'] = label
+    param['legendgroup'] = label
+    param['showlegend'] = True if label not in alreadyinlegend else False
+    alreadyinlegend[label] = True
+    if r['type'] == 'L': 
+        param['line'] = dict(color=(getcolor(label)), shape='spline')
+        trace = plotly.graph_objs.Scatter(**param)
+    if r['type'] == 'A': 
+        param['mode'] = 'lines'
+        param['fill'] = 'tozeroy'
+        param['line'] = dict(color=(getcolor(label)), shape='spline')
+        trace = plotly.graph_objs.Scatter(**param)
+    if r['type'] == 'SA': 
+        param['line'] = dict(color=(getcolor(label)), shape='spline')
+        param['mode'] = 'lines'
+        param['stackgroup'] = groupname
+        trace = plotly.graph_objs.Scatter(**param)
+    if r['type'] == 'C': 
+        param['marker']=dict(color=getcolor(label))
+        trace = plotly.graph_objs.Bar(**param)
+        co['layoutoptions']['barmode'] = 'group'
+    if r['type'] == 'CC': 
+        param['marker']=dict(color=getcolor(label))
+        trace = plotly.graph_objs.Bar(**param)
+        co['layoutoptions']['barmode'] = 'group'
+    if r['type'] == 'SC': 
+        param['marker']=dict(color=getcolor(label))
+        trace = plotly.graph_objs.Bar(**param)
+        co['layoutoptions']['barmode'] = 'stack'
+    l = len(co['traces'])
+    co['traces'][l] = dict(trace=trace, yaxis=yaxisindex, xaxis=index if co['shared_yaxes'] else 0, row=1 if plotorientation=='horizontal' else index+1, col=index+1 if plotorientation=='horizontal' else 1)
 
 def ficon (node):
     icon_file = "fa fa-folder btnn"
@@ -796,7 +958,7 @@ class KairosWorker:
         ncache.execute("create extension postgres_fdw")
         ncache.execute("create graph kairos")
         ncache.execute("create vlabel settings")
-        ncache.execute("create (:settings {colors:'COLORS', keycode:0, logging:'info', loglines:100, nodesdb:'kairos_user_" + user + "', plotorientation:'horizontal', systemdb:'kairos_system_system', template:'DEFAULT', top:15, wallpaper:'DEFAULT'})")
+        ncache.execute("create (:settings {colors:'COLORS', logging:'info', loglines:100, nodesdb:'kairos_user_" + user + "', plotorientation:'horizontal', systemdb:'kairos_system_system', template:'DEFAULT', top:15, wallpaper:'DEFAULT', compatibility:'LAST'})")
         ncache.execute("create vlabel objects")
         ncache.execute("create vlabel nodes")
         ncache.execute("create (:nodes {name:'/', type:'N', created:now(), status:'ACTIVE', icon:'N'})")
@@ -1859,8 +2021,7 @@ class KairosWorker:
         user = params['user'][0]
         db = 'kairos_user_' + user
         ncache = Cache(db, objects=True)
-        #y = ncache.execute("match (s:settings) return cast(s.top as int) as top, s.colors, cast(s.keycode as int) as keycode, s.logging, s.nodesdb, cast(s.loglines as int) as loglines, s.systemdb, s.template, s.wallpaper, s.plotorientation")
-        y = ncache.execute("select top::jsonb::text::int as top, colors, keycode::jsonb::text::int as keycode, logging, nodesdb, loglines::jsonb::text::int as loglines, systemdb, template, wallpaper, plotorientation from (match (s:settings) return s.top, s.colors, s.keycode, s.logging, s.nodesdb, s.loglines, s.systemdb, s.template, s.wallpaper, s.plotorientation) as foo")
+        y = ncache.execute("select top::jsonb::text::int as top, colors, logging, nodesdb, loglines::jsonb::text::int as loglines, systemdb, template, wallpaper, plotorientation, compatibility from (match (s:settings) return s.top, s.colors, s.logging, s.nodesdb, s.loglines, s.systemdb, s.template, s.wallpaper, s.plotorientation, s.compatibility) as foo")
         settings = dict()
         for row in y.fetchall():
             for x in row.keys(): settings[x] = row[x]
@@ -2011,13 +2172,13 @@ class KairosWorker:
         colors = params['colors'][0]
         wallpaper = params['wallpaper'][0]
         top = params['top'][0]
-        keycode = params['keycode'][0]
         plotorientation = params['plotorientation'][0]
         logging = params['logging'][0]
+        compatibility = params['compatibility'][0]
         db = "kairos_user_" + user
         ncache = Cache(db, objects=True)       
         ncache.execute("match (s:settings) detach delete (s)")
-        ncache.execute("create (:settings {colors:'" + colors + "', keycode:" + keycode + ", logging:'" + logging + "', loglines:" + loglines + ", nodesdb:'" + nodesdb + "', plotorientation:'" + plotorientation + "', systemdb:'" + systemdb + "', template:'" + template + "', top:" + top + ", wallpaper:'" + wallpaper + "'})")
+        ncache.execute("create (:settings {colors:'" + colors + "', logging:'" + logging + "', loglines:" + loglines + ", nodesdb:'" + nodesdb + "', plotorientation:'" + plotorientation + "', systemdb:'" + systemdb + "', template:'" + template + "', top:" + top + ", wallpaper:'" + wallpaper + "', compatibility:'" + compatibility + "'})")
         ncache.disconnect()
         return web.json_response(dict(success=True))
 
@@ -2969,134 +3130,6 @@ class KairosWorker:
         else: return web.json_response(dict(success=True, data=dict(msg="Caches have been built sucessfully!")))
 
     @trace_call
-    def runchart1(s, request):
-        status = Object()
-        status.error = None
-        params = parse_qs(request.query_string)
-        try:
-            nodesdb = params['nodesdb'][0]
-            systemdb = params['systemdb'][0]
-            id = params['id'][0]
-            chart = params['chart'][0]
-            sessid = params['sessid'][0]
-            width = int(params['width'][0])
-            height = int(params['height'][0])
-            limit = int(params['top'][0])
-            colors = params['colors'][0]
-            variables = json.loads(params['variables'][0])
-            for v in variables: kairos[v] = variables[v]
-            colors = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + colors + "', type:'color'}")[0]['colors']
-            getcolor = lambda x: colors[x] if x in colors else '#' + hashlib.md5(x.encode('utf-8')).hexdigest()[0:6]
-            converttime = lambda x: datetime.strptime(x, '%Y%m%d%H%M%S000')
-            chart = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + chart + "', type:'chart'}")[0]
-            layout = plotly.graph_objs.Layout()
-            layout.width = width
-            layout.title = chart['title']
-            i = 0
-            alreadyleft = False
-            alreadyright = False
-            data = []
-            def gettimestampdf(d):
-                r = pandas.DataFrame(data=d)
-                r['timestamp'] = r['timestamp'].apply(converttime)
-                r = r.set_index('timestamp').sort_index()
-                return r
-            def paddeddf(t, d):
-                r = t.copy()
-                r['a'] = 0
-                r['b'] = d['value']
-                r['value'] = r['a'] + r['b'].fillna(0)
-                return r
-            status = s.iexecutequery(nodesdb=nodesdb, systemdb=systemdb, id=id, query=chart['reftime'], limit=limit, variables=variables)
-            if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
-            reftimedf = gettimestampdf(status.result)
-            xoptions = dict(range=[reftimedf.index.min(),reftimedf.index.max()], domain=[0.1, 0.9])
-            layout.xaxis = plotly.graph_objs.layout.XAxis(**xoptions)
-            layout.hovermode = 'closest'
-            for y in chart['yaxis']:
-                i += 1
-                attrname = 'yaxis' + str(i)
-                attrsmallname = 'y' + str(i)
-                yoptions = dict(title=y['title'])
-                if 'properties' in y and 'line' in y['properties'] and 'stroke' in y['properties']['line']: yoptions['tickfont'] = dict(color = y['properties']['line']['stroke'])
-                if 'properties' in y and 'text' in y['properties'] and 'fill' in y['properties']['text']: yoptions['titlefont'] = dict(color = y['properties']['text']['fill'])
-                yoptions['side'] = y['position'].lower()
-                yoptions['rangemode'] = 'tozero'
-                if yoptions['side'] == 'right' and not alreadyright:
-                    yoptions['anchor'] = 'x'
-                    yoptions['overlaying'] = 'y'
-                if yoptions['side'] == 'right' and alreadyright:
-                    yoptions['anchor'] = 'free'
-                    yoptions['overlaying'] = 'y'
-                    yoptions['position'] = 0.95
-                if yoptions['side'] == 'left' and alreadyleft:
-                    yoptions['anchor'] = 'free'
-                    yoptions['overlaying'] = 'y'
-                    yoptions['position'] = 0.05
-                if yoptions['side'] == 'left': alreadyleft = True
-                if yoptions['side'] == 'right': alreadyright = True
-                setattr(layout, attrname, plotly.graph_objs.layout.YAxis(**yoptions))
-                for r in y['renderers']:
-                    groupname = getcolor(str(r))
-                    pielabels = []
-                    pievalues =[]
-                    piecolors = []
-                    for d in r['datasets']:
-                        status = s.iexecutequery(nodesdb=nodesdb, systemdb=systemdb, id=id, query=d['query'], limit=limit, variables=variables)
-                        if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
-                        datasetdf = gettimestampdf(status.result)
-                        labeldf = datasetdf.groupby('label')[['value']].sum()
-                        #ascending = 0 if r['type'] not in ['SA', 'SC'] else 1
-                        ascending = 0
-                        if r['type'] == 'P':
-                            pielabels.extend([label for label, row in labeldf.sort_values(by=['value'], ascending=ascending).iterrows()])
-                            pievalues.extend([row['value'] for label, row in labeldf.sort_values(by=['value'], ascending=ascending).iterrows()])
-                            piecolors.extend([getcolor(label) for label, row in labeldf.sort_values(by=['value'], ascending=ascending).iterrows()])
-                        else:
-                            for label, row in labeldf.sort_values(by=['value'], ascending=ascending).iterrows():
-                                paddeddatasetdf = paddeddf(reftimedf, datasetdf[datasetdf['label'] == label])
-                                param = dict()
-                                param['x'] = paddeddatasetdf.index
-                                param['y'] = paddeddatasetdf['value']
-                                param['name'] = label
-                                param['yaxis'] = attrsmallname
-                                if r['type'] == 'L': 
-                                    param['line'] = dict(color=(getcolor(label)), shape='spline')
-                                    data.append(plotly.graph_objs.Scatter(**param))
-                                if r['type'] == 'A': 
-                                    param['mode'] = 'lines'
-                                    param['fill'] = 'tozeroy'
-                                    param['line'] = dict(color=(getcolor(label)), shape='spline')
-                                    data.append(plotly.graph_objs.Scatter(**param))
-                                if r['type'] == 'SA': 
-                                    param['line'] = dict(color=(getcolor(label)), shape='spline')
-                                    param['mode'] = 'lines'
-                                    param['stackgroup'] = groupname
-                                    data.append(plotly.graph_objs.Scatter(**param))
-                                if r['type'] == 'C': 
-                                    param['marker']=dict(color=getcolor(label))
-                                    data.append(plotly.graph_objs.Bar(**param))
-                                if r['type'] == 'CC': 
-                                    param['marker']=dict(color=getcolor(label))
-                                    data.append(plotly.graph_objs.Bar(**param))
-                                    layout.barmode='group'
-                                if r['type'] == 'SC': 
-                                    param['marker']=dict(color=getcolor(label))
-                                    data.append(plotly.graph_objs.Bar(**param))
-                                    layout.barmode='stack'
-                    if r['type'] == 'P':
-                        data.append(plotly.graph_objs.Pie(labels=pielabels, values=pievalues, hoverinfo='label+percent', textinfo='percent', textfont=dict(size=20), marker=dict(colors=piecolors, line=dict(color='#000000', width=2))))
-            fig = plotly.graph_objs.Figure(data=data, layout=layout)
-            html = plotly.offline.plot(fig, output_type='div')
-        except:
-            tb = sys.exc_info()
-            message = str(tb[1])
-            logging.error(message)
-            status.error = message
-        if status.error: return web.json_response(dict(success=False, message="Runchart function completed with errors!"))
-        else: return web.json_response(dict(success=True, data=dict(html=html)))
-
-    @trace_call
     def runchart(s, request):
         status = Object()
         status.error = None
@@ -3106,7 +3139,6 @@ class KairosWorker:
             systemdb = params['systemdb'][0]
             id = params['id'][0]
             chart = params['chart'][0]
-            sessid = params['sessid'][0]
             width = int(params['width'][0])
             height = int(params['height'][0])
             limit = int(params['top'][0])
@@ -3114,167 +3146,155 @@ class KairosWorker:
             plotorientation = params['plotorientation'][0]
             variables = json.loads(params['variables'][0])
             for v in variables: kairos[v] = variables[v]
-            colors = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + colors + "', type:'color'}")[0]['colors']
-            getcolor = lambda x: colors[x] if x in colors else '#' + hashlib.md5(x.encode('utf-8')).hexdigest()[0:6]
-            converttime = lambda x: datetime.strptime(x, '%Y%m%d%H%M%S000')
-            chart = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + chart + "', type:'chart'}")[0]
-            descsubplots = dict()
-            layoutoptions = dict()
-            xaxis = dict()
-            yaxis = dict()
-            alreadyright = dict()
-            alreadyleft = dict()
-            traces = dict()
-            def gettimestampdf(d):
-                if 'rows' not in descsubplots:
-                    descsubplots['rows'] = 1
-                    descsubplots['cols'] = 1
-                    descsubplots['isarray'] = False
-                    if  'timestamp' not in d[0] and plotorientation == 'horizontal':
-                        descsubplots['cols'] = len(d)
-                        descsubplots['isarray'] = True
-                    if  'timestamp' not in d[0] and plotorientation == 'vertical': 
-                        descsubplots['rows'] = len(d)
-                        descsubplots['isarray'] = True
-                ret = []
-                if descsubplots['isarray']:
-                    for x in d:
-                        r = pandas.DataFrame(data=x)
-                        r['timestamp'] = r['timestamp'].apply(converttime)
-                        r = r.set_index('timestamp').sort_index()
-                        ret.append(r)
-                else:
-                    r = pandas.DataFrame(data=d)
-                    r['timestamp'] = r['timestamp'].apply(converttime)
-                    r = r.set_index('timestamp').sort_index()
-                    ret.append(r)
-                return ret
-            def paddeddf(t, d):
-                r = t.copy()
-                r['a'] = 0
-                r['b'] = d['value']
-                r['value'] = r['a'] + r['b'].fillna(0)
-                return r
-            def getnewaxis(axistype=None, options=None, index=0, descsubplots=None):
-                if axistype == 'y' and index not in alreadyright: alreadyright[index] = False
-                if axistype == 'y' and index not in alreadyleft: alreadyleft[index] = False
-                d = yaxis if axistype == 'y' else xaxis
-                l = len(d)
-                d[l] = dict()
-                d[l]['name'] = axistype + 'axis' if l == 0 else  axistype + 'axis' + str(l + 1)
-                d[l]['smallname'] = axistype if l == 0 else axistype + str(l + 1)
-                d[l]['options'] = dict()
-                if axistype == 'y':
-                    d[l]['options']['title'] = options['title']
-                    if 'properties' in options and 'line' in options['properties'] and 'stroke' in options['properties']['line']: d[l]['options']['tickfont'] = dict(color = options['properties']['line']['stroke'])
-                    if 'properties' in options and 'text' in options['properties'] and 'fill' in options['properties']['text']: d[l]['options']['titlefont'] = dict(color = options['properties']['text']['fill'])
-                    d[l]['options']['side'] = options['position'].lower()
-                    d[l]['options']['rangemode'] = 'tozero'
-                    d[l]['options']['anchor'] = 'free'
-                    if d[l]['options']['side'] == 'left' and not alreadyleft[index]: d[l]['options']['position'] = 0.05
-                    if d[l]['options']['side'] == 'left' and alreadyleft[index]: 
-                        d[l]['options']['position'] = 0.00
-                        d[l]['options']['overlaying'] = 'y'
-                    if d[l]['options']['side'] == 'right' and not alreadyright[index]: 
-                        d[l]['options']['overlaying'] = 'y'
-                        d[l]['options']['position'] = 0.90
-                    if d[l]['options']['side'] == 'right' and alreadyright[index]: 
-                        d[l]['options']['overlaying'] = 'y'
-                        d[l]['options']['position'] = 0.95
-                    if d[l]['options']['side'] == 'left': alreadyleft[index] = True
-                    if d[l]['options']['side'] == 'right': alreadyright[index] = True
-                else:
-                    cols = descsubplots['cols']
-                    nbseparators = cols - 1
-                    lengthseparator = 0.02
-                    lengthseparators = lengthseparator * nbseparators
-                    lengthdomain = (0.8 - lengthseparators) / cols 
-                    positiondomain = 0.1 + index * (lengthdomain + lengthseparator)
-                    d[l]['options']['domain'] = [positiondomain, positiondomain + lengthdomain]
-                    d[l]['options']['range'] = [reftimedf[index].index.min(),reftimedf[index].index.max()]
-                return l
-            def settrace(dataframe=None, label=None, yaxisindex=0, index=0, alreadyinlegend = None, groupname=None, plotorientation=None):
-                param = dict()
-                param['x'] = dataframe.index
-                param['y'] = dataframe['value']
-                param['name'] = label
-                param['legendgroup'] = label
-                param['showlegend'] = True if label not in alreadyinlegend else False
-                alreadyinlegend[label] = True
-                if r['type'] == 'L': 
-                    param['line'] = dict(color=(getcolor(label)), shape='spline')
-                    trace = plotly.graph_objs.Scatter(**param)
-                if r['type'] == 'A': 
-                    param['mode'] = 'lines'
-                    param['fill'] = 'tozeroy'
-                    param['line'] = dict(color=(getcolor(label)), shape='spline')
-                    trace = plotly.graph_objs.Scatter(**param)
-                if r['type'] == 'SA': 
-                    param['line'] = dict(color=(getcolor(label)), shape='spline')
-                    param['mode'] = 'lines'
-                    param['stackgroup'] = groupname
-                    trace = plotly.graph_objs.Scatter(**param)
-                if r['type'] == 'C': 
-                    param['marker']=dict(color=getcolor(label))
-                    trace = plotly.graph_objs.Bar(**param)
-                if r['type'] == 'CC': 
-                    param['marker']=dict(color=getcolor(label))
-                    trace = plotly.graph_objs.Bar(**param)
-                    layoutoptions['barmode'] = 'group'
-                if r['type'] == 'SC': 
-                    param['marker']=dict(color=getcolor(label))
-                    trace = plotly.graph_objs.Bar(**param)
-                    layoutoptions['barmode'] = 'stack'
-                l = len(traces)
-                traces[l] = dict(trace=trace, yaxis=yaxisindex, xaxis=index if shared_yaxes else 0, row=1 if plotorientation=='horizontal' else index+1, col=index+1 if plotorientation=='horizontal' else 1)
-            status = s.iexecutequery(nodesdb=nodesdb, systemdb=systemdb, id=id, query=chart['reftime'], limit=limit, variables=variables)
-            if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
-            reftimedf = gettimestampdf(status.result)
-            shared_yaxes = True if plotorientation == 'horizontal' else False
-            shared_xaxes = True if plotorientation == 'vertical' else False
-            getnewaxis(axistype = 'x', index=0, descsubplots=descsubplots)
-            if shared_yaxes:
-                i = 1
-                for e in reftimedf[1:]: 
-                    getnewaxis(axistype = 'x', index=i, descsubplots=descsubplots)
-                    i += 1
-            fig = plotly.tools.make_subplots(rows=descsubplots['rows'], cols=descsubplots['cols'], shared_yaxes=shared_yaxes, shared_xaxes=shared_xaxes)
-            layoutoptions['legend'] = dict(tracegroupgap=0, borderwidth=1)
-            layoutoptions['hovermode'] = 'closest'
-            layoutoptions['title'] = chart['title']
-            layoutoptions['width'] = width
-            for y in chart['yaxis']:
-                iy = getnewaxis(axistype='y', options=y, index=0)
-                for r in y['renderers']:
-                    for d in r['datasets']:
-                        alreadyinlegend = dict()
-                        status = s.iexecutequery(nodesdb=nodesdb, systemdb=systemdb, id=id, query=d['query'], limit=limit, variables=variables)
-                        if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
-                        datasetdf = gettimestampdf(status.result)
-                        labeldf = [x.groupby('label')[['value']].sum() for x in datasetdf]
-                        ascending = 0
-                        if r['type'] == 'P':
-                            pass
-                        else:
+            from pymemcache.client.base import Client as MemoryCache
+            memorycache = MemoryCache(('localhost', 11211))
+            memorykey = hashlib.md5(json.dumps(dict(nodesdb=nodesdb, systemdb=systemdb, id=id, chart=chart, limit=limit, colors=colors, plotorientation=plotorientation, variables=variables)).encode('utf-8')).hexdigest()
+            jsonchart = memorycache.get(memorykey)
+            if jsonchart:
+                chartobj = json.loads(jsonchart)
+                fig = chartobj['figure']
+                events = chartobj['events']
+            else:
+                colors = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + colors + "', type:'color'}")[0]['colors']
+                getcolor = lambda x: colors[x] if x in colors else '#' + hashlib.md5(x.encode('utf-8')).hexdigest()[0:6]
+                chart = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + chart + "', type:'chart'}")[0]
+                node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
+                producers = [k['path'] for k in node['datasource']['producers']] if 'producers' in node['datasource'] and node['datasource']['type'] == 'C' else []
+                co=dict(rows=1, cols=1, isarray=False, shared_yaxes=False, shared_xaxes=False, layoutoptions=dict(), xaxis=dict(), yaxis=dict(), alreadyright=dict(), alreadyleft=dict(), traces=dict(), pies=dict())
+                status = s.iexecutequery(nodesdb=nodesdb, systemdb=systemdb, id=id, query=chart['reftime'], limit=limit, variables=variables)
+                if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
+                reftimedf = gettimestampdf(status.result, co, plotorientation)
+                co['shared_yaxes'] = True if plotorientation == 'horizontal' else False
+                co['shared_xaxes'] = True if plotorientation == 'vertical' else False
+                getnewaxis(co, reftimedf, axistype='x', index=0)
+                if co['shared_yaxes']:
+                    i = 1
+                    for e in reftimedf[1:]: 
+                        getnewaxis(co, reftimedf, axistype='x', index=i)
+                        i += 1
+                fig = plotly.tools.make_subplots(rows=co['rows'], cols=co['cols'], shared_yaxes=co['shared_yaxes'], shared_xaxes=co['shared_xaxes'], subplot_titles=tuple(producers))
+                fig = plotly.tools.make_subplots(rows=co['rows'], cols=co['cols'], shared_yaxes=False, shared_xaxes=False, subplot_titles=tuple(producers))
+                co['layoutoptions']['legend'] = dict(tracegroupgap=0, borderwidth=1)
+                co['layoutoptions']['hovermode'] = 'closest'
+                co['layoutoptions']['title'] = chart['title']
+                co['layoutoptions']['width'] = width
+                co['numyaxis'] = 0
+                events = dict()
+                for y in chart['yaxis']:
+                    co['numyaxis'] += 1
+                    idxy = []
+                    if co['shared_yaxes']: 
+                        idxy.append(getnewaxis(co, reftimedf, axistype='y', options=y, index=0))
+                    else:
+                        for i in range(co['rows']): idxy.append(getnewaxis(co, reftimedf, axistype='y', options=y, index=i))
+                    for r in y['renderers']:
+                        co['pielabels'] = dict()
+                        co['pievalues'] = dict()
+                        co['piecolors'] = dict()
+                        for d in r['datasets']:
+                            alreadyinlegend = dict()
+                            status = s.iexecutequery(nodesdb=nodesdb, systemdb=systemdb, id=id, query=d['query'], limit=limit, variables=variables)
+                            if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
+                            datasetdf = gettimestampdf(status.result, co, plotorientation)
+                            labeldf = [x.groupby('label')[['value']].sum() for x in datasetdf]
+                            ascending = 0
                             i = 0
                             for e in labeldf:
-                                if i > 0 and shared_xaxes: iy = getnewaxis(axistype='y', options=y, index=i)
+                                if i not in co['pielabels']: co['pielabels'][i] = []
+                                if i not in co['pievalues']: co['pievalues'][i] = []
+                                if i not in co['piecolors']: co['piecolors'][i] = []
                                 for label, row in e.sort_values(by=['value'], ascending=ascending).iterrows():
-                                    paddeddatasetdf = paddeddf(reftimedf[i], datasetdf[i][datasetdf[i]['label'] == label])
-                                    settrace(dataframe=paddeddatasetdf, label=label, yaxisindex=iy, index=i, alreadyinlegend=alreadyinlegend, groupname=getcolor(str(r)), plotorientation=plotorientation)
+                                    events[label] = dict(info=None, onclick=None)
+                                    if 'onclick' in d and d['onclick']: events[label]['onclick'] = d['onclick']
+                                    if 'info' in d and d['info']: events[label]['info'] = d['info']
+                                    if r['type'] == 'P':
+                                        co['pielabels'][i].append(label)
+                                        co['pievalues'][i].append(row['value'])
+                                        co['piecolors'][i].append(getcolor(label))
+                                    else:
+                                        paddeddatasetdf = paddeddf(reftimedf[i], datasetdf[i][datasetdf[i]['label'] == label])
+                                        settrace(co, r, dataframe=paddeddatasetdf, label=label, yaxisindex=idxy[i] if co['shared_xaxes'] else idxy[0], index=i, alreadyinlegend=alreadyinlegend, groupname=getcolor(str(r)), plotorientation=plotorientation, colors=colors)
                                 i += 1
-            for it in traces: fig.append_trace(traces[it]['trace'], traces[it]['row'], traces[it]['col'])
-            for it in traces: fig['data'][it].update(xaxis=xaxis[traces[it]['xaxis']]['smallname'], yaxis=yaxis[traces[it]['yaxis']]['smallname'])
-            for iy in yaxis: setattr(fig['layout'], yaxis[iy]['name'], plotly.graph_objs.layout.YAxis())
-            for ix in xaxis: setattr(fig['layout'], xaxis[ix]['name'], plotly.graph_objs.layout.XAxis())
-            fig['layout'].update(**layoutoptions)
-            for iy in yaxis: fig['layout'][yaxis[iy]['name']].update(**yaxis[iy]['options'])
-            for ix in xaxis: fig['layout'][xaxis[ix]['name']].update(**xaxis[ix]['options'])
-            html = plotly.offline.plot(fig, output_type='div')
+                    if r['type'] == 'P':
+                        for i in co['pielabels']:
+                            co['pies'][i]=dict(trace=plotly.graph_objs.Pie(labels=co['pielabels'][i], values=co['pievalues'][i], hoverinfo='label+percent', textinfo='none', marker=dict(colors=co['piecolors'][i], line=dict(color='#000000', width=2))), row=1, col=i)
+                if len(co['pies']) > 0:
+                    fig['layout'].update(**co['layoutoptions'])
+                    fig = json.loads(json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder))
+                    for i in co['pies']:
+                        fig['data'].append(json.loads(json.dumps(co['pies'][i]['trace'], cls=plotly.utils.PlotlyJSONEncoder)))
+                else:
+                    for it in co['pies']: fig.append_trace(co['pies'][it]['trace'], co['pies'][it]['row'], co['pies'][it]['col'])
+                    for it in co['traces']: fig.append_trace(co['traces'][it]['trace'], co['traces'][it]['row'], co['traces'][it]['col'])
+                    for it in co['traces']: fig['data'][it].update(xaxis=co['xaxis'][co['traces'][it]['xaxis']]['smallname'], yaxis=co['yaxis'][co['traces'][it]['yaxis']]['smallname'])
+                    for iy in co['yaxis']: setattr(fig['layout'], co['yaxis'][iy]['name'], plotly.graph_objs.layout.YAxis())
+                    for ix in co['xaxis']: setattr(fig['layout'], co['xaxis'][ix]['name'], plotly.graph_objs.layout.XAxis())
+                    fig['layout'].update(**co['layoutoptions'])
+                    for iy in co['yaxis']: fig['layout'][co['yaxis'][iy]['name']].update(**co['yaxis'][iy]['options'])
+                    for ix in co['xaxis']: fig['layout'][co['xaxis'][ix]['name']].update(**co['xaxis'][ix]['options'])
+                chartobj = dict(figure=fig, events=events)
+                memoryvalue = json.dumps(chartobj, cls=plotly.utils.PlotlyJSONEncoder)
+                logging.debug(memoryvalue)
+                try: memorycache.set(memorykey, memoryvalue)
+                except: pass
+                chartobj = json.loads(memoryvalue)
+                fig = chartobj['figure']
+            fig['layout']['width'] = width
+            if 'titlefont' not in fig['layout']: fig['layout']['titlefont'] = dict()
+            fig['layout']['titlefont']['size'] = getfontsize(width, binf=1000, bsup=2000, vinf=12, vsup=18)
+            if 'annotations' in fig['layout']:
+                for a in fig['layout']['annotations']:
+                    a['font']['size'] = getfontsize(width, binf=1000, bsup=2000, vinf=10, vsup=14)
+            if 'legend' not in fig['layout']: fig['layout']['legend'] = dict()
+            if 'font' not in fig['layout']['legend']: fig['layout']['legend']['font'] = dict()
+            fig['layout']['legend']['font']['size'] = getfontsize(width, binf=500, bsup=2000, vinf=8, vsup=12)
+            fig['layout']['legend']['x'] = 1.02
+            numleftyaxis = 0
+            numrightyaxis = 0
+            numxaxis = 0
+            figtype = None
+            for e in fig['data']:
+                if e['type'] == 'pie': figtype = 'pie'
+            for e in list(fig['layout']):
+                if 'yaxis' in e:
+                    if 'side' not in fig['layout'][e]: del fig['layout'][e]
+                    else:
+                        if fig['layout'][e]['side'] == 'left': numleftyaxis += 1
+                        if fig['layout'][e]['side'] == 'right': numrightyaxis += 1
+                if 'xaxis' in e: numxaxis += 1
+            if figtype == 'pie':
+                numleftyaxis = 0
+                numrightyaxis = 0
+                for e in list(fig['layout']):
+                    if 'xaxis' in e or 'yaxis' in e: del fig['layout'][e]
+            for e in fig['layout']:
+                if 'yaxis' in e or 'xaxis' in e:
+                    if 'titlefont' not in fig['layout'][e]: fig['layout'][e]['titlefont'] = dict()
+                    if 'tickfont' not in fig['layout'][e]: fig['layout'][e]['tickfont'] = dict()
+                    fig['layout'][e]['tickfont']['size'] = getfontsize(width, binf=500, bsup=2000, vinf=8, vsup=12)
+                    fig['layout'][e]['titlefont']['size'] = getfontsize(width, binf=500, bsup=2000, vinf=10, vsup=14)
+                if 'yaxis' in e:
+                    fig['layout'][e]['position'] = getyposition(fig['layout'][e], width, numleftyaxis=numleftyaxis)
+            for e in fig['layout']:
+                if 'xaxis' in e:
+                    if 'xaxis' == e: index = 0
+                    else: index = int(e[-1]) - 1
+                    fig['layout'][e]['domain'] = getdomain(width, index=index, numleftyaxis=numleftyaxis, numrightyaxis=numrightyaxis, numxaxis=numxaxis)
+            if figtype == 'pie':
+                index = 0
+                for e in fig['data']:
+                    if 'domain' not in e: e['domain'] = dict()
+                    e['domain']['x'] = getdomain(width, index=index, numleftyaxis=numleftyaxis, numrightyaxis=numrightyaxis, numxaxis=numxaxis)
+                    index += 1       
+            if 'annotations' in fig['layout']:
+                    index = 0
+                    for a in list(fig['layout']['annotations']):
+                        a['x'] = getaposition(width, index=index, numleftyaxis=numleftyaxis, numrightyaxis=numrightyaxis, numxaxis=numxaxis)
+                        index += 1
         except:
             tb = sys.exc_info()
             message = str(tb[1])
             logging.error(message)
             status.error = message
         if status.error: return web.json_response(dict(success=False, message="Runchart function completed with errors!"))
-        else: return web.json_response(dict(success=True, data=dict(html=html)))
+        else: return web.json_response(dict(success=True, data=dict(chart=chartobj)))

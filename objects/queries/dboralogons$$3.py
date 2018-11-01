@@ -4,10 +4,10 @@ class UserObject(dict):
             "type": "query",
             "id": "DBORALOGONS$$3",
             "collections": [
-                "DBORAMISC"
+                "DBORASTA"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'sessions'::text as label, sessions as value from DBORAMISC) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'logon rate'::text as label, value as value from DBORASTA where statistic in ('logons cumulative')) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": false
         }
