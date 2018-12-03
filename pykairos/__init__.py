@@ -14,6 +14,7 @@
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
 import string, random, ssl, logging, os, binascii, subprocess, zipfile, gzip, tarfile, bz2, shutil, re, json,  time, lxml.html, magic, cgi, sys, multiprocessing, pyinotify, urllib, base64, psycopg2, psycopg2.extras, psycopg2.extensions, queue, multiprocessing, multiprocessing.connection, io, time, plotly, pandas, hashlib, pymemcache
+from pymemcache.client.base import Client
 from collections import *
 from datetime import datetime
 from aiohttp import web, WSCloseCode, WSMsgType, MultiDict
@@ -305,6 +306,22 @@ class Parallel:
             for e in x:
                 s.workers[e].join()
                 del s.workers[e]
+class MemoryCache:
+    def __init__(s, server, timeout=3600):
+        s.memorycache = Client(server)
+        s.timeout = timeout
+    def get(s, key):
+        jsonvalueout = s.memorycache.get(key)
+        if jsonvalueout:
+            valueout = json.loads(jsonvalueout)
+            now = int(datetime.now().strftime('%s'))
+            timestamp = int(valueout['timestamp'])
+            if now - timestamp > s.timeout: return None
+            else: return valueout['value']
+        else: return None 
+    def set(s, key, valuein):
+        valueout = json.dumps(dict(timestamp=datetime.now().strftime('%s'), value=valuein))
+        s.memorycache.set(key, valueout)
 
 class Cache:
     def __init__(s,database=None, autocommit=False, objects=False, schema=None):
@@ -3146,8 +3163,13 @@ class KairosWorker:
             plotorientation = params['plotorientation'][0]
             variables = json.loads(params['variables'][0])
             for v in variables: kairos[v] = variables[v]
-            from pymemcache.client.base import Client as MemoryCache
-            memorycache = MemoryCache(('localhost', 11211))
+            node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
+            timeout = 3600
+            if node['datasource']['type'] == 'D':
+                liveobject = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + node['datasource']['liveobject'] + "', type:'liveobject'}")[0]
+                try: timeout = liveobject['retention']
+                except: timeout = 60
+            memorycache = MemoryCache(('localhost', 11211), timeout)
             memorykey = hashlib.md5(json.dumps(dict(nodesdb=nodesdb, systemdb=systemdb, id=id, chart=chart, limit=limit, colors=colors, plotorientation=plotorientation, variables=variables)).encode('utf-8')).hexdigest()
             jsonchart = memorycache.get(memorykey)
             if jsonchart:
@@ -3158,7 +3180,6 @@ class KairosWorker:
                 colors = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + colors + "', type:'color'}")[0]['colors']
                 getcolor = lambda x: colors[x] if x in colors else '#' + hashlib.md5(x.encode('utf-8')).hexdigest()[0:6]
                 chart = s.igetobjects(nodesdb=nodesdb, systemdb=systemdb, where="{id:'" + chart + "', type:'chart'}")[0]
-                node = s.igetnodes(nodesdb=nodesdb, id=id, getsource=True, getcache=True)[0]
                 producers = [k['path'] for k in node['datasource']['producers']] if 'producers' in node['datasource'] and node['datasource']['type'] == 'C' else []
                 co=dict(rows=1, cols=1, isarray=False, shared_yaxes=False, shared_xaxes=False, layoutoptions=dict(), xaxis=dict(), yaxis=dict(), alreadyright=dict(), alreadyleft=dict(), traces=dict(), pies=dict())
                 status = s.iexecutequery(nodesdb=nodesdb, systemdb=systemdb, id=id, query=chart['reftime'], limit=limit, variables=variables)
