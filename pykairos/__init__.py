@@ -167,12 +167,14 @@ def settrace(co, r, dataframe=None, label=None, yaxisindex=0, index=0, alreadyin
     if r['type'] == 'A': 
         param['mode'] = 'lines'
         param['fill'] = 'tozeroy'
+        param['fillcolor'] = getcolor(label)
         param['line'] = dict(color=(getcolor(label)), shape='spline')
         trace = plotly.graph_objs.Scatter(**param)
     if r['type'] == 'SA': 
         param['line'] = dict(color=(getcolor(label)), shape='spline')
         param['mode'] = 'lines'
         param['stackgroup'] = groupname
+        param['fillcolor'] = getcolor(label)
         trace = plotly.graph_objs.Scatter(**param)
     if r['type'] == 'C': 
         param['marker']=dict(color=getcolor(label))
@@ -240,7 +242,16 @@ def replaceeval(obj, recursive=False):
 def trace_call(func):
     def wrapper(*args, **kwargs):
         logging.debug('>>> Entering %s ...' % func.__name__)
+        loglevel = logging.getLogger().getEffectiveLevel()
+        if loglevel == logging.TRACE:
+            tracef = open('/var/log/kairos/agens_' + str(os.getpid()) + '.sql', 'a')
+            print('-- >>> ' + func.__name__ + ' ' + str(datetime.now()), file=tracef)
+            tracef.close()
         response = func(*args, **kwargs)
+        if loglevel == logging.TRACE:
+            tracef = open('/var/log/kairos/agens_' + str(os.getpid()) + '.sql', 'a')
+            print('-- <<< ' + func.__name__ + ' ' + str(datetime.now()), file=tracef)
+            tracef.close()
         logging.debug('<<< Leaving %s ...' % func.__name__)
         return response
     return wrapper
@@ -326,20 +337,36 @@ class MemoryCache:
 class Cache:
     def __init__(s,database=None, autocommit=False, objects=False, schema=None):
             agensstr = "host='localhost' user='agensgraph' dbname='" + database + "'" if database != None else "host='localhost' user='agensgraph'"
+            s.loglevel = logging.getLogger().getEffectiveLevel()
+            s.tracefile = '/var/log/kairos/agens_' + str(os.getpid()) + '.sql'
+            s.trace('\n\n-- '+ str(datetime.now()))
+            if database: s.trace('psql -d ' + database)
+            else: s.trace('psql')
+            s.trace('')
             s.agens = psycopg2.connect(agensstr)
             s.autocommit = autocommit
             s.schema = schema
             if autocommit: s.agens.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+            else: s.trace('BEGIN;')
             if schema: s.execute("set search_path = " + schema)
-            if objects: s.execute("set graph_path = kairos")       
+            if objects: s.execute("set graph_path = kairos")
+    def trace(s, stmt):
+        if s.loglevel == logging.TRACE:
+            ftrace = open(s.tracefile, 'a')
+            print(stmt, file=ftrace)
+            ftrace.close()      
     def execute(s,*req):
         logging.debug('Executing request: ' + req[0])
+        s.trace(req[0] + ';')
         c = s.agens.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         c.execute(*req)
         logging.debug('Request completed!')
         return c
     def copy(s, buffer, table, description):
         logging.debug('Executing copy into: ' + table + " using: " + str(description))
+        s.trace('COPY ' + table + " " + json.dumps(description).replace('[','(').replace(']',')') + ' FROM stdin;')
+        s.trace(buffer.getvalue()[:-1])
+        s.trace('\\.')
         c = s.agens.cursor()
         c.copy_from(buffer, table, columns=description)
         logging.debug('Request completed!')
@@ -349,11 +376,18 @@ class Cache:
         for rx in x.fetchall(): result = True
         return result
     def commit(s):
-        if not s.autocommit: s.agens.commit()
+        if not s.autocommit:
+            s.trace('COMMIT;') 
+            s.agens.commit()
     def rollback(s):
-        if not s.autocommit: s.agens.rollback()
+        if not s.autocommit:
+            s.trace('ROLLBACK;') 
+            s.agens.rollback()
     def disconnect(s):
-        if not s.autocommit: s.agens.commit()
+        if not s.autocommit: 
+            s.trace('COMMIT;') 
+            s.agens.commit()
+        s.trace('\\q')
         s.agens.close()
 
 class Arcfile:
@@ -798,12 +832,13 @@ class KairosWorker:
                 ncache.disconnect()
         
     @trace_call
-    def ideletecache(s, nid, nodesdb=None):
+    def ideletecache(s, nid, nodesdb=None, context=None):
         status = Object()
         status.error = None
         logging.info("Node: " + nid + ", dropping all caches ...")
         try:
-            ncache = Cache(nodesdb, autocommit=True, objects=True)
+            if not context: ncache = Cache(nodesdb, autocommit=True, objects=True)
+            else: ncache = context
             x = ncache.execute("match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' return id(c) as cid")
             cids = [row['cid'] for row in x.fetchall()]
             if len(cids):
@@ -812,7 +847,7 @@ class KairosWorker:
                 schname = [row['name'] for row in y.fetchall()][0]
                 ncache.execute("drop schema " + schname + " cascade")
                 ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + cid + "' detach delete c")
-            ncache.disconnect()
+            if not context: ncache.disconnect()
         except:
             tb = sys.exc_info()
             message = str(tb[1])
@@ -821,8 +856,9 @@ class KairosWorker:
         return status
         
     @trace_call
-    def ideletesource(s, nid, nodesdb=None):
-        ncache = Cache(nodesdb, objects=True)
+    def ideletesource(s, nid, nodesdb=None, context=None):
+        if not context : ncache = Cache(nodesdb, objects=True)
+        else: ncache = context
         x = ncache.execute("match (n:nodes)-[:node_has_source]->(s:sources) where to_jsonb(id(n)) = '" + nid + "' return id(s) as sid")
         sids = [row['sid'] for row in x.fetchall()]
         if len(sids):
@@ -832,18 +868,19 @@ class KairosWorker:
             try: os.unlink(location)
             except: pass
             ncache.execute("match (s:sources) where to_jsonb(id(s)) = '" + sid + "' detach delete s")
-        ncache.disconnect()
+        if not context: ncache.disconnect()
 
     @trace_call
-    def icreatecache(s, nid, nodesdb=None):
-        ncache = Cache(nodesdb, autocommit=True, objects=True)
+    def icreatecache(s, nid, nodesdb=None, context=None):
+        if not context: ncache = Cache(nodesdb, autocommit=True, objects=True)
+        else: ncache = context
         schname = 'cache_' + nid.replace('.', '_')
         ncache.execute("create schema " + schname)
         ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + nid + "' create ((n)-[:node_has_cache]->(c:caches {created:now(), database:'" + nodesdb + "', name:'" + schname + "', queries:'" + json.dumps(dict()) + "', collections:'" + json.dumps(dict()) + "'}))")
-        ncache.disconnect()
+        if not context: ncache.disconnect()
         
     @trace_call
-    def icreatesource(s, nid, nodesdb=None, systemdb=None, stream=None, filename=None):
+    def icreatesource(s, nid, nodesdb=None, systemdb=None, stream=None, filename=None, context=None):
         filepath = '/files/' + nodesdb + '/' + nid + '.zip'
         infile = Arcfile(stream, 'r')
         ziparchive = Arcfile(filepath, 'w:zip')
@@ -864,14 +901,16 @@ class KairosWorker:
         ziparchive = Arcfile(filepath, 'r')
         for member in ziparchive.list(): do(member)
         ziparchive.close()
-        ncache = Cache(nodesdb, objects=True)        
+        if not context: ncache = Cache(nodesdb, objects=True)
+        else: ncache = context        
         ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + nid + "' create ((n)-[:node_has_source]->(s:sources {created:now(), location: '" + filepath+ "', collections:'" + json.dumps(collections) + "'}))")
         ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + nid + "' set n.type=to_json('B'), n.icon=to_json('B')")
-        ncache.disconnect()
+        if not context: ncache.disconnect()
         
     @trace_call
-    def igetcache(s, nid, nodesdb=None):
-        ncache = Cache(nodesdb, objects=True)
+    def igetcache(s, nid, nodesdb=None, context=None):
+        if not context: ncache = Cache(nodesdb, objects=True)
+        else: ncache = context
         x = ncache.execute("select rid, database, name, queries, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from (match (n:nodes)-[:node_has_cache]->(c:caches) where to_jsonb(id(n)) = '" + nid + "' return id(c) as rid, c.database, c.name, c.queries, c.created, c.collections) as foo")
         r = Object()
         for rx in x.fetchall():
@@ -881,12 +920,13 @@ class KairosWorker:
             r.queries = json.loads(rx['queries'])
             r.created = rx['created']
             r.collections = json.loads(rx['collections'])
-        ncache.disconnect()
+        if not context: ncache.disconnect()
         return r
         
     @trace_call
-    def igetsource(s, nid, nodesdb=None):
-        ncache = Cache(nodesdb, objects=True)        
+    def igetsource(s, nid, nodesdb=None, context=None):
+        if not context: ncache = Cache(nodesdb, objects=True)
+        else: ncache = context        
         x = ncache.execute("select rid, location, to_char(cast(created::jsonb::text as timestamp), 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from (match (n:nodes)-[:node_has_source]->(s:sources) where to_jsonb(id(n)) = '" + nid + "' return id(s) as rid, s.location, s.created, s.collections) as foo")
         r = Object()
         for rx in x.fetchall():
@@ -894,12 +934,12 @@ class KairosWorker:
             r.location = rx['location']
             r.created = rx['created']
             r.collections = json.loads(rx['collections'])
-        ncache.disconnect()
+        if not context: ncache.disconnect()
         return r
 
     @trace_call
     def icreatesystem(s):
-        ncache = Cache(None, autocommit=True)        
+        ncache = Cache(None, autocommit=True)
         x = ncache.execute("select datname from pg_database")
         databases = [row['datname'] for row in x.fetchall()]
         if 'kairos_system_system' in databases:
@@ -962,7 +1002,9 @@ class KairosWorker:
         ncache = Cache(None, autocommit=True)
         x = ncache.execute("select datname from pg_database")
         databases = [row['datname'] for row in x.fetchall()]
-        if curdatabase in databases: return dict(success=False, message=user + ' user already exists!')
+        if curdatabase in databases:
+            ncache.disconnect()
+            return dict(success=False, message=user + ' user already exists!')
         logging.info("Creating a new " + curdatabase + " database ...")
         ncache.execute("create database kairos_user_" + user + " with encoding 'utf8'")
         logging.info(curdatabase + " database created.")
@@ -1126,6 +1168,7 @@ class KairosWorker:
         if not name and child: x = ncache.execute("select " + projection + " from (match (n:nodes)-[:node_has_children]->(c:nodes) where to_jsonb(id(c))='" + child + "' return " + selector + ") as foo")
         if id: x = ncache.execute("select " + projection + " from (match (n:nodes) where to_jsonb(id(n))='" + id + "' return " + selector + ") as foo")
         selectednodes = [row for row in x.fetchall()]
+        ncache.disconnect()
         nodes=[]
         for row in selectednodes:
             node = dict(datasource=dict(cache=dict()))
@@ -1153,9 +1196,10 @@ class KairosWorker:
                 except: pass
                 node['datasource']['collections'] = d
             if countchildren:
+                ncache = Cache(nodesdb, objects=True)
                 x = ncache.execute("select count(*) as count from (match (n:nodes)-[:node_has_children]->(c:nodes) where to_jsonb(id(n))='" + node['id'] + "' return c) as foo")
-                for r in x.fetchall():
-                    node['kids'] = r['count']
+                for r in x.fetchall(): node['kids'] = r['count']
+                ncache.disconnect()
             if getsource:
                 if row['type'] == 'B':
                     source = s.igetsource(node['id'], nodesdb=nodesdb)
@@ -1177,7 +1221,6 @@ class KairosWorker:
                         node['datasource']['cache']['name'] = cache.name
                         node['datasource']['cache']['database'] = cache.database
             nodes.append(node)
-        ncache.disconnect()              
         return nodes
     
     @trace_call
@@ -1186,15 +1229,16 @@ class KairosWorker:
         return '' if node['name'] == '/' else s.igetpath(nodesdb=nodesdb, id=s.igetnodes(nodesdb=nodesdb, child=id)[0]['id']) + '/' + node['name']
 
     @trace_call
-    def icreatenode(s, nodesdb=None, id=None, name=None):
-        ncache = Cache(nodesdb, objects=True)
+    def icreatenode(s, nodesdb=None, id=None, name=None, context=None):
+        if not context: ncache = Cache(nodesdb, objects=True)
+        else: ncache = context
         if not name:
             x = ncache.execute("select to_char(now(), 'YYYY-MM-DD HH24:MI:SS.MS') as name")
             for row in x.fetchall(): name = row['name']
         x = ncache.execute("match (p:nodes) where to_jsonb(id(p))='" + id + "' create (p)-[:node_has_children]->(n:nodes {name:'" + name + "', type:'N', created:now(), status:'ACTIVE', icon:'N'}) return id(n) as rid") 
         for row in x.fetchall():
             rid = row['rid']
-        ncache.disconnect()              
+        if not context: ncache.disconnect()              
         return rid
 
     @trace_call
@@ -1210,8 +1254,8 @@ class KairosWorker:
             listnodes = [row['rid'] for row in x.fetchall()]
             listnodes.append(id)
             for rid in listnodes:
-                s.ideletesource(rid, nodesdb=nodesdb)
-                s.ideletecache(rid, nodesdb=nodesdb)
+                s.ideletesource(rid, nodesdb=nodesdb, context=ncache)
+                s.ideletecache(rid, nodesdb=nodesdb, context=ncache)
                 ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + rid + "' detach delete n") 
         else:
             ncache.execute("match (p:nodes)-[l:node_has_children]->(n:nodes) where to_jsonb(id(n)) = '" + id + "' detach delete l") 
@@ -1541,7 +1585,7 @@ class KairosWorker:
                         buffer.seek(0)
                         logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
                         hcache.copy(buffer, col, tuple(tabledesc.keys()))
-                        hcache.commit()
+                        #hcache.commit()
                         buffer = io.StringIO()
                         globalcounter += counter
                         counter = 0
@@ -1560,7 +1604,7 @@ class KairosWorker:
                     buffer.seek(0)
                     logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
                     hcache.copy(buffer, col, tuple(tabledesc.keys()))
-                    hcache.commit()
+                    #hcache.commit()
                     globalcounter += counter
                 except:
                     tb = sys.exc_info()
@@ -1662,7 +1706,7 @@ class KairosWorker:
                             for k in description: request += k + ' ' + record['desc'][k] +  ', '
                             request = request[:-2] + ')'
                             hcache.execute(request)
-                            hcache.commit()
+                            #hcache.commit()
                             readheader[col] = False
                     else:
                         bufferempty = False
@@ -1673,7 +1717,7 @@ class KairosWorker:
                             buffer.seek(0)
                             logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
                             hcache.copy(buffer, col, tuple(description))
-                            hcache.commit()
+                            #hcache.commit()
                             buffer = io.StringIO()
                             globalcounter += counter
                             counter = 0
@@ -1692,7 +1736,7 @@ class KairosWorker:
                     buffer.seek(0)
                     logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
                     hcache.copy(buffer, col, tuple(description))
-                    hcache.commit()
+                    #hcache.commit()
                     globalcounter += counter
                 except:
                     tb = sys.exc_info()
@@ -2584,8 +2628,8 @@ class KairosWorker:
         x = ncache.execute("match (t:nodes)-[:node_has_children*]->(d:nodes) where to_jsonb(id(t)) = '" + trash['id'] + "' return id(d) as rid")
         listnodes = [row['rid'] for row in x.fetchall()]
         for rid in listnodes:
-            s.ideletesource(rid, nodesdb=nodesdb)
-            s.ideletecache(rid, nodesdb=nodesdb)
+            s.ideletesource(rid, nodesdb=nodesdb, context=ncache)
+            s.ideletecache(rid, nodesdb=nodesdb, context=ncache)
             ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + rid + "' detach delete n") 
         ncache.disconnect()
         return web.json_response(dict(success=True))
@@ -2608,6 +2652,7 @@ class KairosWorker:
         ncache.execute("match (t:nodes), (f:nodes) where to_jsonb(id(f)) = '" + pfrom + "' and to_jsonb(id(t)) = '" + pto + "' create ((t)-[:node_has_children]->(f))")
         x = ncache.execute("match (n:nodes) where to_jsonb(id(n)) = '" + pto+ "' return n.status as status")
         status = [row['status'] for row in x.fetchall()][0]
+        ncache.execute("match (t:nodes) where to_jsonb(id(t)) = '" + pfrom + "' set t.status=to_json('" + status + "')")
         ncache.execute("match (t:nodes)-[:node_has_children*]->(d:nodes) where to_jsonb(id(t)) = '" + pfrom + "' set d.status=to_json('" + status + "')")
         ncache.disconnect()
         node = s.igetnodes(nodesdb=targetdb, id=pfrom)[0]
@@ -2770,7 +2815,7 @@ class KairosWorker:
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0]
-        status = s.ideletecache(id, nodesdb=nodesdb)
+        status = s.ideletecache(id, nodesdb=nodesdb, context=None)
         if status.error: return web.json_response(dict(success=False, status='error', message=status.error))
         else: return web.json_response(dict(success=True))
 
@@ -2853,7 +2898,7 @@ class KairosWorker:
         if node['datasource']['type'] in ['A']:
             if node['datasource']['aggregatormethod'] != aggregatormethod or node['datasource']['aggregatortimefilter'] != aggregatortimefilter:
                 logging.info("Node: " + id + ", Type: " + node['datasource']['type'] + ", deleting cache ...")
-                s.ideletecache(id, nodesdb=nodesdb)
+                s.ideletecache(id, nodesdb=nodesdb, context=None)
         if node['datasource']['type'] in ['A', 'N']:  
             producers = s.iexpand(pattern=aggregatorselector, nodesdb=nodesdb, sort=aggregatorsort, take=aggregatortake, skip=aggregatorskip)
             ncache = Cache(nodesdb, objects=True)
@@ -2994,7 +3039,7 @@ class KairosWorker:
         node = s.igetnodes(nodesdb=nodesdb, id=id)[0]
         if node['datasource']['type'] in ['D']:
             logging.info("Node: " + id + ", Type: " + node['datasource']['type'] + ", deleting cache ...")
-            s.ideletecache(id, nodesdb=nodesdb)
+            s.ideletecache(id, nodesdb=nodesdb, context=None)
         s.icreatecache(id, nodesdb=nodesdb)
         cache = s.igetcache(id, nodesdb=nodesdb)
         (message, collections) = s.iapplyliveobject(id=id, cache=cache, liveobject=liveobject)
@@ -3025,22 +3070,24 @@ class KairosWorker:
         x = ncache.execute("match (n:nodes {type:'B'}) return id(n) as rid")
         bnodes = bnodes.union(set([row['rid'] for row in x.fetchall()]))
         ncache.disconnect()
+        errors = 0
         for n in bnodes:
             path = s.igetpath(nodesdb=nodesdb, id=n)
             archive = path.replace('/', '_')[1:] + '.zip'
             logging.info("Trying to export file  /files/" + nodesdb + "/" + n + ".zip...")
-            ag = subprocess.run(['cp', '/files/' + nodesdb + '/' + n + '.zip', '/export/' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if  ag.returncode:
+            try: 
+                shutil.copy('/files/' + nodesdb + '/' + n + '.zip', '/export/' + nodesdb)
+                os.link('/export/' + nodesdb + '/' + n + '.zip', '/export/' + nodesdb + '/' + archive)
+            except:
+                errors += 1
                 message = "Unable to copy file " + n + ".zip!"
                 logging.error(message)
-                return web.json_response(dict(success=False, message=message))
-            ag = subprocess.run(['ln', '/export/' + nodesdb + '/' + n + '.zip', '/export/' + nodesdb + '/' + archive], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if  ag.returncode:
-                message = "Unable to link file " + n + ".zip!"
-                logging.error(message)
-                return web.json_response(dict(success=False, message=message))
-        logging.info("Export done ...")
-        return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been exported sucessfully!")))
+        if errors == 0:
+            logging.info("Export done ...")
+            return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been exported sucessfully!")))
+        else:
+            logging.info("Export done with " + str(errors) + " errors !")
+            return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been exported but " + str(errors) + " errors have been met while exporting files!")))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -3073,15 +3120,20 @@ class KairosWorker:
         x = ncache.execute("match (n:nodes {type:'B'}) return id(n) as rid")
         bnodes = bnodes.union(set([row['rid'] for row in x.fetchall()]))
         ncache.disconnect()
+        errors = 0
         for n in bnodes:
             logging.info("Trying to create file  /files/" + nodesdb + "/" + n + ".zip...")
-            ag = subprocess.run(['cp', '/export/' + nodesdb + '/' + n + '.zip', '/files/' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if  ag.returncode:
+            try: shutil.copy('/export/' + nodesdb + '/' + n + '.zip', '/files/' + nodesdb)
+            except:
+                errors += 1
                 message = "Unable to copy file " + n + ".zip!"
                 logging.error(message)
-                return web.json_response(dict(success=False, message=message))
-        logging.info("Import done ...")
-        return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been imported sucessfully!")))
+        if errors == 0:
+            logging.info("Import done ...")
+            return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been imported sucessfully!")))
+        else:
+            logging.info("Import done with " + str(errors) + " errors !")
+            return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been imported but " + str(errors) + " errors have been met while importing files!")))
 
     @trace_call
     def cleardependentcaches(s, request):
@@ -3102,7 +3154,7 @@ class KairosWorker:
                 adependents = adependents.union(set([row['rid'] for row in y.fetchall()]))
             ncache.disconnect()
             for n in bdependents.union(adependents):
-                estatus = s.ideletecache(n, nodesdb=nodesdb)
+                estatus = s.ideletecache(n, nodesdb=nodesdb, context=None)
                 status.error = estatus.error if estatus.error else status.error
         except:
             tb = sys.exc_info()
