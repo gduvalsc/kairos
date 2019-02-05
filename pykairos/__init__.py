@@ -322,7 +322,8 @@ class MemoryCache:
         s.memorycache = Client(server)
         s.timeout = timeout
     def get(s, key):
-        jsonvalueout = s.memorycache.get(key)
+        memorykey = hashlib.md5(json.dumps(key).encode('utf-8')).hexdigest()
+        jsonvalueout = s.memorycache.get(memorykey)
         if jsonvalueout:
             valueout = json.loads(jsonvalueout)
             now = int(datetime.now().strftime('%s'))
@@ -331,8 +332,20 @@ class MemoryCache:
             else: return valueout['value']
         else: return None 
     def set(s, key, valuein):
+        memorykey = hashlib.md5(json.dumps(key).encode('utf-8')).hexdigest()
+        listkey = hashlib.md5(json.dumps(key['id']).encode('utf-8')).hexdigest()
+        jsonlistvalue = s.memorycache.get(listkey)
+        listvalue = json.loads(jsonlistvalue) if jsonlistvalue else []
+        if memorykey not in listvalue: 
+            listvalue.append(memorykey)
+            s.memorycache.set(listkey, json.dumps(listvalue))
         valueout = json.dumps(dict(timestamp=datetime.now().strftime('%s'), value=valuein))
-        s.memorycache.set(key, valueout)
+        s.memorycache.set(memorykey, valueout)
+    def flush(s, id):
+        listkey = hashlib.md5(json.dumps(id).encode('utf-8')).hexdigest()
+        jsonlistvalue = s.memorycache.get(listkey)
+        listvalue = json.loads(jsonlistvalue) if jsonlistvalue else []
+        for k in listvalue: s.memorycache.delete(k)
 
 class Cache:
     def __init__(s,database=None, autocommit=False, objects=False, schema=None):
@@ -848,6 +861,8 @@ class KairosWorker:
                 ncache.execute("drop schema " + schname + " cascade")
                 ncache.execute("match (c:caches) where to_jsonb(id(c)) = '" + cid + "' detach delete c")
             if not context: ncache.disconnect()
+            memorycache = MemoryCache(('localhost', 11211))
+            memorycache.flush(nid)
         except:
             tb = sys.exc_info()
             message = str(tb[1])
@@ -3222,7 +3237,8 @@ class KairosWorker:
                 try: timeout = liveobject['retention']
                 except: timeout = 60
             memorycache = MemoryCache(('localhost', 11211), timeout)
-            memorykey = hashlib.md5(json.dumps(dict(nodesdb=nodesdb, systemdb=systemdb, id=id, chart=chart, limit=limit, colors=colors, plotorientation=plotorientation, variables=variables)).encode('utf-8')).hexdigest()
+            #memorykey = hashlib.md5(json.dumps(dict(nodesdb=nodesdb, systemdb=systemdb, id=id, chart=chart, limit=limit, colors=colors, plotorientation=plotorientation, variables=variables)).encode('utf-8')).hexdigest()
+            memorykey = dict(nodesdb=nodesdb, systemdb=systemdb, id=id, chart=chart, limit=limit, colors=colors, plotorientation=plotorientation, variables=variables)
             jsonchart = memorycache.get(memorykey)
             if jsonchart:
                 chartobj = json.loads(jsonchart)

@@ -18,7 +18,7 @@
 
 dhtmlxEvent(window,"load",function(){
 
-    var VERSION = "5.2";
+    var VERSION = "5.3";
     var ajaxcpt = 0;
     var desktop = {};
     desktop.variables = {};
@@ -2696,7 +2696,6 @@ dhtmlxEvent(window,"load",function(){
     };
 
     var dispchart1 = function (node, chart) {
-        log.debug('Preparing window to receive chart...');
         var uniquecid = _.uniqueId('');
         var wchart = null;
         wchart = create_window("chart", node.name + ' - ' + chart);
@@ -2728,6 +2727,9 @@ dhtmlxEvent(window,"load",function(){
                                 }
                             ]);
                         }
+                    });
+                    chartdiv.on('plotly_legendclick', function(data){
+                        navigator.clipboard.writeText(data.data[data.curveNumber].legendgroup);
                     });
                     chartdiv.on('plotly_hover', function(data){
                         item = data.points[0].data.legendgroup;
