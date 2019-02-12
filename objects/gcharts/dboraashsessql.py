@@ -36,10 +36,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHAS",
+                                            "table": "ORAHAS, (select ashcoeff() as ashcoeff) as foo",
                                             "projection": "sql_id",
                                             "restriction": "session_id||' - '||program = '%(DBORAASHSESSQL)s' and sql_id != ''",
-                                            "value": "kairos_count * 1.0 /ashcoeff()"
+                                            "value": "kairos_count * 1.0 /ashcoeff"
                                         }
                                     ]
                                 }

@@ -40,10 +40,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "EBS12CM",
+                                            "table": "EBS12CM, (select ebscoeff() as ebscoeff) as foo",
                                             "projection": "prg_name",
                                             "restriction": "status_code = 'E'::text",
-                                            "value": "executecount * 1.0 / ebscoeff()"
+                                            "value": "executecount * 1.0 / ebscoeff"
                                         }
                                     ]
                                 }
@@ -67,10 +67,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "EBS12CM",
+                                            "table": "EBS12CM, (select ebscoeff() as ebscoeff) as foo",
                                             "projection": "'All programs with status E'::text",
                                             "restriction": "status_code = 'E'::text",
-                                            "value": "executecount * 1.0 / ebscoeff()"
+                                            "value": "executecount * 1.0 / ebscoeff"
                                         }
                                     ]
                                 }

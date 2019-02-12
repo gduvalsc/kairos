@@ -33,10 +33,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "ORAHAS",
+                                            "table": "ORAHAS, (select ashcoeff() as ashcoeff) as foo",
                                             "projection": "'on cpu'::text",
                                             "restriction": "session_state = 'ON CPU'",
-                                            "value": "kairos_count * 1.0 /ashcoeff()"
+                                            "value": "kairos_count * 1.0 /ashcoeff"
                                         }
                                     ]
                                 },
@@ -55,10 +55,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "ORAHAS",
+                                            "table": "ORAHAS, (select ashcoeff() as ashcoeff) as foo",
                                             "projection": "'waiting'::text",
                                             "restriction": "session_state = 'WAITING'",
-                                            "value": "kairos_count * 1.0 /ashcoeff()"
+                                            "value": "kairos_count * 1.0 /ashcoeff"
                                         }
                                     ]
                                 }

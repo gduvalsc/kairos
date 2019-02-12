@@ -33,10 +33,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHAS",
+                                            "table": "ORAHAS, (select ashcoeff() as ashcoeff) as foo",
                                             "projection": "sql_plan_hash_value||' - '||sql_id",
                                             "restriction": "sql_id = '%(DBORAASHSQLPHV)s'",
-                                            "value": "kairos_count * 1.0 /ashcoeff()"
+                                            "value": "kairos_count * 1.0 /ashcoeff"
                                         }
                                     ]
                                 }

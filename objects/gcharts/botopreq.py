@@ -40,10 +40,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "BO",
+                                            "table": "BO, (select bocoeff() as bocoeff) as foo",
                                             "projection": "report||' - '||event_id||' (duration: '||duration||')'::text",
                                             "restriction": "",
-                                            "value": "executecount * 1.0 / bocoeff()"
+                                            "value": "executecount * 1.0 / bocoeff"
                                         }
                                     ]
                                 }
@@ -67,10 +67,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "BO",
+                                            "table": "BO, (select bocoeff() as bocoeff) as foo",
                                             "projection": "'All requests'::text",
                                             "restriction": "",
-                                            "value": "executecount * 1.0 / bocoeff()"
+                                            "value": "executecount * 1.0 / bocoeff"
                                         }
                                     ]
                                 }

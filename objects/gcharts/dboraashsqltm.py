@@ -33,16 +33,16 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "ORAHAS",
+                                            "table": "ORAHAS, (select ashcoeff() as ashcoeff) as foo",
                                             "projection": "'IN_SQL_EXECUTION'::text",
                                             "restriction": "sql_id = '%(DBORAASHSQLTM)s' and IN_SQL_EXECUTION = 'Y'",
-                                            "value": "kairos_count * 1.0 /ashcoeff()"
+                                            "value": "kairos_count * 1.0 /ashcoeff"
                                         },
                                         {
-                                            "table": "ORAHAS",
+                                            "table": "ORAHAS, (select ashcoeff() as ashcoeff) as foo",
                                             "projection": "'IN_PARSE'::text",
                                             "restriction": "sql_id = '%(DBORAASHSQLTM)s' and IN_PARSE = 'Y'",
-                                            "value": "kairos_count * 1.0 /ashcoeff()"
+                                            "value": "kairos_count * 1.0 /ashcoeff"
                                         }
                                     ]
                                 }

@@ -74,7 +74,7 @@ def getdomain(width, index=0, numleftyaxis=1, numrightyaxis=0, numxaxis=1, binf=
     return [positiondomain, positiondomain+lengthdomain]
 
 def gettimestampdf(d, co, plotorientation):
-    converttime = lambda x: datetime.strptime(x, '%Y%m%d%H%M%S000')
+    converttime = lambda x: datetime.strptime(x, '%Y%m%d%H%M%S%f')
     if  'timestamp' not in d[0] and plotorientation == 'horizontal':
         co['cols'] = len(d)
         co['isarray'] = True

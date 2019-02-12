@@ -33,10 +33,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "EBS12CM",
+                                            "table": "EBS12CM, (select ebscoeff() as ebscoeff) as foo",
                                             "projection": "'Running programs'::text",
                                             "restriction": "prg_name not like 'FNDRS%'::text",
-                                            "value": "executecount * 1.0 / ebscoeff()"
+                                            "value": "executecount * 1.0 / ebscoeff"
                                         }
                                     ]
                                 },
@@ -55,10 +55,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "EBS12CM",
+                                            "table": "EBS12CM, (select ebscoeff() as ebscoeff) as foo",
                                             "projection": "'Waiting programs'::text",
                                             "restriction": "prg_name not like 'FNDRS%'::text",
-                                            "value": "waitcount * 1.0 / ebscoeff()"
+                                            "value": "waitcount * 1.0 / ebscoeff"
                                         }
                                     ]
                                 }

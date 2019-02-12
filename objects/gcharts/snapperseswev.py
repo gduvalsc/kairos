@@ -33,10 +33,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "SNAPPER",
+                                            "table": "SNAPPER, (select snappercoeff() as snappercoeff) as foo",
                                             "projection": "case when event is null then 'on cpu' when event is not null then event end",
                                             "restriction": "sid||' - '||program = '%(SNAPPERSESWEV)s'",
-                                            "value": "pthread / 100 /snappercoeff()"
+                                            "value": "pthread / 100 /snappercoeff"
                                         }
                                     ]
                                 }

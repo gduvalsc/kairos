@@ -32,10 +32,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "SNAPPER",
+                                            "table": "SNAPPER, (select snappercoeff() as snappercoeff) as foo",
                                             "projection": "sql_id",
                                             "restriction": "username = '%(SNAPPERSCHSQL)s' and sql_id != ''",
-                                            "value": "pthread / 100 /snappercoeff()"
+                                            "value": "pthread / 100 /snappercoeff"
                                         }
                                     ]
                                 }

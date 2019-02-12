@@ -9,7 +9,7 @@ class UserObject(dict):
             "userfunctions": [
                 "snappercoeff"
             ],
-            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, case when event is null then 'on cpu' when event is not null then event end as label, pthread / 100 /snappercoeff() as value from SNAPPER where username = '%(SNAPPERSCHWEV)s') as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, case when event is null then 'on cpu' when event is not null then event end as label, pthread / 100 /snappercoeff as value from SNAPPER, (select snappercoeff() as snappercoeff) as foo where username = '%(SNAPPERSCHWEV)s') as foo group by timestamp, label order by timestamp",
             "nocache": true,
             "filterable": true
         }

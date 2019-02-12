@@ -33,10 +33,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "EBS12CM",
+                                            "table": "EBS12CM, (select ebscoeff() as ebscoeff) as foo",
                                             "projection": "prg_name||'-'||request_id",
                                             "restriction": "prg_name not like 'FNDRS%'::text",
-                                            "value": "executecount * 1.0 / ebscoeff()"
+                                            "value": "executecount * 1.0 / ebscoeff"
                                         }
                                     ]
                                 }

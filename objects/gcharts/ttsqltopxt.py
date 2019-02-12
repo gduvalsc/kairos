@@ -33,10 +33,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "TTSQLHS",
+                                            "table": "TTSQLHS, (select ttcoeff() as ttcoeff) as foo",
                                             "projection": "hashid",
                                             "restriction": "",
-                                            "value": "(totaltime / 1000.0 / deltatime) / ttcoeff()"
+                                            "value": "(totaltime / 1000.0 / deltatime) / ttcoeff"
                                         }
                                     ]
                                 }

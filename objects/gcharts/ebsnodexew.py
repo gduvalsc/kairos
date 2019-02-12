@@ -40,10 +40,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "EBS12CM",
+                                            "table": "EBS12CM, (select ebscoeff() as ebscoeff) as foo",
                                             "projection": "request_id||' (duration: '||cast(time * 60.0 as text)||')'::text",
                                             "restriction": "node_name = '%(EBSNODEXEW)s'::text",
-                                            "value": "waitcount * 1.0 / ebscoeff()"
+                                            "value": "waitcount * 1.0 / ebscoeff"
                                         }
                                     ]
                                 }
@@ -67,10 +67,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "EBS12CM",
+                                            "table": "EBS12CM, (select ebscoeff() as ebscoeff) as foo",
                                             "projection": "'Waiting executions'::text",
                                             "restriction": "node_name = '%(EBSNODEXEW)s'::text",
-                                            "value": "waitcount * 1.0 / ebscoeff()"
+                                            "value": "waitcount * 1.0 / ebscoeff"
                                         }
                                     ]
                                 }
