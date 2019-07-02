@@ -7,7 +7,7 @@ class UserObject(dict):
                 "NMONTOP"
             ],
             "userfunctions": [],
-            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'All captured processes'::text as label, value+0.0 as value from NMONTOP where id = 'ResData'::text) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, sum(value) as value from (select timestamp, 'All captured processes'::text as label, cast(value as real)+0.0 as value from NMONTOP where id = 'ResData'::text) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

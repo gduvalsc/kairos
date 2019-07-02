@@ -31,7 +31,7 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "(select t.timestamp as timestamp, command as label, value from (select timestamp, process, (value+0)/100.0 as value from NMONTOP where id='%CPU') t, (select timestamp, process, value command from NMONTOP where id='Command') s where t.timestamp=s.timestamp and t.process=s.process) as foo",
+                                            "table": "(select t.timestamp as timestamp, command as label, value from (select timestamp, process, (cast(value as real)+0)/100.0 as value from NMONTOP where id='%CPU') t, (select timestamp, process, value command from NMONTOP where id='Command') s where t.timestamp=s.timestamp and t.process=s.process) as foo",
                                             "projection": "label",
                                             "restriction": "",
                                             "value": "value"
@@ -59,7 +59,7 @@ class UserObject(dict):
                                             "table": "NMONTOP",
                                             "projection": "'All captured commands'::text",
                                             "restriction": "id = '%CPU'::text",
-                                            "value": "(value+0) / 100.0"
+                                            "value": "(cast(value as real)+0) / 100.0"
                                         }
                                     ]
                                 }

@@ -77,7 +77,7 @@ def get_parameters(parser, args, service):
     if service == 'dropcollectioncache': mandatory = [PA, PP, PNO, PSY, PID, PCL]
     if service == 'emptytrash': mandatory = [PA, PP, PNO]
     if service == 'executequery': mandatory = [PA, PP, PNO, PSY, PID, PQY, PTP]
-    if service == 'export': mandatory = [PA, PP, PNO]
+    if service == 'export': mandatory = [PA, PP]
     if service == 'getcollections': mandatory = [PA, PP, PNO, PID]
     if service == 'getid': mandatory = [PA, PP, PNO, PPN]
     if service == 'getmenus': mandatory = [PA, PP, PNO, PSY]
@@ -85,7 +85,7 @@ def get_parameters(parser, args, service):
     if service == 'getobject': mandatory = [PA, PP, PID, PTY, PDA]
     if service == 'getsettings': mandatory = [PA, PP]
     if service == 'gettree': mandatory = [PNO, PID]
-    if service == 'import': mandatory = [PA, PP, PNO]
+    if service == 'import': mandatory = [PA, PP]
     if service == 'listdatabases': mandatory = [PA, PP]
     if service == 'listgrants': mandatory = [PA, PP]
     if service == 'listnodesdb': mandatory = [PA, PP]
@@ -182,7 +182,7 @@ def get_method(service):
     return 'post' if service in post else 'get'
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action = 'version', version='KAIROS V5.4')
+parser.add_argument('--version', action = 'version', version='KAIROS V5')
 parser.add_argument(PA.name, action = 'store', dest=PA.target, default='', help='KAIROS user name to be authentified')
 parser.add_argument(PP.name, action = 'store', dest=PP.target, default='', help='KAIROS user password')
 parser.add_argument(PS.name, action = 'store', dest=PS.target, required=True, help='Service to be executed')

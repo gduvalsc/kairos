@@ -3069,86 +3069,104 @@ class KairosWorker:
     @trace_call
     def exportdatabase(s, request):
         params = parse_qs(request.query_string)
-        nodesdb = params['nodesdb'][0]
-        try: shutil.rmtree('/export/' + nodesdb)
-        except: pass
-        os.mkdir('/export/' + nodesdb)
-        os.chmod('/export/' + nodesdb, 0o777)
-        logging.info("Trying to export database ...")
-        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'pg_dump -F c -f /export/' + nodesdb + '/database.dump ' + nodesdb], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if  ag.returncode:
-            message = "Unable to export database: " + nodesdb + " for an uknown reason!"
-            logging.error(message)
-            return web.json_response(dict(success=False, message=message))
-        ncache = Cache(nodesdb, objects=True)
-        bnodes = set()
-        x = ncache.execute("match (n:nodes {type:'B'}) return id(n) as rid")
-        bnodes = bnodes.union(set([row['rid'] for row in x.fetchall()]))
-        ncache.disconnect()
-        errors = 0
-        for n in bnodes:
-            path = s.igetpath(nodesdb=nodesdb, id=n)
-            archive = path.replace('/', '_')[1:] + '.zip'
-            logging.info("Trying to export file  /files/" + nodesdb + "/" + n + ".zip...")
-            try: 
-                shutil.copy('/files/' + nodesdb + '/' + n + '.zip', '/export/' + nodesdb)
-                os.link('/export/' + nodesdb + '/' + n + '.zip', '/export/' + nodesdb + '/' + archive)
-            except:
-                errors += 1
-                message = "Unable to copy file " + n + ".zip!"
+        nodesdb = [params['nodesdb'][0]] if 'nodesdb' in params else []
+        gerrors = 0
+        experr = 0
+        if len(nodesdb) == 0:
+            for d in os.listdir('/files'):
+                wdir = '/files/' + d
+                if 'kairos_' in d and os.path.isdir(wdir): nodesdb.append(d)
+        for db in nodesdb:
+            try: shutil.rmtree('/export/' + db)
+            except: pass
+            os.mkdir('/export/' + db)
+            os.chmod('/export/' + db, 0o777)
+            logging.info("Trying to export database " + db + " ...")
+            ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'pg_dump -F c -f /export/' + db + '/database.dump ' + db], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if  ag.returncode:
+                message = "Unable to export database: " + db + " for an uknown reason!"
+                experr += 1
                 logging.error(message)
-        if errors == 0:
-            logging.info("Export done ...")
-            return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been exported sucessfully!")))
-        else:
-            logging.info("Export done with " + str(errors) + " errors !")
-            return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been exported but " + str(errors) + " errors have been met while exporting files!")))
+                continue
+            ncache = Cache(db, objects=True)
+            bnodes = set()
+            x = ncache.execute("match (n:nodes {type:'B'}) return id(n) as rid")
+            bnodes = bnodes.union(set([row['rid'] for row in x.fetchall()]))
+            ncache.disconnect()
+            errors = 0
+            for n in bnodes:
+                path = s.igetpath(nodesdb=db, id=n)
+                archive = path.replace('/', '_')[1:] + '.zip'
+                logging.info("Trying to export file  /files/" + db + "/" + n + ".zip...")
+                try: 
+                    shutil.copy('/files/' + db + '/' + n + '.zip', '/export/' + db)
+                    os.link('/export/' + db + '/' + n + '.zip', '/export/' + db + '/' + archive)
+                except:
+                    errors += 1
+                    gerrors += 1
+                    message = "Unable to copy file " + n + ".zip!"
+                    logging.error(message)
+            if errors == 0: logging.info("Export of database: " + db + " done ...")
+            else: logging.info("Export of database: " + db + " done with " + str(errors) + " error(s) !")
+        if experr > 0: return web.json_response(dict(success=False, data=dict(msg= str(experr) + " database(s) has(ve) not been exported!")))
+        elif gerrors == 0: return web.json_response(dict(success=True, data=dict(msg="Database(s): " + str(nodesdb) + " has(ve) been exported sucessfully!")))
+        else: return web.json_response(dict(success=True, data=dict(msg="Database(s): " + str(nodesdb) + " has(ve) been exported but " + str(gerrors) + " error(s) has(ve) been met while exporting files!")))
 
     @intercept_logging_and_internal_error
     @trace_call
     def importdatabase(s, request):
         params = parse_qs(request.query_string)
-        logging.info("Trying to import database ...")
-        nodesdb = params['nodesdb'][0]
-        logging.info("Trying to drop database " + nodesdb + "...")
-        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -c "drop database ' + nodesdb + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if  ag.returncode:
-            message = "Unable to drop database: " + nodesdb + " during import!"
-            logging.error(message)
-            return web.json_response(dict(success=False, message=message))
-        shutil.rmtree('/files/' + nodesdb)
-        os.mkdir('/files/' + nodesdb)
-        logging.info("Trying to create database " + nodesdb + "...")
-        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -c "create database ' + nodesdb + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if  ag.returncode:
-            message = "Unable to create database: " + nodesdb + " during import!"
-            logging.error(message)
-            return web.json_response(dict(success=False, message=message))
-        logging.info("Trying to restore database " + nodesdb + "...")
-        ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'pg_restore -d ' + nodesdb + ' /export/' + nodesdb + '/database.dump'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        if  ag.returncode:
-            message = "Error during import of database: " + nodesdb
-            logging.error(message)
-            return web.json_response(dict(success=False, message=message))
-        ncache = Cache(nodesdb, objects=True)
-        bnodes = set()
-        x = ncache.execute("match (n:nodes {type:'B'}) return id(n) as rid")
-        bnodes = bnodes.union(set([row['rid'] for row in x.fetchall()]))
-        ncache.disconnect()
-        errors = 0
-        for n in bnodes:
-            logging.info("Trying to create file  /files/" + nodesdb + "/" + n + ".zip...")
-            try: shutil.copy('/export/' + nodesdb + '/' + n + '.zip', '/files/' + nodesdb)
-            except:
-                errors += 1
-                message = "Unable to copy file " + n + ".zip!"
+        nodesdb = [params['nodesdb'][0]] if 'nodesdb' in params else []
+        gerrors = 0
+        imperr = 0
+        if len(nodesdb) == 0:
+            for d in os.listdir('/export'):
+                wdir = '/export/' + d
+                if 'kairos_' in d and os.path.isdir(wdir): nodesdb.append(d)
+        for db in nodesdb:
+            logging.info("Trying to import database " + db + " ...")
+            logging.info("Trying to drop database " + db + "...")
+            ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -c "drop database ' + db + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if  ag.returncode:
+                message = "Unable to drop database: " + db + " during import!"
                 logging.error(message)
-        if errors == 0:
-            logging.info("Import done ...")
-            return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been imported sucessfully!")))
-        else:
-            logging.info("Import done with " + str(errors) + " errors !")
-            return web.json_response(dict(success=True, data=dict(msg="Database: " + nodesdb + " has been imported but " + str(errors) + " errors have been met while importing files!")))
+                imperr += 1
+                continue
+            shutil.rmtree('/files/' + db)
+            os.mkdir('/files/' + db)
+            logging.info("Trying to create database " + db + "...")
+            ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'psql -c "create database ' + db + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if  ag.returncode:
+                message = "Unable to create database: " + db + " during import!"
+                logging.error(message)
+                imperr += 1
+                continue
+            logging.info("Trying to restore database " + db + "...")
+            ag = subprocess.run(['su', '-', 'agensgraph', '-c', 'pg_restore -d ' + db + ' /export/' + db + '/database.dump'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            if  ag.returncode:
+                message = "Error during import of database: " + db
+                logging.error(message)
+                imperr += 1
+                continue
+            ncache = Cache(db, objects=True)
+            bnodes = set()
+            x = ncache.execute("match (n:nodes {type:'B'}) return id(n) as rid")
+            bnodes = bnodes.union(set([row['rid'] for row in x.fetchall()]))
+            ncache.disconnect()
+            errors = 0
+            for n in bnodes:
+                logging.info("Trying to create file  /files/" + db + "/" + n + ".zip...")
+                try: shutil.copy('/export/' + db + '/' + n + '.zip', '/files/' + db)
+                except:
+                    errors += 1
+                    gerrors += 1
+                    message = "Unable to copy file " + n + ".zip!"
+                    logging.error(message)
+            if errors == 0: logging.info("Import of database: " + db + " done ...")
+            else: logging.info("Import of datbase: " + db + " done with " + str(errors) + " error(s) !")
+        if imperr > 0: return web.json_response(dict(success=False, data=dict(msg= str(imperr) + " database(s) has(ve) not been imported!")))
+        elif gerrors == 0: return web.json_response(dict(success=True, data=dict(msg="Database(s): " + str(nodesdb) + " has(ve) been imported sucessfully!")))
+        else: return web.json_response(dict(success=True, data=dict(msg="Database(s): " + str(nodesdb) + " has(ve) been imported but " + str(gerrors) + " error(s) has(ve) been met while importing files!")))
 
     @trace_call
     def cleardependentcaches(s, request):
