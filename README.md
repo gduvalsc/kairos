@@ -69,7 +69,7 @@ docker create
         --name kairos 
         -h kairos
         -P --privileged -v /sys/fs/cgroup:/sys/fs/cgroup 
-        -p 2443:443
+        -p 4443:443
         -v /Users/gdsc/Documents/kairos_store/data:/home/agensgraph/data 
         -v /Users/gdsc/Documents/kairos_store/files:/files
         -v /Users/gdsc/Documents/kairos_export:/export
@@ -100,7 +100,7 @@ docker exec -it kairos bash
  We can now check that the application is available by using a browser on the host system with the following URL:
 
 ```
-https://physical_machine:2443
+https://physical_machine:4443
 ```
 
 ![kairos](pictures/kairos.png)
