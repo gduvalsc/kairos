@@ -18,7 +18,7 @@
 
 dhtmlxEvent(window,"load",function(){
 
-    var VERSION = "5.5";
+    var VERSION = "@@VERSION@@";
     var ajaxcpt = 0;
     var desktop = {};
     desktop.variables = {};
@@ -978,7 +978,7 @@ dhtmlxEvent(window,"load",function(){
             uniqueid = _.uniqueId('log');
             var wml = create_window(id, title);
             wml.attachHTMLString('<div id="' + uniqueid + '" style="width:100%;height:100%;overflow:auto"></div>');
-            ws.send("tail -" + desktop.settings.loglines + " " + file);
+            ws.send("tail -f " + file);
         };
         ws.onmessage = function (e) {
             if (e.data === '__END_OF_PIPE__') {
@@ -1108,14 +1108,6 @@ dhtmlxEvent(window,"load",function(){
             _.each(['off', 'fatal', 'error', 'warn', 'info', 'debug', 'trace', 'all'], function (l) {
                 listlogging.push({text: l, value: l, selected: l === desktop.settings.logging ? true : false});
             });
-            var compatibility = [];
-            _.each(['V4', 'V5', 'LAST'], function (l) {
-                compatibility.push({text: l, value: l, selected: l === desktop.settings.compatibility ? true : false});
-            });
-            var listloglines = [];
-            _.each(_.range(100, 10000, 100), function (n) {
-                listloglines.push({text: n, value: n, selected: n === desktop.settings.loglines ? true : false});
-            });
             var listtop = [];
             _.each(_.range(1, 101), function (n) {
                 listtop.push({text: n, value: n, selected: n === desktop.settings.top ? true : false});
@@ -1131,8 +1123,6 @@ dhtmlxEvent(window,"load",function(){
                     {type: "select", label: "Wallpaper", options: listwallpapers, name: "wallpaper"},
                     {type: "select", label: "Plot orientation", options: plotorientation, name: "plotorientation"},
                     {type: "select", label: "Logging", options: listlogging, name: "logging"},
-                    {type: "select", label: "Compatibility", options: compatibility, name: "compatibility"},
-                    {type: "select", label: "Log lines to display", options: listloglines, name: "loglines"},
                     {type: "select", label: "Request labels limit", options: listtop, name: "top"},
                 ]},
                 {type: "button", value: "Update settings", name: "updatesettings", width: 460}
@@ -1140,23 +1130,18 @@ dhtmlxEvent(window,"load",function(){
             var settingsform = wsettings.attachForm();
             settingsform.cross_and_load(settingsdata);
             settingsform.attachEvent("onButtonClick", function(){
-                if (settingsform.getItemValue('plotorientation') === 'vertical' && settingsform.getItemValue('compatibility') !== 'V4') {
-                    alertify.error('<div style="font-size:150%;">' + "Vertical plotorientation is not yet compatible with LAST compatibility !" + "</div>");
-                } else {
-                    waterfall([
-                        ajax_get_first_in_async_waterfall("updatesettings", {user: desktop.user, systemdb: settingsform.getItemValue("systemdb"), nodesdb: settingsform.getItemValue("nodesdb"), loglines: settingsform.getItemValue("loglines"), template: settingsform.getItemValue("template"), colors: settingsform.getItemValue("color"), wallpaper: settingsform.getItemValue("wallpaper"), top: settingsform.getItemValue("top"), plotorientation: settingsform.getItemValue("plotorientation"), logging: settingsform.getItemValue("logging"), compatibility: settingsform.getItemValue("compatibility")}),
-                        function (x) {
-                            waterfall([
-                                ajax_get_first_in_async_waterfall("getsettings", {user: desktop.user}),
-                                function (y) {
-                                    desktop.settings = y.settings;
-                                    wsettings.close();
-                                }
-                            ]);
-                        }
-                    ]);
-    
-                }
+                waterfall([
+                    ajax_get_first_in_async_waterfall("updatesettings", {user: desktop.user, systemdb: settingsform.getItemValue("systemdb"), nodesdb: settingsform.getItemValue("nodesdb"), template: settingsform.getItemValue("template"), colors: settingsform.getItemValue("color"), wallpaper: settingsform.getItemValue("wallpaper"), top: settingsform.getItemValue("top"), plotorientation: settingsform.getItemValue("plotorientation"), logging: settingsform.getItemValue("logging")}),
+                    function (x) {
+                        waterfall([
+                            ajax_get_first_in_async_waterfall("getsettings", {user: desktop.user}),
+                            function (y) {
+                                desktop.settings = y.settings;
+                                wsettings.close();
+                            }
+                        ]);
+                    }
+                ]);
             });
         });
     };
@@ -1684,7 +1669,7 @@ dhtmlxEvent(window,"load",function(){
 
     var postgres_logfile = function () {
 		var prefix = "wss://" + window.location.host;
-        manage_log(prefix + "/get_postgres_logfile", "postgres_logfile", "PostgreSQL log", "/home/agensgraph/data/logfile");
+        manage_log(prefix + "/get_postgres_logfile", "postgres_logfile", "PostgreSQL log", "/var/lib/pgsql/10/data/$(cut -f 2 -d ' ' /var/lib/pgsql/10/data/current_logfiles)");
     };
 
     var webserver_log = function () {
@@ -2082,14 +2067,14 @@ dhtmlxEvent(window,"load",function(){
         tree.attachEvent("onDrop", function (id, pid) {
             if (desktop.mouseevent.ctrlKey === false && desktop.mouseevent.shiftKey === false && desktop.mouseevent.altKey === false && desktop.mouseevent.metaKey === false && pid !== startpid) {
                 waterfall([
-                    ajax_get_first_in_async_waterfall("movenode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: id, to: pid}),
+                    ajax_get_first_in_async_waterfall("movenode", {nodesdb: desktop.settings.nodesdb, from: id, to: pid}),
                     function () {
                     }
                 ]);
             }
             if (desktop.mouseevent.altKey) {
                 waterfall([
-                    ajax_get_first_in_async_waterfall("aggregateaddnode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: id, to: pid, path: tree.getPath(id)}),
+                    ajax_get_first_in_async_waterfall("aggregateaddnode", {nodesdb: desktop.settings.nodesdb, from: id, to: pid}),
                     function () {
                         waterfall([
                             ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: pid}),
@@ -2105,7 +2090,7 @@ dhtmlxEvent(window,"load",function(){
             }
             if (desktop.mouseevent.ctrlKey || desktop.mouseevent.shiftKey) {
                 waterfall([
-                    ajax_get_first_in_async_waterfall("compareaddnode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: id, to: pid, path: tree.getPath(id)}),
+                    ajax_get_first_in_async_waterfall("compareaddnode", {nodesdb: desktop.settings.nodesdb, from: id, to: pid}),
                     function () {
                         waterfall([
                             ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: pid}),
@@ -2121,7 +2106,7 @@ dhtmlxEvent(window,"load",function(){
             }
             if (desktop.mouseevent.metaKey) {
                 waterfall([
-                    ajax_get_first_in_async_waterfall("linkfathernode", {origindb: desktop.settings.nodesdb, targetdb: desktop.settings.nodesdb, from: id, to: pid, path: tree.getPath(id)}),
+                    ajax_get_first_in_async_waterfall("linkfathernode", {nodesdb: desktop.settings.nodesdb, from: id, to: pid}),
                     function () {
                         waterfall([
                             ajax_get_first_in_async_waterfall("getnode", {nodesdb: desktop.settings.nodesdb, id: pid}),
@@ -2167,7 +2152,8 @@ dhtmlxEvent(window,"load",function(){
 				{id: "run_choice", text: "Run choice"},
 				{type: "separator"},
 				{id: "clear_dependent_caches", text: "Clear dependent caches"},
-				{id: "build_dependent_caches", text: "Build dependent caches"},
+                {id: "build_dependent_caches", text: "Build dependent caches"},
+				{id: "clear_memory_caches", text: "Clear memory caches"},
 				{type: "separator"},
 				{id: "display_collection", text: "Display collection"},
 				{type: "separator"},
@@ -2199,6 +2185,7 @@ dhtmlxEvent(window,"load",function(){
         contextmenu.setItemImage("unload","fa fa-cloud-download", "fa fa-cloud-download");
         contextmenu.setItemImage("clear_dependent_caches","fas fa-angle-double-down", "fas fa-angle-double-down");
         contextmenu.setItemImage("build_dependent_caches","fas fa-angle-double-up", "fas fa-angle-double-up");
+        contextmenu.setItemImage("clear_memory_caches","fas fa-angle-double-down", "fas fa-angle-double-down");
         contextmenu.setItemImage("export","fa fa-sign-out", "fa fa-sign-out");
         contextmenu.setItemImage("import","fa fa-sign-in", "fa fa-sign-in");
         contextmenu.setItemImage("empty_trash","fa fa-trash-o", "fa fa-trash-o");
@@ -2214,7 +2201,7 @@ dhtmlxEvent(window,"load",function(){
             if (select) {
                 var type = tree.getUserData(id, "type");
                 var contextmenuenabled = {upload: false, create_node: true, rename_node: false, delete_node: false, refresh_node: true, open_node: true, execute_query: false, run_chart: false, run_choice: false, download: false, downloadc: true, display_member: false, unload: false, export: false, import:false, clear_dependent_caches: false, build_dependent_caches: false, empty_trash: false};
-                if (id === rootid) {
+                if (id == rootid) {
                     contextmenuenabled.export = true;
                     contextmenuenabled.import = true;    
                 }
@@ -2489,6 +2476,15 @@ dhtmlxEvent(window,"load",function(){
                         }
                     ]);
                 }
+                if (fid === "clear_memory_caches") {
+                    log.debug("Clear memory caches at node: " + id + " (" + tree.getItemText(id) + ")");
+                    waterfall([
+                        ajax_get_first_in_async_waterfall("clearmemorycaches", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id}),
+                        function (x) {
+                            alertify.success('<div style="font-size:150%;">' + x.msg + "</div>");
+                        }
+                    ]);
+                }
                 if (fid === "empty_trash") {
                     log.debug("Empty trash");
                     waterfall([
@@ -2512,197 +2508,14 @@ dhtmlxEvent(window,"load",function(){
         ]);
     };
 
-    var dispchart0 = function (node, chart, layoutpiece, wlayout) {
-        log.debug('Getting chart, template & colors');
-        log.debug('Starting chart display');
-        var uniquecid = _.uniqueId('chart');
-        var wchart = null;
-        if (layoutpiece === undefined) {
-            wchart = create_window("chart", node.name + ' - ' + chart);
-        } else {
-            wchart = wlayout.tabs(layoutpiece);
-        }
-        wchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto"></div>');
-        var prepare_and_draw = function(x, q) {
-            log.debug('Preparing chart:' + chart);
-            var g = new KairosCharter.Chart({width: wchart.cell.clientWidth - 3, height: wchart.cell.clientHeight - 3}, desktop.settings.logging);
-            wchart.kairosg = g;
-            var m = g.getChartTemplate();
-            _.each(x.template.lines, function (y) {
-                m.setLine(y);
-            });
-            _.each(x.template.columns, function (y) {
-                m.setColumn(y);
-            });
-            var boundedobjects = {};
-            m.setObject("main", x.template.main);
-            m.setObject("margintop", x.template.margintop);
-            m.setObject("marginbottom", x.template.marginbottom);
-            m.setObject("marginleft", x.template.marginleft);
-            m.setObject("marginright", x.template.marginright);
-            m.setObject(uniquecid + "title", x.template.title);
-            boundedobjects[uniquecid + "title"] = g.bindTitle(uniquecid + "title", x.chart.title);
-            m.setObject(uniquecid + "subtitle", x.template.subtitle);
-            boundedobjects[uniquecid + "subtitle"] = g.bindTitle(uniquecid + "subtitle", x.chart.subtitle);
-            var numplots = node.datasource.type === 'C' ? node.datasource.producers.length : 1;
-            var reftime = [];
-            _.each(_.range(numplots), function (i) {
-                reftime[i] = new KairosCharter.RefTime();
-                if (x.chart.reftime !== undefined) {
-                    var qreftime = node.datasource.type === 'C' ? q[x.chart.reftime][i] : q[x.chart.reftime];
-                    _.each(qreftime, function (ref) {
-                        reftime[i].store(ref);
-                    });
-                }
-                var plotid = desktop.settings.plotorientation === 'vertical' ? "plot" + i + "0" : "plot0" + i;
-                if (boundedobjects[uniquecid + plotid] === undefined) {
-                    m.setObject(uniquecid + plotid, x.template[plotid]);
-                    boundedobjects[uniquecid + plotid] = g.bindPlot(uniquecid + plotid);
-                    m.getObject(uniquecid + plotid).unhidelines();
-                    m.getObject(uniquecid + plotid).unhidecolumns();
-                }
-                var plottitleid = desktop.settings.plotorientation === 'vertical' ? "plottitle" + i + "0" : "plottitle0" + i;
-                if (boundedobjects[uniquecid + plottitleid] === undefined) {
-                    m.setObject(uniquecid + plottitleid, x.template[plottitleid]);
-                    var title = node.datasource.type === "C" ? node.datasource.producers[i].path : node.name;
-                    title = node.datasource.type === "L" ? node.datasource.producers[0].path : title;
-                    boundedobjects[uniquecid + plottitleid] = g.bindTitle(uniquecid + plottitleid, title);
-                }
-                var xaxisid = desktop.settings.plotorientation === 'vertical' ? "xaxis0" : "xaxis" + i;
-                if (boundedobjects[uniquecid + xaxisid] === undefined) {
-                    m.setObject(uniquecid + xaxisid, x.template[xaxisid]);
-                    boundedobjects[uniquecid + xaxisid] = g.bindXaxis(uniquecid + xaxisid, "", "linear");
-                    var xaxistitleid = desktop.settings.plotorientation === 'vertical' ? "xaxistitle0" : "xaxistitle" + i;
-                    m.setObject(uniquecid + xaxistitleid, x.template[xaxistitleid]);
-                }
-                if (boundedobjects[uniquecid + "legend"] === undefined) {
-                    m.setObject(uniquecid + "legend", x.template.legend);
-                    boundedobjects[uniquecid + "legend"] = g.bindLegend(uniquecid + "legend");
-                }
-                var il = -1;
-                var ir = -1;
-                _.each(x.chart.yaxis, function (y) {
-                    y.position = y.position === undefined ? 'left' : y.position;
-                    ir = y.position.toLowerCase() === 'right' ? ir + 1 : ir;
-                    il = y.position.toLowerCase() !== 'right' ? il + 1 : il;
-                    var yaxisid = desktop.settings.plotorientation === 'vertical' ? "yaxis" + i : "yaxis0";
-                    var yaxistitleid = "yaxistitle";
-                    var ytn = y.position.toLowerCase() === 'right' ? yaxistitleid + "right" + ir : yaxistitleid + "left" + il;
-                    var yn = y.position.toLowerCase() === 'right' ? yaxisid + "right" + ir : yaxisid + "left" + il;
-                    if (boundedobjects[uniquecid + yn] === undefined) {
-                        m.setObject(uniquecid + yn, x.template[yn]);
-                        m.getObject(uniquecid + yn).unhidecolumns();
-                        boundedobjects[uniquecid + yn] = g.bindYaxis(uniquecid + yn, y.title, y.position.toLowerCase(), y.scaling, y.properties, y.minvalue, y.maxvalue);
-                    }
-                    _.each(y.renderers, function (r) {
-                        var renderer = {type: r.type};
-                        var dataset = new KairosCharter.Dataset(reftime[i]);
-                        _.each(r.datasets, function (d) {
-                            var qquery = node.datasource.type === 'C' ? q[d.query][i] : q[d.query];
-                            _.each(qquery, function (z) {
-                                dataset.store(z);
-                                if (dataset.color[z[d.label]] === undefined) {
-                                    var color = x.colors.colors[z[d.label]] === undefined ? undefined : x.colors.colors[z[d.label]];
-                                    dataset.color[z[d.label]] = dataset.getColor(z[d.label], "", color);
-                                }
-                                if (d.onclick !== undefined && dataset.onclick[z[d.label]] === undefined) {
-                                    dataset.onclick[z[d.label]] = function () {
-                                        desktop.variables[d.onclick.variable] = z[d.label];
-                                        if (d.onclick.action === "dispchart") {
-                                            dispchart(node, d.onclick.chart);
-                                        }
-                                    }
-                                }
-                                if (d.info !== undefined && dataset.info[z[d.label]] === undefined) {
-                                    dataset.info[z[d.label]] = function () {
-                                        desktop.variables[d.info.variable] = z[d.label];
-                                        waterfall([
-                                            ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, query: d.info.query, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)}),
-                                            function (y) {
-                                                alertify.set({ delay: 15000 });
-                                                var key = node.datasource.type === 'C' ? y[i][0].key : y[0].key;
-                                                var value = node.datasource.type === 'C' ? y[i][0].value : y[0].value;
-                                                alertify.log(key + "<hr/>" + value);
-                                            }
-                                        ]);
-                                    }
-                                }
-                            });
-                        });
-                        var uniquebid = _.uniqueId('bind');
-                        boundedobjects[uniquebid] = g.bind(uniquecid + uniquebid, dataset, uniquecid + plotid, renderer, uniquecid + xaxisid, uniquecid + yn, uniquecid + "legend");
-                    });
-                });
-            });
-            log.debug('Drawing chart: ' + chart);
-            var selector = '[id=' + uniquecid + ']';
-            g.draw(selector, uniquecid, desktop);
-            log.debug('End of drawing');
-        };
-        parallel({
-            chart: ajax_get_in_async_parallel("getchart", {chart: chart, systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb, variables: JSON.stringify(desktop.variables)}),
-            template: ajax_get_in_async_parallel("gettemplate", {template: desktop.settings.template, systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb}),
-            colors: ajax_get_in_async_parallel("getcolors", {colors: desktop.settings.colors, systemdb: desktop.settings.systemdb, nodesdb: desktop.settings.nodesdb}),
-        }, function (x) {
-            log.debug('Executing queries');
-            var chartqueries = {};
-            if (x.chart.reftime !== undefined) {
-                chartqueries[x.chart.reftime] = ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, query: x.chart.reftime, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)});
-
-            }
-            _.each(x.chart.yaxis, function (y) {
-                _.each(y.renderers, function (r) {
-                    _.each(r.datasets, function (d) {
-                        chartqueries[d.query] = ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, query: d.query, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)});
-                    });
-                });
-            });
-            falseparallel(chartqueries, function (q) {
-                wchart.resultqueries = q;
-                wchart.descchart = x;
-                prepare_and_draw(x, q);
-            });
-        });
-        wchart.attachEvent("onResizeFinish", function () {
-            wchart.kairosg.destroy();
-            prepare_and_draw(wchart.descchart, wchart.resultqueries);
-        });
-        if (wlayout !== undefined) {
-            wlayout.attachEvent("onResizeFinish", function () {
-                wchart.kairosg.destroy();
-                prepare_and_draw(wchart.descchart, wchart.resultqueries);
-            });
-            wlayout.attachEvent("onPanelResizeFinish", function () {
-                wchart.kairosg.destroy();
-                prepare_and_draw(wchart.descchart, wchart.resultqueries);
-            });
-            wlayout.attachEvent("onCollapse", function () {
-                wchart.kairosg.destroy();
-                prepare_and_draw(wchart.descchart, wchart.resultqueries);
-            });
-            wlayout.attachEvent("onExpand", function () {
-                wchart.kairosg.destroy();
-                prepare_and_draw(wchart.descchart, wchart.resultqueries);
-            });
-            wlayout.attachEvent("onDock", function () {
-                wchart.kairosg.destroy();
-                prepare_and_draw(wchart.descchart, wchart.resultqueries);
-            });
-            wlayout.attachEvent("onUndock", function () {
-                wchart.kairosg.destroy();
-                prepare_and_draw(wchart.descchart, wchart.resultqueries);
-            });
-        }
-    };
-
-    var dispchart1 = function (node, chart) {
+    var dispchart = function (node, chart) {
         var uniquecid = _.uniqueId('');
         var wchart = null;
         wchart = create_window("chart", node.name + ' - ' + chart);
         var runchart = function() {
             wchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto;text-align:center;"><img src="resources/ajax-loader.gif" alt="Work in progress..."></div>');
             waterfall([
-                ajax_get_first_in_async_waterfall("runchart", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, chart: chart, width: wchart.cell.clientWidth, height: wchart.cell.clientHeight, top: desktop.settings.top, plotorientation: desktop.settings.plotorientation, colors: desktop.settings.colors, variables: JSON.stringify(desktop.variables)}),
+                ajax_get_first_in_async_waterfall("runchart", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, chart: chart, width: wchart.cell.clientWidth, height: wchart.cell.clientHeight, top: desktop.settings.top, plotorientation: desktop.settings.plotorientation, colors: desktop.settings.colors, template: desktop.settings.template, variables: JSON.stringify(desktop.variables)}),
                 function (x) {
                     wchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto;text-align:center;"></div>');
                     var chartdiv = document.getElementById(uniquecid);
@@ -2756,14 +2569,6 @@ dhtmlxEvent(window,"load",function(){
             runchart();
         });
         runchart();
-    };
-
-    var dispchart = function (node, chart, layoutpiece, wlayout) {
-        if (desktop.settings.compatibility === 'V4') {
-            dispchart0(node, chart, layoutpiece, wlayout);
-        } else {
-            dispchart1(node, chart);
-        }
     };
     
     var dispchoice = function (node, choice) {

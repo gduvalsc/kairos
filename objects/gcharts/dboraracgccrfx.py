@@ -13,10 +13,10 @@ class UserObject(dict):
                     "scaling": "LINEAR",
                     "properties": {
                         "line": {
-                            "stroke": "black"
+                            "stroke": "gray"
                         },
                         "text": {
-                            "fill": "black"
+                            "fill": "gray"
                         }
                     },
                     "renderers": [

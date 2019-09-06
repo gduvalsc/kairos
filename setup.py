@@ -1,6 +1,6 @@
 from setuptools import setup
 setup(name='pykairos',
-      version='5.5',
+      version='@@VERSION@@',
       description='Python aiohttp server used by Kairos',
       author='Gerard Duval',
       author_email='gerard.duval@gdsoftconsulting.com',
