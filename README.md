@@ -22,7 +22,7 @@ As said above, `KAIROS` can be extended to other domains by experts in these dom
 
 ![dropdown](pictures/dropdown.png)
 
-###### A look to the main "wait events" of an Oracle database during a particular day (precision: one minute)
+###### A look to the main "waiting SQL requests" of an Oracle database during a particular day (precision: one minute)
 
 ![sample1](pictures/sample1.png)
 
