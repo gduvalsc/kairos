@@ -1,6 +1,6 @@
 VERSION=6.0
 PORT=44360
-IMAGE=kairos6
+IMAGE=kairos
 #IMAGE=gdsc/kairos:$(VERSION)
 MACHINE=kairos$(VERSION)
 NETWORK=mynetwork

@@ -1292,13 +1292,13 @@ class KairosWorker:
                 status.mapproducers[collection] = dict(deleted=dict(), created=dict(), updated=dict(), unchanged=dict())
                 datepart[collection] = dict()
                 for part in cache.collections[collection]: status.mapproducers[collection]['deleted'][part] = dict(id=part)
-            node = s.igetnodes(nodesdb=nodesdb, id=nid)[0]
+            node = s.igetnodes(nodesdb=nodesdb, id=nid, getcache=True)[0]
             producers = s.iexpand(pattern=node['datasource']['aggregatorselector'], nodesdb=nodesdb, sort=node['datasource']['aggregatorsort'], skip=node['datasource']['aggregatorskip'], take=node['datasource']['aggregatortake'])
             ncache = Cache(nodesdb, autocommit=True)
             ncache.execute("update nodes set producers='" + json.dumps(producers) + "', aggregated=now() where id = " + str(nid))
             ncache.disconnect()              
             for producer in node['datasource']['producers']:
-                pid = producer['id']
+                pid = str(producer['id'])
                 for collection in collections:        
                     datepart[collection][pid] = cache.collections[collection][pid] if pid in cache.collections[collection] else None
                     if pid in status.mapproducers[collection]['deleted']:
@@ -1382,7 +1382,7 @@ class KairosWorker:
             for collection in collections:
                 logging.info("Node: " + str(nid) + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
                 status.todo[collection] = False
-                datepart = cache.collections[collection][nid] if nid in cache.collections[collection] else None
+                datepart = cache.collections[collection][str(nid)] if str(nid) in cache.collections[collection] else None
                 status.todo[collection] = True if datepart == None else status.todo[collection]
                 status.todo[collection] = True if datepart != None and (datetime.now() - datetime.strptime(datepart, '%Y-%m-%d %H:%M:%S.%f')).seconds > timeout else status.todo[collection]                   
         except:
@@ -1618,7 +1618,7 @@ class KairosWorker:
             else:
                 for producer in producers:
                     pnode = s.igetnodes(nodesdb=nodesdb, id=producer, getcache=True)[0]             
-                    cache.collections[collection][pnode['id']] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+                    cache.collections[collection][str(pnode['id'])] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
             queue.close()
             queue.join_thread()
             error_queue.close()
@@ -1761,7 +1761,7 @@ class KairosWorker:
                 message = 'At least one error found during collection cache building! See KAIROS.LOG for more information!'
                 status.error = message
             else:
-                for collection in collections: cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+                for collection in collections: cache.collections[collection][str(nid)] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
             for collection in collections: 
                 queues[collection].close()
                 queues[collection].join_thread()
@@ -1785,7 +1785,7 @@ class KairosWorker:
             hcache = Cache(nodesdb, schema=cache.name)
             hcache.execute("create table " + collection + " as select '" + str(nid) + "'::text as kairos_nodeid, * from foreign_" +collection)
             hcache.disconnect()
-            cache.collections[collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+            cache.collections[collection][str(nid)] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
         except:
             tb = sys.exc_info()
             message = str(tb[1])
