@@ -97,6 +97,19 @@ class UserObject(dict):
                     "type": "submenu",
                     "label": "SQL requests",
                     "items": [
+                        { "type": "submenu", "tablecondition": "DBORAPDB", "label": " Choose PDB ...",
+                            "items": [
+                                { "type": "menuitem", "tablecondition": "DBORASQE", "label": "Top SQL by Elapsed time", "action": "dispchoice", "choice": "DBORAPDBSQE" },
+                                { "type": "menuitem", "tablecondition": "DBORASQC", "label": "Top SQL by CPU time", "action": "dispchoice", "choice": "DBORAPDBSQC" },
+                                { "type": "menuitem", "tablecondition": "DBORASQG", "label": "Top SQL by Gets", "action": "dispchoice", "choice": "DBORAPDBSQG" },
+                                { "type": "menuitem", "tablecondition": "DBORASQR", "label": "Top SQL by Reads", "action": "dispchoice", "choice": "DBORAPDBSQR" },
+                                { "type": "menuitem", "tablecondition": "DBORASQX", "label": "Top SQL by Executions", "action": "dispchoice", "choice": "DBORAPDBSQX" },
+                                { "type": "menuitem", "tablecondition": "DBORASQP", "label": "Top SQL by Parse calls", "action": "dispchoice", "choice": "DBORAPDBSQP" },
+                                { "type": "menuitem", "tablecondition": "DBORASQM", "label": "Top SQL by Sharable memory", "action": "dispchoice", "choice": "DBORAPDBSQM" },
+                                { "type": "menuitem", "tablecondition": "DBORASQV", "label": "Top SQL by Version count", "action": "dispchoice", "choice": "DBORAPDBSQV" },
+                                { "type": "menuitem", "tablecondition": "DBORASQW", "label": "Top SQL by Cluster wait time", "action": "dispchoice", "choice": "DBORAPDBSQW" },
+                            ]
+                        },
                         { "type": "menuitem", "tablecondition": "DBORASQE", "label": "Top SQL by Elapsed time", "action": "dispchart", "chart": "DBORASQE" },
                         { "type": "menuitem", "tablecondition": "DBORASQC", "label": "Top SQL by CPU time", "action": "dispchart", "chart": "DBORASQC" },
                         { "type": "menuitem", "tablecondition": "DBORASQG", "label": "Top SQL by Gets", "action": "dispchart", "chart": "DBORASQG" },

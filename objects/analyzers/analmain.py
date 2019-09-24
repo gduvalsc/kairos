@@ -10,16 +10,17 @@ class UserObject(dict):
                 {"context": "gentype", "action": s.gentype, "regexp": '^\w+\s(\w+)\s+'}
             ],
             "rules": [
-                {"action": s.awr, "regexp": '^WORKLOAD REPOSITORY report for'},
+                {"action": s.awrhtml, "regexp": '.[Hh][Ee][Aa][Dd].<[Tt][Ii][Tt][Ll][Ee]>AWR Report for DB:'},
+                {"action": s.awrpdb, "regexp": 'summary="This table displays pdb instance information"'},
+                {"action": s.awrrachtml, "regexp": '.head.<title>AWR RAC Report for DB:'},
                 {"action": s.astatspack, "regexp": '(^STATSPACK Statistics Report for|^STATSPACK report for)'},
+                {"action": s.awr, "regexp": '^WORKLOAD REPOSITORY report for'},
                 {"action": s.ebs, "regexp": '^REPORT TYPE: EBS12CM'},
                 {"action": s.bo, "regexp": '^REPORT TYPE: BO'},
                 {"action": s.gen, "regexp": '^REPORT TYPE: (\w+) '},
                 {"action": s.json, "regexp": '^\s+"collection":\s*"(\w+)'},
-                {"action": s.awrhtml, "regexp": '.[Hh][Ee][Aa][Dd].<[Tt][Ii][Tt][Ll][Ee]>AWR Report for DB:'},
                 {"action": s.nmon, "regexp": '^AAA,progname,'},
                 {"action": s.nmon, "regexp": '^CPU_ALL,'},
-                {"action": s.awrrachtml, "regexp": '.head.<title>AWR RAC Report for DB:'},
                 {"action": s.vmstat, "regexp": 'Collection Module:.+VmstatExaWatcher'},
                 {"action": s.tthtml, "regexp": '.<[Tt][Ii][Tt][Ll][Ee]>TTSTATS REPORT'},
                 {"action": s.sar, "regexp": '^(AIX|SunOS|HP-UX|Linux)[ \t]+(.+?)[ \t]+.*[ \t]+[0-9][0-9]/[0-9][0-9]/2?0?[0-9][0-9].*$'},
@@ -33,17 +34,31 @@ class UserObject(dict):
 
     def begin(s, a):
         a.cpt = 0
+        a.awrhtml = False
+        a.awrpdb = False
+        a.member = None
 
     def end(s, a):
-        pass
+        if a.awrhtml:
+            if a.awrpdb: a.emit(None, None, {
+                            "member": a.member,
+                            "analyzer": 'ANALAWRHTML',
+                            "collections": ['DBORAPDB', 'DBORAAWR', 'DBORAINFO', 'DBORAMISC', 'DBORAMDC', 'DBORABPA', 'DBORAWEC', 'DBORAWEV', 'DBORAWEB', 'DBORASTA', 'DBORAMTT', 'DBORALIB', 'DBORASQE', 'DBORASQP', 'DBORASQM', 'DBORASQV', 'DBORASQW', 'DBORASQG', 'DBORASQR', 'DBORASQX', 'DBORASQC', 'DBORAREQ', 'DBORALAT', 'DBORALAW', 'DBORAENQ', 'DBORATBS', 'DBORAFIL', 'DBORASGA', 'DBORAPGA', 'DBORAPGB', 'DBORAPGC', 'DBORAOSS', 'DBORATMS', 'DBORASRV', 'DBORASVW', 'DBORABUF', 'DBORASGLR', 'DBORASGPR', 'DBORASGPRR', 'DBORASGUR', 'DBORASGOR', 'DBORASGDPR', 'DBORASGPW', 'DBORASGPWR', 'DBORASGDPW', 'DBORASGTS', 'DBORASGDBC', 'DBORASGRLW', 'DBORASGIW', 'DBORASGBBW', 'DBORASGGCBB', 'DBORASGCRBR', 'DBORASGCBR', 'EXACPU', 'EXATOPDBIOR', 'EXATOPDBIOV', 'EXATOPDSKIOR', 'EXATOPDSKIOV', 'EXATOPCLLOSIO', 'EXATOPCLLOSIOL', 'EXATOPDSKOSIO', 'EXATOPDSKOSIOL']
+                        })
+            else: a.emit(None, None, {
+                    "member": a.member,
+                    "analyzer": 'ANALAWRHTML',
+                    "collections": ['DBORAAWR', 'DBORAINFO', 'DBORAMISC', 'DBORAMDC', 'DBORABPA', 'DBORAWEC', 'DBORAWEV', 'DBORAWEB', 'DBORASTA', 'DBORAMTT', 'DBORALIB', 'DBORASQE', 'DBORASQP', 'DBORASQM', 'DBORASQV', 'DBORASQW', 'DBORASQG', 'DBORASQR', 'DBORASQX', 'DBORASQC', 'DBORAREQ', 'DBORALAT', 'DBORALAW', 'DBORAENQ', 'DBORATBS', 'DBORAFIL', 'DBORASGA', 'DBORAPGA', 'DBORAPGB', 'DBORAPGC', 'DBORAOSS', 'DBORATMS', 'DBORASRV', 'DBORASVW', 'DBORABUF', 'DBORASGLR', 'DBORASGPR', 'DBORASGPRR', 'DBORASGUR', 'DBORASGOR', 'DBORASGDPR', 'DBORASGPW', 'DBORASGPWR', 'DBORASGDPW', 'DBORASGTS', 'DBORASGDBC', 'DBORASGRLW', 'DBORASGIW', 'DBORASGBBW', 'DBORASGGCBB', 'DBORASGCRBR', 'DBORASGCBR', 'EXACPU', 'EXATOPDBIOR', 'EXATOPDBIOV', 'EXATOPDSKIOR', 'EXATOPDSKIOV', 'EXATOPCLLOSIO', 'EXATOPCLLOSIOL', 'EXATOPDSKOSIO', 'EXATOPDSKOSIOL']
+                })
 
     def awr(s, a, l ,g, m):
-        a.setContext('BREAK')
-        a.emit(None, None, {
-            "member": m,
-            "analyzer": "ANALAWR",
-            "collections": ['DBORAAWR', 'DBORAINFO', 'DBORAMISC', 'DBORAMDC', 'DBORADRV', 'DBORAWEC', 'DBORAWEV', 'DBORAWEB', 'DBORASTA', 'DBORAMTT', 'DBORALIB', 'DBORASQE', 'DBORASQP', 'DBORASQM', 'DBORASQV', 'DBORASQW', 'DBORASQG', 'DBORASQR', 'DBORASQX', 'DBORASQC', 'DBORAREQ', 'DBORALAT', 'DBORALAW', 'DBORAENQ', 'DBORATBS', 'DBORAFIL', 'DBORASGA', 'DBORAPGA', 'DBORAPGB', 'DBORAPGC', 'DBORAOSS', 'DBORATMS', 'DBORASRV', 'DBORASVW', 'DBORABUF', 'DBORASGLR', 'DBORASGPR', 'DBORASGPRR', 'DBORASGUR', 'DBORASGOR', 'DBORASGDPR', 'DBORASGPW', 'DBORASGPWR', 'DBORASGDPW', 'DBORASGTS', 'DBORASGDBC', 'DBORASGRLW', 'DBORASGIW', 'DBORASGBBW', 'DBORASGGCBB', 'DBORASGCRBR', 'DBORASGCBR']
-        })
+        if not a.awrhtml:
+            a.setContext('BREAK')
+            a.emit(None, None, {
+                "member": m,
+                "analyzer": "ANALAWR",
+                "collections": ['DBORAAWR', 'DBORAINFO', 'DBORAMISC', 'DBORAMDC', 'DBORADRV', 'DBORAWEC', 'DBORAWEV', 'DBORAWEB', 'DBORASTA', 'DBORAMTT', 'DBORALIB', 'DBORASQE', 'DBORASQP', 'DBORASQM', 'DBORASQV', 'DBORASQW', 'DBORASQG', 'DBORASQR', 'DBORASQX', 'DBORASQC', 'DBORAREQ', 'DBORALAT', 'DBORALAW', 'DBORAENQ', 'DBORATBS', 'DBORAFIL', 'DBORASGA', 'DBORAPGA', 'DBORAPGB', 'DBORAPGC', 'DBORAOSS', 'DBORATMS', 'DBORASRV', 'DBORASVW', 'DBORABUF', 'DBORASGLR', 'DBORASGPR', 'DBORASGPRR', 'DBORASGUR', 'DBORASGOR', 'DBORASGDPR', 'DBORASGPW', 'DBORASGPWR', 'DBORASGDPW', 'DBORASGTS', 'DBORASGDBC', 'DBORASGRLW', 'DBORASGIW', 'DBORASGBBW', 'DBORASGGCBB', 'DBORASGCRBR', 'DBORASGCBR']
+            })
 
     def astatspack(s, a, l ,g, m):
         a.setContext('BREAK')
@@ -62,12 +77,12 @@ class UserObject(dict):
         })
 
     def awrhtml(s, a, l, g, m):
+        a.awrhtml = True
+        a.member = m
+
+    def awrpdb(s, a, l, g, m):
+        a.awrpdb = True
         a.setContext('BREAK')
-        a.emit(None, None, {
-            "member": m,
-            "analyzer": 'ANALAWRHTML',
-            "collections": ['DBORAAWR', 'DBORAINFO', 'DBORAMISC', 'DBORAMDC', 'DBORABPA', 'DBORAWEC', 'DBORAWEV', 'DBORAWEB', 'DBORASTA', 'DBORAMTT', 'DBORALIB', 'DBORASQE', 'DBORASQP', 'DBORASQM', 'DBORASQV', 'DBORASQW', 'DBORASQG', 'DBORASQR', 'DBORASQX', 'DBORASQC', 'DBORAREQ', 'DBORALAT', 'DBORALAW', 'DBORAENQ', 'DBORATBS', 'DBORAFIL', 'DBORASGA', 'DBORAPGA', 'DBORAPGB', 'DBORAPGC', 'DBORAOSS', 'DBORATMS', 'DBORASRV', 'DBORASVW', 'DBORABUF', 'DBORASGLR', 'DBORASGPR', 'DBORASGPRR', 'DBORASGUR', 'DBORASGOR', 'DBORASGDPR', 'DBORASGPW', 'DBORASGPWR', 'DBORASGDPW', 'DBORASGTS', 'DBORASGDBC', 'DBORASGRLW', 'DBORASGIW', 'DBORASGBBW', 'DBORASGGCBB', 'DBORASGCRBR', 'DBORASGCBR', 'EXACPU', 'EXATOPDBIOR', 'EXATOPDBIOV', 'EXATOPDSKIOR', 'EXATOPDSKIOV', 'EXATOPCLLOSIO', 'EXATOPCLLOSIOL', 'EXATOPDSKOSIO', 'EXATOPDSKOSIOL']
-        })
         
     def vmstat(s, a, l, g, m):
         a.setContext('BREAK')
@@ -154,4 +169,4 @@ class UserObject(dict):
 
     def stop(s, a, l, g, m):
         a.cpt += 1
-        if (a.cpt > 9): a.setContext('BREAK')
+        if (a.cpt > 99): a.setContext('BREAK')

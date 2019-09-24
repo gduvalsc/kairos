@@ -1,4 +1,4 @@
-VERSION=6.0
+VERSION=6.1
 PORT=44360
 IMAGE=kairos
 #IMAGE=gdsc/kairos:$(VERSION)

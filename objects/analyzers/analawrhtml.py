@@ -105,8 +105,8 @@ class UserObject(dict):
                 {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsggcbb", "scope": "DBORASGGCBB"},
                 {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgcrbr", "scope": "DBORASGCRBR"},
                 {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgcbr", "scope": "DBORASGCBR"},
-                {"action": s.athget, "regexp": '(.+Time.+|Executions|.+Total|SQL.+)', "tag": 'th', "context": "thsqc", "scope": "DBORASQC"},
-                {"action": s.athget, "regexp": '(.+Time.+|Executions|.+Total|SQL.+|CPU)', "tag": 'th', "context": "thsqe", "scope": "DBORASQE"},
+                {"action": s.athget, "regexp": '(.+Time.+|Executions|.+Total|SQL.+|PDB)', "tag": 'th', "context": "thsqc", "scope": "DBORASQC"},
+                {"action": s.athget, "regexp": '(.+Time.+|Executions|.+Total|SQL.+|CPU|PDB)', "tag": 'th', "context": "thsqe", "scope": "DBORASQE"},
                 {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqg", "scope": "DBORASQG"},
                 {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqm", "scope": "DBORASQM"},
                 {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqp", "scope": "DBORASQP"},
@@ -138,8 +138,8 @@ class UserObject(dict):
             ],
             "outcontextrules": [
                 {"action": s.genstate('thtab1'), "regexp": 'DB Name.*ReleaseRAC', "tag": 'tr'},
-                #{"action": s.genstate('thtab2'), "regexp": '^.InstanceInst.*Time', "tag": 'tr'},
-                #{"action": s.genstate('thtab3'), "regexp": '^Container DB Id', "tag": 'tr'},
+                {"action": s.genstate('thtab2'), "regexp": 'InstanceInst.*Time', "tag": 'tr'},
+                {"action": s.genstate('thtab3'), "regexp": 'Container DB Id', "tag": 'tr'},
                 {"action": s.genstate('thtab4'), "regexp": 'Snap.*Cursors/Session', "tag": 'tr'},
                 {"action": s.genstate('thtms'), "regexp": 'Time Model Statistics', "tag": 'h3', "scope": "DBORATMS"},
                 {"action": s.genstate('thoss'), "regexp": 'Operating System Statistics', "tag": 'h3', "scope": "DBORAOSS"},
@@ -250,7 +250,7 @@ class UserObject(dict):
                     dinfoinstance['iname'] = y['Instance'] if 'Instance' in y else ''
                     dinfoinstance['inum'] = y['Instnum'] if 'Instnum' in y else ''
                     dinfoinstance['startup'] = y['StartupTime'] if 'StartupTime' in y else ''
-                    dinfoinstance['type'] = 'AWR_12G' if '12.2' in y['Release'] and dinfoinstance['cdb'] == 'YES' else 'AWR_11G'
+                    dinfoinstance['type'] = 'AWR_12C' if '12.2' in y['Release'] and dinfoinstance['cdb'] == 'YES' else 'AWR_11G'
                     dinfoinstance['cdbid'] = ''
                     dinfoinstance['cname'] = ''
                     dinfoinstance['open'] = ''
@@ -355,7 +355,7 @@ class UserObject(dict):
                     stack.append(dict(timestamp=a.date, item=item, gets=gets, pins=pins, reloads=reloads, invalidations=invalidations))
                 a.emit('DBORALIB', d, stack)
             if x == 'SQL ordered by Elapsed Time':
-                d = dict(timestamp='text', sqlid='text', reads='real', execs='real', cpu='real', elapsed='real', percent='real')
+                d = dict(timestamp='text', sqlid='text', reads='real', execs='real', cpu='real', elapsed='real', percent='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     elapsed = tof(y['ElapsedTime(s)']) / a.dur
@@ -365,44 +365,48 @@ class UserObject(dict):
                     try: percent = tof(y['%Total'])
                     except: percent = tof(y['%TotalDBTime'])
                     sqlid = y['SQLId']
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
                     a.sqlid[sqlid] = y['SQLModule']
                     reads=0.0
-                    stack.append(dict(timestamp=a.date, sqlid=sqlid, reads=reads, execs=execs, cpu=cpu, elapsed=elapsed, percent=percent))
+                    stack.append(dict(timestamp=a.date, sqlid=sqlid, reads=reads, execs=execs, cpu=cpu, elapsed=elapsed, percent=percent, pdb=pdb))
                 a.emit('DBORASQE', d, stack)
             if x == 'SQL ordered by Parse Calls':
-                d = dict(timestamp='text', sqlid='text', parses='real', execs='real', percent='real')
+                d = dict(timestamp='text', sqlid='text', parses='real', execs='real', percent='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     parses = tof(y['ParseCalls']) / a.dur
                     execs = tof(y['Executions']) / a.dur
                     percent = tof(y['%TotalParses'])
                     sqlid = y['SQLId']
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
                     a.sqlid[sqlid] = y['SQLModule']
-                    stack.append(dict(timestamp=a.date, sqlid=sqlid, parses=parses, execs=execs, percent=percent))
+                    stack.append(dict(timestamp=a.date, sqlid=sqlid, parses=parses, execs=execs, percent=percent, pdb=pdb))
                 a.emit('DBORASQP', d, stack)
             if x == 'SQL ordered by Sharable Memory':
-                d = dict(timestamp='text', sqlid='text', sharedmem='real', execs='real', percent='real')
+                d = dict(timestamp='text', sqlid='text', sharedmem='real', execs='real', percent='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     sharedmem = tof(y['SharableMem(b)'])
                     execs = tof(y['Executions']) / a.dur
                     percent = tof(y['%Total'])
                     sqlid = y['SQLId']
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
                     a.sqlid[sqlid] = y['SQLModule']
-                    stack.append(dict(timestamp=a.date, sqlid=sqlid, sharedmem=sharedmem, execs=execs, percent=percent))
+                    stack.append(dict(timestamp=a.date, sqlid=sqlid, sharedmem=sharedmem, execs=execs, percent=percent, pdb=pdb))
                 a.emit('DBORASQM', d, stack)
             if x == 'SQL ordered by Version Count':
-                d = dict(timestamp='text', sqlid='text', versioncount='real', execs='real')
+                d = dict(timestamp='text', sqlid='text', versioncount='real', execs='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     versioncount = tof(y['VersionCount'])
                     execs = tof(y['Executions']) / a.dur
                     sqlid = y['SQLId']
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
                     a.sqlid[sqlid] = y['SQLModule']
-                    stack.append(dict(timestamp=a.date, sqlid=sqlid, versioncount=versioncount, execs=execs))
+                    stack.append(dict(timestamp=a.date, sqlid=sqlid, versioncount=versioncount, execs=execs, pdb=pdb))
                 a.emit('DBORASQV', d, stack)
             if x == 'SQL ordered by Cluster Wait Time':
-                d = dict(timestamp='text', sqlid='text', clusterwait='real', elapsed='real', cpu='real', execs='real')
+                d = dict(timestamp='text', sqlid='text', clusterwait='real', elapsed='real', cpu='real', execs='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     execs = tof(y['Executions']) / a.dur
@@ -411,11 +415,12 @@ class UserObject(dict):
                     try: cpu = tof(y['%CPU']) * elapsed / 100
                     except: cpu = tof(y['CPUTime(s)'])
                     sqlid = y['SQLId']
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
                     a.sqlid[sqlid] = y['SQLModule']
-                    stack.append(dict(timestamp=a.date, sqlid=sqlid, clusterwait=clusterwait, elapsed=elapsed, cpu=cpu, execs=execs))
+                    stack.append(dict(timestamp=a.date, sqlid=sqlid, clusterwait=clusterwait, elapsed=elapsed, cpu=cpu, execs=execs, pdb=pdb))
                 a.emit('DBORASQW', d, stack)
             if x == 'SQL ordered by Gets':
-                d = dict(timestamp='text', sqlid='text', gets='real', execs='real', percent='real', cpu='real', elapsed='real')
+                d = dict(timestamp='text', sqlid='text', gets='real', execs='real', percent='real', cpu='real', elapsed='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     gets = tof(y['BufferGets']) / a.dur
@@ -425,11 +430,12 @@ class UserObject(dict):
                     try: cpu = tof(y['%CPU']) * elapsed / 100
                     except: cpu = tof(y['CPUTime(s)'])
                     sqlid = y['SQLId']
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
                     a.sqlid[sqlid] = y['SQLModule']
-                    stack.append(dict(timestamp=a.date, sqlid=sqlid, gets=gets, execs=execs, percent=percent, cpu=cpu, elapsed=elapsed))
+                    stack.append(dict(timestamp=a.date, sqlid=sqlid, gets=gets, execs=execs, percent=percent, cpu=cpu, elapsed=elapsed, pdb=pdb))
                 a.emit('DBORASQG', d, stack)
             if x == 'SQL ordered by Reads':
-                d = dict(timestamp='text', sqlid='text', reads='real', execs='real', percent='real', cpu='real', elapsed='real')
+                d = dict(timestamp='text', sqlid='text', reads='real', execs='real', percent='real', cpu='real', elapsed='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     reads = tof(y['PhysicalReads']) / a.dur
@@ -439,11 +445,12 @@ class UserObject(dict):
                     try: cpu = tof(y['%CPU']) * elapsed
                     except: cpu = tof(y['CPUTime(s)'])
                     sqlid = y['SQLId']
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
                     a.sqlid[sqlid] = y['SQLModule']
-                    stack.append(dict(timestamp=a.date, sqlid=sqlid, reads=reads, execs=execs, percent=percent, cpu=cpu, elapsed=elapsed))
+                    stack.append(dict(timestamp=a.date, sqlid=sqlid, reads=reads, execs=execs, percent=percent, cpu=cpu, elapsed=elapsed, pdb=pdb))
                 a.emit('DBORASQR', d, stack)
             if x == 'SQL ordered by Executions':
-                d = dict(timestamp='text', sqlid='text', execs='real', rows='real', cpuperexec='real', elapsedperexec='real')
+                d = dict(timestamp='text', sqlid='text', execs='real', rows='real', cpuperexec='real', elapsedperexec='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     rows = tof(y['RowsProcessed']) / a.dur
@@ -454,11 +461,12 @@ class UserObject(dict):
                     except: cpuperexec = tof(y['CPUperExec(s)']) * execs
                     elapsedperexec = elapsed / execs
                     sqlid = y['SQLId']
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
                     a.sqlid[sqlid] = y['SQLModule']
-                    stack.append(dict(timestamp=a.date, sqlid=sqlid, execs=execs, rows=rows, cpuperexec=cpuperexec, elapsedperexec=elapsedperexec))
+                    stack.append(dict(timestamp=a.date, sqlid=sqlid, execs=execs, rows=rows, cpuperexec=cpuperexec, elapsedperexec=elapsedperexec, pdb=pdb))
                 a.emit('DBORASQX', d, stack)
             if x == 'SQL ordered by CPU Time':
-                d = dict(timestamp='text', sqlid='text', gets='real', execs='real', cpu='real', elapsed='real', percent='real')
+                d = dict(timestamp='text', sqlid='text', gets='real', execs='real', cpu='real', elapsed='real', percent='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     cpu = tof(y['CPUTime(s)']) / a.dur
@@ -467,9 +475,10 @@ class UserObject(dict):
                     try: percent = tof(y['%Total'])
                     except: percent = tof(y['%TotalDBTime'])
                     sqlid = y['SQLId']
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
                     a.sqlid[sqlid] = y['SQLModule']
                     gets = 0.0
-                    stack.append(dict(timestamp=a.date, sqlid=sqlid, gets=gets, execs=execs, cpu=cpu, elapsed=elapsed, percent=percent))
+                    stack.append(dict(timestamp=a.date, sqlid=sqlid, gets=gets, execs=execs, cpu=cpu, elapsed=elapsed, percent=percent, pdb=pdb))
                 a.emit('DBORASQC', d, stack)
             if x == 'Complete List of SQL Text':
                 d = dict(sqlid='text', module='text', request='text')
@@ -646,7 +655,7 @@ class UserObject(dict):
                     stack.append(dict(timestamp=a.date, bufpool=bufpool, sizeforest=sizeforest, sizefactor=sizefactor, buffers=buffers, estphysreadsfactor=estphysreadsfactor, estphysreads=estphysreads))
                 a.emit('DBORABPA', d, stack)
             if x == 'Segments by Logical Reads':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', gets='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', gets='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -655,10 +664,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     gets = tof(y['LogicalReads']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, gets=gets))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, gets=gets, pdb=pdb))
                 a.emit('DBORASGLR', d, stack)
             if x == 'Segments by Physical Reads':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', reads='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', reads='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -667,10 +677,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     reads = tof(y['PhysicalReads']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, reads=reads))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, reads=reads, pdb=pdb))
                 a.emit('DBORASGPR', d, stack)
             if x == 'Segments by Physical Read Requests':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', reads='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', reads='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -679,10 +690,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     reads = tof(y['PhysReadRequests']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, reads=reads))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, reads=reads, pdb=pdb))
                 a.emit('DBORASGPRR', d, stack)
             if x == 'Segments by UnOptimized Reads':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', reads='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', reads='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -691,10 +703,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     reads = tof(y['UnOptimizedReads']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, reads=reads))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, reads=reads, pdb=pdb))
                 a.emit('DBORASGUR', d, stack)
             if x == 'Segments by Optimized Reads':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', reads='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', reads='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -703,10 +716,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     reads = tof(y['OptimizedReads']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, reads=reads))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, reads=reads, pdb=pdb))
                 a.emit('DBORASGOR', d, stack)
             if x == 'Segments by Direct Physical Reads':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', reads='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', reads='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -715,10 +729,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     reads = tof(y['DirectReads']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, reads=reads))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, reads=reads, pdb=pdb))
                 a.emit('DBORASGDPR', d, stack)
             if x == 'Segments by Physical Writes':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', writes='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', writes='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -727,10 +742,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     writes = tof(y['PhysicalWrites']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, writes=writes))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, writes=writes, pdb=pdb))
                 a.emit('DBORASGPW', d, stack)
             if x == 'Segments by Physical Write Requests':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', writes='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', writes='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -739,10 +755,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     writes = tof(y['PhysWriteRequests']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, writes=writes))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, writes=writes, pdb=pdb))
                 a.emit('DBORASGPWR', d, stack)
             if x == 'Segments by Direct Physical Writes':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', writes='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', writes='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -751,10 +768,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     writes = tof(y['DirectWrites']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, writes=writes))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, writes=writes, pdb=pdb))
                 a.emit('DBORASGDPW', d, stack)
             if x == 'Segments by Table Scans':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', scans='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', scans='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -763,10 +781,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     scans = tof(y['TableScans']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, scans=scans))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, scans=scans, pdb=pdb))
                 a.emit('DBORASGTS', d, stack)
             if x == 'Segments by DB Blocks Changes':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', changes='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', changes='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -775,10 +794,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     changes = tof(y['DBBlockChanges']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, changes=changes))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, changes=changes, pdb=pdb))
                 a.emit('DBORASGDBC', d, stack)
             if x == 'Segments by Row Lock Waits':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', waits='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', waits='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -787,10 +807,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     waits = tof(y['RowLockWaits']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, waits=waits))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, waits=waits, pdb=pdb))
                 a.emit('DBORASGRLW', d, stack)
             if x == 'Segments by ITL Waits':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', waits='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', waits='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -799,10 +820,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     waits = tof(y['ITLWaits']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, waits=waits))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, waits=waits, pdb=pdb))
                 a.emit('DBORASGIW', d, stack)
             if x == 'Segments by Buffer Busy Waits':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', waits='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', waits='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -811,10 +833,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     waits = tof(y['BufferBusyWaits']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, waits=waits))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, waits=waits, pdb=pdb))
                 a.emit('DBORASGBBW', d, stack)
             if x == 'Segments by Global Cache Buffer Busy':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', waits='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', waits='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -823,10 +846,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     waits = tof(y['GCBufferBusy']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, waits=waits))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, waits=waits, pdb=pdb))
                 a.emit('DBORASGGCBB', d, stack)
             if x == 'Segments by CR Blocks Received':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', blocks='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', blocks='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -835,10 +859,11 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     blocks = tof(y['CRBlocksReceived']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, blocks=blocks))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, blocks=blocks, pdb=pdb))
                 a.emit('DBORASGCRBR', d, stack)
             if x == 'Segments by Current Blocks Received':
-                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', blocks='real')
+                d = dict(timestamp='text', owner='text', tablespace='text', object='text', subobject='text', objtype='text', blocks='real', pdb='text')
                 stack = []
                 for y in a.collected[x]:
                     owner = y['Owner']
@@ -847,7 +872,8 @@ class UserObject(dict):
                     subobject = y['SubobjectName']
                     objtype = y['Obj.Type']
                     blocks = tof(y['CurrentBlocksReceived']) / a.dur
-                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, blocks=blocks))
+                    pdb = y['PDBName'] if 'PDBName' in y else ''
+                    stack.append(dict(timestamp=a.date, owner=owner, tablespace=tablespace, object=objname, subobject=subobject, objtype=objtype, blocks=blocks, pdb=pdb))
                 a.emit('DBORASGCBR', d, stack)
             if x == 'Exadata OS CPU Statistics - Top Cells':
                 d = dict(timestamp='text', cell='text', cpu='real', usr='real', sys='real')
@@ -1067,7 +1093,7 @@ class UserObject(dict):
             k = a.lxmltext(l)
             if re.match('Snap.*Cursors/Session', k): k = 'zz9'
             if re.match('DB Name.*ReleaseRAC', k): k = 'zz8'
-            if re.match('^.InstanceInst.*Time', k): k = 'zz7'
-            if re.match('^Container DB Id', k): k = 'zz6'
+            if re.match('InstanceInst.*Time', k): k = 'zz7'
+            if re.match('Container DB Id', k): k = 'zz6'
             a.collected[k] = a.tab
         return f
