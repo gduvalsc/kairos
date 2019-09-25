@@ -686,6 +686,10 @@ function fdbahistsqlstat
      then
           fdbahistsqlstat121 $1 $2
      fi
+     if [[ "$ORAVERS" = "12.2" ]]
+     then
+          fdbahistsqlstat121 $1 $2
+     fi
 }
 function fdbahistsqlstat111
 {
@@ -809,6 +813,10 @@ function fsysmetric
           fsysmetric112 $1 $2
      fi
      if [[ "$ORAVERS" = "12.1" ]]
+     then
+          fsysmetric121 $1 $2
+     fi
+     if [[ "$ORAVERS" = "12.2" ]]
      then
           fsysmetric121 $1 $2
      fi
@@ -949,6 +957,10 @@ function fdbahistactivesesshistory
           fdbahistactivesesshistory112 $1 $2
      fi
      if [[ "$ORAVERS" = "12.1" ]]
+     then
+          fdbahistactivesesshistory121 $1 $2
+     fi
+     if [[ "$ORAVERS" = "12.2" ]]
      then
           fdbahistactivesesshistory121 $1 $2
      fi

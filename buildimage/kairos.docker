@@ -1,0 +1,92 @@
+FROM centos:latest
+RUN yum -y update
+RUN yum install -y https://centos7.iuscommunity.org/ius-release.rpm
+RUN yum install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+RUN yum install -y python-devel python-setuptools python-psutil python-pip
+RUN yum install -y python36u python36u-pip python36u-lxml python36u-devel
+RUN yum install -y postgresql10-server  postgresql10-contrib postgresql10-devel postgresql10-plpython
+RUN yum install -y wget make gcc vim zip unzip libaio crontabs psmisc telent openssh-clients
+RUN yum install -y memcached
+
+
+#### cx_oracle
+ADD instantclient-basic-linux.zip /usr/local/lib
+ADD instantclient-sdk-linux.zip /usr/local/lib
+WORKDIR /usr/local/lib
+RUN unzip instantclient-basic-linux.zip 
+RUN unzip instantclient-sdk-linux.zip 
+RUN rm instantclient-basic-linux.zip 
+RUN rm instantclient-sdk-linux.zip 
+RUN mv instantclient_12_2 instantclient
+WORKDIR /usr/local/lib/instantclient
+RUN ln -s libclntsh.so.12.1 libclntsh.so
+ENV ORACLE_HOME=/usr/local/lib/instantclient
+ENV LD_LIBRARY_PATH=/usr/local/lib/instantclient
+RUN echo ORACLE_HOME=/usr/local/lib/instantclient >> /var/lib/pgsql/.bash_profile
+RUN echo LD_LIBRARY_PATH=/usr/local/lib/instantclient >> /var/lib/pgsql/.bash_profile
+RUN echo export ORACLE_HOME LD_LIBRARY_PATH>> /var/lib/pgsql/.bash_profile
+
+### postgres oracle_fdw
+ADD oracle_fdw-2.1.0.tar.gz /tmp
+RUN cd /tmp/oracle_fdw-2.1.0 && \
+    ln -s /usr/pgsql-10/bin/pg_config /usr/local/bin/pg_config && \
+    make && \
+    make install
+
+### pgkairos
+ADD pgkairos-0.9-1.noarch.rpm /tmp
+RUN cd /tmp && rpm -i --ignoreos --prefix=/usr/pgsql-10/share/extension pgkairos-0.9-1.noarch.rpm
+
+### python & python packages
+RUN pip install --upgrade pip
+
+### python3 & python3 packages
+RUN ln -s /usr/bin/python3.6 /usr/bin/python3
+RUN ln -s /usr/bin/pip3.6 /usr/bin/pip3
+RUN pip3 install --upgrade pip
+RUN pip3 install python-magic
+RUN pip3 install pyinotify
+RUN pip3 install psycopg2-binary
+RUN pip3 install plotly
+RUN pip3 install pandas
+RUN pip3 install aiohttp===1.2.0
+RUN pip3 install yarl==0.18.0
+RUN pip3 install daemonmgr
+RUN pip3 install setproctitle
+RUN pip3 install gunicorn
+RUN pip3 install pymemcache
+
+### services
+RUN echo .include /usr/lib/systemd/system/postgresql-10.service >>/etc/systemd/system/postgresql-10.service
+RUN echo [Service] >>/etc/systemd/system/postgresql-10.service
+RUN echo Environment=ORACLE_HOME=/usr/local/lib/instantclient >>/etc/systemd/system/postgresql-10.service
+RUN echo Environment=LD_LIBRARY_PATH=/usr/local/lib/instantclient >>/etc/systemd/system/postgresql-10.service
+RUN systemctl enable postgresql-10
+ADD kairos.service /usr/lib/systemd/system
+RUN systemctl enable kairos
+RUN systemctl enable memcached
+
+### init postgresql db
+RUN ln -s /var/lib/pgsql/10/ /postgres
+COPY pgboot.tar /postgres/backups
+
+### KAIROS
+ENV KAIROS_VERSION=6.1
+RUN mkdir /autoupload
+RUN mkdir /export
+ADD resources.tar.gz /
+ADD pykairos-${KAIROS_VERSION}.tar.gz /kairosx
+RUN cd /kairosx/pykairos-${KAIROS_VERSION} && \
+    pip3 install . && \
+    cd /kairosx && \
+    rm -fr /kairosx/pykairos-${KAIROS_VERSION} && \
+    mkdir /var/log/kairos
+RUN chmod 755 /kairosx/kairos && \
+    ln -s /kairosx/kairos /usr/local/bin/kairos
+RUN daemonmgr -register --daemon kairosd --name KairosMain --command 'python3 -m pykairos --launcher' --stderr /var/log/kairos/kairos.err --stdout /var/log/kairos/kairos.out
+
+### clean
+RUN yum autoremove -y wget gcc make
+
+WORKDIR /
+CMD ["usr/sbin/init"]

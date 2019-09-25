@@ -4,6 +4,7 @@ class UserObject(dict):
             "type": "color",
             "id": "COLORS",
             "colors": {
+                "CDB$ROOT": "black",
                 "session logical reads": "darkgreen",
                 "physical reads": "red",
                 "redo size": "blue",
