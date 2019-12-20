@@ -686,7 +686,7 @@ class NotifyEventHandler(pyinotify.ProcessEvent):
         if 'kairos_' in event.path and not event.dir and os.path.isfile(event.pathname):
             if os.path.basename(event.pathname)[0] != '.':
                 logging.info("Uploading file '" + event.pathname + "' into database " + os.path.basename(event.path) + " ...")
-                status = os.system('kairos -s uploadnode --systemdb kairos_system_system --nodesdb ' + os.path.basename(event.path) + ' --file ' + event.pathname)
+                status = os.system('kairos -s uploadnode --systemdb kairos_system_system --nodesdb ' + os.path.basename(event.path) + ' --id 1 --file ' + event.pathname)
                 if status == 0: os.remove(event.pathname)
                 logging.info("File '" + event.pathname + "' has been uploaded to " + os.path.basename(event.path) + "!")
     def process_IN_ATTRIB(s, event):
