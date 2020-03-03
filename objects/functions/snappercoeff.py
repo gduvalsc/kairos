@@ -24,7 +24,7 @@ class UserObject(dict):
                     if method == '$12hours': r = 720.0
                     if method == '$day': r = 1440.0
                     return r
-                $$ language plpythonu;
+                $$ language plpython3u;
             """
         }
         super(UserObject, s).__init__(**object)

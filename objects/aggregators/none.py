@@ -7,7 +7,7 @@ class UserObject(dict):
             "function": """
                 CREATE OR REPLACE FUNCTION no_average(x text) RETURNS text AS $$
 	                return x
-                $$ language plpythonu;
+                $$ language plpython3u;
             """
         }
         super(UserObject, s).__init__(**object)

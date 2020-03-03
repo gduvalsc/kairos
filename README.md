@@ -68,18 +68,15 @@ docker create
         -it 
         --name kairos 
         -h kairos
-        -P --privileged -v /sys/fs/cgroup:/sys/fs/cgroup 
         -p 4443:443
-        -v /Users/gdsc/Documents/kairos_store/data:/home/agensgraph/data 
-        -v /Users/gdsc/Documents/kairos_store/files:/files
+        -v /Users/gdsc/Documents/kairos_store/data:/postgres/data 
         -v /Users/gdsc/Documents/kairos_export:/export
         -v /Users/gdsc/Documents/kairos_autoupload:/autoupload 
         gdsc/kairos
 ```
 
-The `KAIROS` container must remain a black box with no user data inside. For this, when the container is created, we have to specify (-v option) which directories are mounted within the container to access data. 4 directories are mounted externally:
--	/home/agensgraph/data
--	/files
+The `KAIROS` container must remain a black box with no user data inside. For this, when the container is created, we have to specify (-v option) which directories are mounted within the container to access data. 3 directories are mounted externally:
+-	/postgres/data
 -	/export
 -	/autoupload
 

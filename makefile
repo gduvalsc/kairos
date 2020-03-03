@@ -1,5 +1,5 @@
-VERSION=6.2
-PORT=44362
+VERSION=7.0
+PORT=44370
 IMAGE=kairos
 #IMAGE=gdsc/kairos:$(VERSION)
 MACHINE=kairos$(VERSION)
@@ -20,24 +20,14 @@ optimize:
 	rm /tmp/$(IMAGE).tar
 	docker images
 
-load_image_software:
-
-
 machine:
-	docker create -it --name $(MACHINE) -h $(MACHINE) -P --privileged -v /sys/fs/cgroup:/sys/fs/cgroup -p $(PORT):443 -v /Users/gdsc/Documents/kairos/$(VERSION)/data:/postgres/data -v /Users/gdsc/Documents/kairos/export:/export -v /Users/gdsc/Documents/kairos/$(VERSION)/autoupload:/autoupload $(IMAGE)
+	docker create -it --name $(MACHINE) -h $(MACHINE) -p $(PORT):443 -v /Users/gdsc/Documents/kairos/$(VERSION)/data:/postgres/data -v /Users/gdsc/Documents/kairos/export:/export -v /Users/gdsc/Documents/kairos/$(VERSION)/autoupload:/autoupload $(IMAGE)
 	docker network connect $(NETWORK) $(MACHINE)
 
 monitoring:
-	docker exec $(MACHINE) su - agensgraph -c 'psql -c "create database kairos"'
-	docker exec $(MACHINE) su - agensgraph -c 'psql -d kairos -c "create extension plpythonu"'
-	docker exec $(MACHINE) su - agensgraph -c 'psql -d kairos -c "create extension pgkairos"'
-	docker exec $(MACHINE) su - agensgraph -c 'echo "* * * * * LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/instantclient /usr/local/bin/psql -d kairos -c '\''select snap_system()'\''" > /tmp/crontab'
-	docker exec $(MACHINE) su - agensgraph -c 'echo "* * * * * LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/instantclient /usr/local/bin/psql -d kairos -c '\''select snap()'\''" >> /tmp/crontab'
-	docker exec $(MACHINE) su - agensgraph -c 'echo "* * * * * LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/instantclient TERM=xterm flock -w1 /tmp/xxx watch -n 5 -e -t --precise -x /usr/local/bin/psql -d kairos -c '\''select snap_detailed(5)'\''>>/tmp/xxx" >> /tmp/crontab'
-	docker exec $(MACHINE) su - agensgraph -c 'echo "0 5 * * * LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/instantclient /usr/local/bin/psql -d kairos -c '\''select export_relative_day(1)'\''" >> /tmp/crontab'
-	docker exec $(MACHINE) su - agensgraph -c 'echo "0 4 * * * LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib/instantclient /usr/local/bin/psql -d kairos -c '\''select purge()'\''" >> /tmp/crontab'
-	docker exec $(MACHINE) su - agensgraph -c 'cat /tmp/crontab|crontab'
-	docker exec $(MACHINE) bash -c 'conf=$$(find / -name postgresql.conf); echo "listen_addresses='"'*'"'" >> $$conf;'
+	docker exec $(MACHINE) su - postgres -c 'psql -c "create database kairos"'
+	docker exec $(MACHINE) su - postgres -c 'psql -d kairos -c "create extension plpython3u"'
+	docker exec $(MACHINE) su - postgres -c 'psql -d kairos -c "create extension pgkairos"'
 
 deliver:
 	docker tag kairos gdsc/kairos:latest
@@ -52,7 +42,6 @@ sh:
 	docker exec -it $(MACHINE) bash
 
 stop:
-	#docker exec $(MACHINE) systemctl start kairosstop
 	docker stop $(MACHINE)
 
 rm:
@@ -79,8 +68,7 @@ ressources:
 	rm -fr kairosx; mkdir kairosx
 	cp -r resources  pykairos kairos.key kairos.crt index.html worker.py kairosx
 	cp instantclient-basic-linux.zip instantclient-sdk-linux.zip oracle_fdw-2.1.0.tar.gz buildimage
-	cp pgkairos-0.9-1.noarch.rpm buildimage
-	cp kairos.service buildimage
+	cp pgkairos-1.1-1.noarch.rpm buildimage
 	cp pgboot.tar buildimage
 	sed -e 's/@@VERSION@@/$(VERSION)/' client.js > kairosx/client.js
 	sed -e 's/@@VERSION@@/$(VERSION)/' kairos > kairosx/kairos
@@ -92,9 +80,6 @@ ressources:
 clean:
 	rm -fr kairosx buildimage
 	docker rmi $$(docker images -f 'dangling=true' -q)
-
-save: clean
-	tar cvzf /Volumes/Secomba/gdsc/Boxcryptor/Google\ Drive/projets/kairos.tgz *
 
 nonreg:
 	cd ../KAIROSTESTS && py.test --capture=fd -v test.py

@@ -32,6 +32,7 @@ PTP = Parameter('--top', 'top')
 PCL = Parameter('--collection', 'collection')
 PCO = Parameter('--colors', 'colors')
 PLG = Parameter('--logging', 'logging')
+PLO = Parameter('--liveobject', 'liveobject')
 PTE = Parameter('--template', 'template')
 PWA = Parameter('--wallpaper', 'wallpaper')
 PME = Parameter('--member', 'member')
@@ -57,7 +58,7 @@ PMT = Parameter('--aggregatormethod', 'aggregatormethod')
 
 def get_parameters(parser, args, service):
 
-    handled_services = ['aggregateaddnode', 'applyaggregator', 'buildallcollectioncaches', 'buildcollectioncache', 'changepassword', 'checkserverconfig', 'clearcollectioncache', 'compareaddnode', 'creategrant', 'createnode', 'createrole', 'createuser', 'createsystem', 'deletegrant', 'deletenode', 'deleteobject', 'deleterole', 'deleteuser', 'displaycollection', 'dropcollectioncache', 'emptytrash', 'executequery', 'export', 'getcollections', 'getid', 'getmember', 'getmemberlist', 'getmenus', 'getnode', 'getobject', 'getsettings', 'gettree', 'import', 'linkfathernode', 'listdatabases', 'listgrants', 'listobjects', 'listnodesdb', 'listroles', 'listsystemdb', 'listusers', 'renamenode', 'runchart', 'unload', 'updatesettings', 'uploadnode', 'uploadobject']
+    handled_services = ['aggregateaddnode', 'applyaggregator', 'applyliveobject', 'buildallcollectioncaches', 'buildcollectioncache', 'changepassword', 'checkserverconfig', 'clearcollectioncache', 'compareaddnode', 'creategrant', 'createnode', 'createrole', 'createuser', 'createsystem', 'deletegrant', 'deletenode', 'deleteobject', 'deleterole', 'deleteuser', 'displaycollection', 'dropcollectioncache', 'emptytrash', 'executequery', 'export', 'getcollections', 'getid', 'getmember', 'getmemberlist', 'getmenus', 'getnode', 'getobject', 'getsettings', 'gettree', 'import', 'linkfathernode', 'listdatabases', 'listgrants', 'listobjects', 'listnodesdb', 'listroles', 'listsystemdb', 'listusers', 'renamenode', 'runchart', 'unload', 'updatesettings', 'uploadnode', 'uploadobject']
     admin_services = ['listusers', 'createuser', 'deleteuser', 'listroles', 'createrole', 'deleterole', 'listgrants', 'creategrant', 'deletegrant']
 
     if service not in handled_services:
@@ -70,6 +71,7 @@ def get_parameters(parser, args, service):
 
     if service == 'aggregateaddnode': mandatory = [PNO, PFR, PTO]
     if service == 'applyaggregator': mandatory = [PNO, PSY, PID, PSE, PTK, PTF, PSK, PST, PMT]
+    if service == 'applyliveobject': mandatory = [PNO, PSY, PID, PLO]
     if service == 'buildallcollectioncaches': mandatory = [PNO, PSY, PID]
     if service == 'buildcollectioncache': mandatory = [PNO, PSY, PID, PCL]
     if service == 'changepassword': mandatory = [PA, PP, PPA]
@@ -143,6 +145,7 @@ def get_parameters(parser, args, service):
         parameters = dict(to=vars(args)[PTO.target], nodesdb=vars(args)[PNO.target])
         parameters['from'] = vars(args)[PFR.target]
     if service == 'applyaggregator': parameters = dict(id=vars(args)[PID.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target], aggregatorselector=vars(args)[PSE.target], aggregatorskip=vars(args)[PSK.target], aggregatortake=vars(args)[PTK.target], aggregatorsort=vars(args)[PST.target], aggregatortimefilter=vars(args)[PTF.target], aggregatormethod=vars(args)[PMT.target])
+    if service == 'applyliveobject': parameters = dict(id=vars(args)[PID.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target], liveobject=vars(args)[PLO.target])
     if service == 'buildallcollectioncaches': parameters = dict(id=vars(args)[PID.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
     if service == 'buildcollectioncache': parameters = dict(id=vars(args)[PID.target], collection=vars(args)[PCL.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
     if service == 'changepassword':
@@ -227,6 +230,7 @@ parser.add_argument(PTP.name, action = 'store', dest=PTP.target, default='', hel
 parser.add_argument(PCL.name, action = 'store', dest=PCL.target, default='', help='Collection name')
 parser.add_argument(PCO.name, action = 'store', dest=PCO.target, default='', help='Object redifining colors')
 parser.add_argument(PLG.name, action = 'store', dest=PLG.target, default='', help='Kairos logging')
+parser.add_argument(PLO.name, action = 'store', dest=PLO.target, default='', help='Live object')
 parser.add_argument(PTE.name, action = 'store', dest=PTE.target, default='', help='Kairos template to be used')
 parser.add_argument(PCH.name, action = 'store', dest=PCH.target, default='', help='Chart to be used')
 parser.add_argument(PWA.name, action = 'store', dest=PWA.target, default='', help='Kairos wallpaper to be used')

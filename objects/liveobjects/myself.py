@@ -5,8 +5,8 @@ class UserObject(dict):
             "type": "liveobject",
             "id": "MYSELF",
             "extension": "postgres_fdw",
-            "options": "host 'kairosnonreg', port '5432', dbname 'kairos'",
-            "user": "agensgraph",
+            "options": "host 'localhost', port '5432', dbname 'kairos'",
+            "user": "postgres",
             "password": "xxxxx",
             "tables": {
                 "vkpg_stat_activity": {

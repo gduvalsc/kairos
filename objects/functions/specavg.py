@@ -9,7 +9,7 @@ class UserObject(dict):
                     import json
                     d = json.loads(t)
                     return None if x == None else x / d[y+z]
-                $$ language plpythonu;
+                $$ language plpython3u;
             """
         }
         super(UserObject, s).__init__(**object)

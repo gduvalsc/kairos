@@ -8,7 +8,7 @@ class UserObject(dict):
                 CREATE OR REPLACE FUNCTION meet(pattern text, regexp text) RETURNS bool AS $$
                     import re
                     return True if re.match(regexp, pattern) else False
-                $$ language plpythonu;
+                $$ language plpython3u;
             """
         }
         super(UserObject, s).__init__(**object)

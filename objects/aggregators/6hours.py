@@ -8,7 +8,7 @@ class UserObject(dict):
                 CREATE OR REPLACE FUNCTION average_per_6hours(x text) RETURNS text AS $$
 	                h = ["00", "06", "12", "18"][int(int(x[8:10]) / 6)]
 	                return x[0:8] + h + "0000000"
-                $$ language plpythonu;
+                $$ language plpython3u;
             """
         }
         super(UserObject, s).__init__(**object)

@@ -7,7 +7,7 @@ class UserObject(dict):
             "function": """
                 CREATE OR REPLACE FUNCTION average_per_hour(x text) RETURNS text AS $$
 	                return x[0:10] + "0000000"
-                $$ language plpythonu;
+                $$ language plpython3u;
             """
         }
         super(UserObject, s).__init__(**object)

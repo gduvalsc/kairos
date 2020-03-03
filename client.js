@@ -214,7 +214,7 @@ dhtmlxEvent(window,"load",function(){
     var waterfall = function (a, fposterr) {
         async.waterfall(a, function (err, result) {
             if (err) {
-                alertify.error('<div style="font-size:150%;">' + err + "</div>");
+                alertify.error('<div style="font-size:150%;">' + err + "</div>", 20000);
                 if (fposterr !== undefined) {
                     fposterr();
                 }
@@ -225,7 +225,7 @@ dhtmlxEvent(window,"load",function(){
     var parallel = function (o, callback) {
         async.parallel(o, function (err, results) {
             if (err) {
-                alertify.error('<div style="font-size:150%;">' + err + "</div>");
+                alertify.error('<div style="font-size:150%;">' + err + "</div>", 20000);
             } else {
                 callback(results);
             }
@@ -242,7 +242,7 @@ dhtmlxEvent(window,"load",function(){
         var results = {};
         async.series(af, function (err, aresult) {
             if (err) {
-                alertify.error('<div style="font-size:150%;">' + err + "</div>");
+                alertify.error('<div style="font-size:150%;">' + err + "</div>", 60000);
             } else {
                 _.each(aresult, function (v, i) {
                     results[ak[i]] = v;
@@ -795,7 +795,7 @@ dhtmlxEvent(window,"load",function(){
             }
         }
         catch (err) {
-            alertify.error('<div style="font-size:150%;">' + err + "</div>");
+            alertify.error('<div style="font-size:150%;">' + err + "</div>", 20000);
         }
         return jsonobject;
     };
@@ -989,7 +989,7 @@ dhtmlxEvent(window,"load",function(){
             }
         };
         ws.onerror = function (e) {
-            alertify.error('<div style="font-size:150%;">' + e.data + "</div>");
+            alertify.error('<div style="font-size:150%;">' + e.data + "</div>", 20000);
         };
         ws.onclose = function (e) {
             return;
@@ -1648,7 +1648,7 @@ dhtmlxEvent(window,"load",function(){
         passwordform.cross_and_load(passworddata);
         passwordform.attachEvent("onButtonClick", function(){
             if (passwordform.getItemValue("new") !== passwordform.getItemValue("repeat")) {
-                alertify.error('<div style="font-size:150%;">' + "New and repeated passwords are not identicals !" + "</div>");
+                alertify.error('<div style="font-size:150%;">' + "New and repeated passwords are not identicals !" + "</div>", 20000);
             } else {
                 waterfall([
                     ajax_post_first_in_async_waterfall("changepassword", {user: desktop.user, password: passwordform.getItemValue("actual"), new: passwordform.getItemValue("new"), logging: 'fatal'}),
@@ -2003,6 +2003,7 @@ dhtmlxEvent(window,"load",function(){
         var menu = wexp.attachMenu({
             iconset: "awesome"
         });
+        menu.setOpenMode("win");
         var tree = wexp.attachTreeView({
             dnd: true,
             multiselect: false,
@@ -2026,7 +2027,7 @@ dhtmlxEvent(window,"load",function(){
                 if (tree.getUserData(pid, "type") !== "T") {
                     _.each(tree.getSubItems(pid), function (e) {
                         if (tree.getItemText(id) === tree.getItemText(e)) {
-                            alertify.error('<div style="font-size:150%;">' + "A child of '" + tree.getItemText(pid) + "' has already the name: '" + tree.getItemText(e) + "'" + "</div>");
+                            alertify.error('<div style="font-size:150%;">' + "A child of '" + tree.getItemText(pid) + "' has already the name: '" + tree.getItemText(e) + "'" + "</div>", 20000);
                             ret = false;
                         }
                     });
@@ -2151,9 +2152,8 @@ dhtmlxEvent(window,"load",function(){
 				{id: "run_chart", text: "Run chart"},
 				{id: "run_choice", text: "Run choice"},
 				{type: "separator"},
-				{id: "clear_dependent_caches", text: "Clear dependent caches"},
-                {id: "build_dependent_caches", text: "Build dependent caches"},
-				{id: "clear_memory_caches", text: "Clear memory caches"},
+				{id: "clear_progeny_caches", text: "Clear progeny caches"},
+                {id: "build_progeny_caches", text: "Build progeny caches"},
 				{type: "separator"},
 				{id: "display_collection", text: "Display collection"},
 				{type: "separator"},
@@ -2183,9 +2183,8 @@ dhtmlxEvent(window,"load",function(){
         contextmenu.setItemImage("display_collection","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("display_member","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("unload","fa fa-cloud-download", "fa fa-cloud-download");
-        contextmenu.setItemImage("clear_dependent_caches","fas fa-angle-double-down", "fas fa-angle-double-down");
-        contextmenu.setItemImage("build_dependent_caches","fas fa-angle-double-up", "fas fa-angle-double-up");
-        contextmenu.setItemImage("clear_memory_caches","fas fa-angle-double-down", "fas fa-angle-double-down");
+        contextmenu.setItemImage("clear_progeny_caches","fas fa-angle-double-down", "fas fa-angle-double-down");
+        contextmenu.setItemImage("build_progeny_caches","fas fa-angle-double-up", "fas fa-angle-double-up");
         contextmenu.setItemImage("export","fa fa-sign-out", "fa fa-sign-out");
         contextmenu.setItemImage("import","fa fa-sign-in", "fa fa-sign-in");
         contextmenu.setItemImage("empty_trash","fa fa-trash-o", "fa fa-trash-o");
@@ -2200,14 +2199,14 @@ dhtmlxEvent(window,"load",function(){
         tree.attachEvent("onSelect", function(id, select){
             if (select) {
                 var type = tree.getUserData(id, "type");
-                var contextmenuenabled = {upload: false, create_node: true, rename_node: false, delete_node: false, refresh_node: true, open_node: true, execute_query: false, run_chart: false, run_choice: false, download: false, downloadc: true, display_member: false, unload: false, export: false, import:false, clear_dependent_caches: false, build_dependent_caches: false, empty_trash: false};
+                var contextmenuenabled = {upload: false, create_node: true, rename_node: false, delete_node: false, refresh_node: true, open_node: true, execute_query: false, run_chart: false, run_choice: false, download: false, downloadc: true, display_member: false, unload: false, export: false, import:false, clear_progeny_caches: false, build_progeny_caches: false, empty_trash: false};
                 if (id == rootid) {
                     contextmenuenabled.export = true;
                     contextmenuenabled.import = true;    
                 }
                 if (_.contains(["N", "B", "A", "L"], type)) {
-                    contextmenuenabled.clear_dependent_caches = true;
-                    contextmenuenabled.build_dependent_caches = true;
+                    contextmenuenabled.clear_progeny_caches = true;
+                    contextmenuenabled.build_progeny_caches = true;
                 }
                 if (_.contains(["B", "N"], type)) {
                     contextmenuenabled.upload = true;
@@ -2458,28 +2457,19 @@ dhtmlxEvent(window,"load",function(){
                         }
                     ]);
                 }
-                if (fid === "clear_dependent_caches") {
-                    log.debug("Clear dependent caches at node: " + id + " (" + tree.getItemText(id) + ")");
+                if (fid === "clear_progeny_caches") {
+                    log.debug("Clear progeny caches at node: " + id + " (" + tree.getItemText(id) + ")");
                     waterfall([
-                        ajax_get_first_in_async_waterfall("cleardependentcaches", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id}),
+                        ajax_get_first_in_async_waterfall("clearprogenycaches", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id}),
                         function (x) {
                             alertify.success('<div style="font-size:150%;">' + x.msg + "</div>");
                         }
                     ]);
                 }
-                if (fid === "build_dependent_caches") {
-                    log.debug("Build dependent caches at node: " + id + " (" + tree.getItemText(id) + ")");
+                if (fid === "build_progeny_caches") {
+                    log.debug("Build progeny caches at node: " + id + " (" + tree.getItemText(id) + ")");
                     waterfall([
-                        ajax_get_first_in_async_waterfall("builddependentcaches", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id}),
-                        function (x) {
-                            alertify.success('<div style="font-size:150%;">' + x.msg + "</div>");
-                        }
-                    ]);
-                }
-                if (fid === "clear_memory_caches") {
-                    log.debug("Clear memory caches at node: " + id + " (" + tree.getItemText(id) + ")");
-                    waterfall([
-                        ajax_get_first_in_async_waterfall("clearmemorycaches", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id}),
+                        ajax_get_first_in_async_waterfall("buildprogenycaches", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id}),
                         function (x) {
                             alertify.success('<div style="font-size:150%;">' + x.msg + "</div>");
                         }
@@ -2543,6 +2533,9 @@ dhtmlxEvent(window,"load",function(){
                     });
                     chartdiv.on('plotly_legendclick', function(data){
                         navigator.clipboard.writeText(data.data[data.curveNumber].legendgroup);
+                    });
+                    chartdiv.on('plotly_doubleclick', function(data){
+                        console.log(x.chart.figure);
                     });
                     chartdiv.on('plotly_hover', function(data){
                         item = data.points[0].data.legendgroup;

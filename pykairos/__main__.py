@@ -14,6 +14,7 @@
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
 import argparse, pykairos, logging, os, multiprocessing, signal, subprocess, time, json
+from pykairos.kairosnotifier import KairosNotifier
 from glob import glob
 
 def catchrun(*c):
@@ -43,7 +44,7 @@ parser.add_argument('--makeboot', action='store_true', dest='makeboot', help='Cr
 args = parser.parse_args()
 logging.basicConfig(format='%(asctime)s %(process)5s %(levelname)8s %(message)s', level=logging.TRACE, filename="/var/log/kairos/kairos.log")
 if args.notifier:
-    n = pykairos.KairosNotifier()
+    n = KairosNotifier()
 if args.launcher:
     logging.info('This system is configured with ' + str(multiprocessing.cpu_count()) + ' cpus.')
     import setproctitle
@@ -69,28 +70,19 @@ if args.launcher:
     catchrun(gunicorn, notifier)
 
 if args.bootstrap:
-    if len(os.listdir('/postgres/data')) == 0: 
-        os.system('cd /postgres; tar xvf /postgres/backups/pgboot.tar; chmod 700 /postgres/data')
-        os.system('su - postgres -c "/usr/pgsql-10/bin/pg_ctl -D /postgres/data start"')
-    kairos = subprocess.run(['daemonmgr', '--daemon', 'kairosd', '-start'])
-    if  kairos.returncode:
-        logging.error("Error during startup of Kairos")
-        exit(1)
-    logging.info("Kairos startup has been initiated!")
+    os.system('/usr/sbin/crond')
+    if len(os.listdir('/postgres/data')) == 0: os.system('cd /postgres; tar xvf /postgres/backups/pgboot.tar; chmod 700 /postgres/data')
+    os.system('su - postgres -c "pg_ctl -D /postgres/data start"')
+    os.system("python3 -m pykairos --launcher")
+    
 if args.makeboot:
-    os.system('rm -fr  /postgres/boot; mkdir /postgres/boot; chown postgres:postgres /postgres/boot')
-    os.system('su - postgres -c "/usr/pgsql-10/bin/initdb -D /postgres/boot/data -E UTF8"')
-    os.system('su - postgres -c "/usr/pgsql-10/bin/pg_ctl -D /postgres/boot/data start"')
+    os.system('su - postgres -c "pg_ctl stop"')
+    os.system('rm -fr  /postgres/boot; mkdir /postgres/boot; mkdir /postgres/boot/data; chown -R postgres:postgres /postgres/boot')
+    os.system('su - postgres -c "initdb -D /postgres/boot/data -E UTF8 --no-locale"')
+    os.system('su - postgres -c "pg_ctl -D /postgres/boot/data start"')
     os.system('su - postgres -c "echo ''local all postgres trust'' > /postgres/boot/data/pg_hba.conf"')
     os.system('su - postgres -c "echo ''host all postgres all trust'' >> /postgres/boot/data/pg_hba.conf"')
     os.system('su - postgres -c "echo ''host all all all md5'' >> /postgres/boot/data/pg_hba.conf"')
-
-    print('K', end='', flush=True)
-    kairos = subprocess.run(['daemonmgr', '--daemon', 'kairosd', '-start'])
-    if  kairos.returncode:
-        logging.error("Error during startup of Kairos")
-        exit(1)
-    logging.info("Kairos startup has been initiated!")
     print('S', end='', flush=True)
     logging.info("Creating system database...")
     while True:

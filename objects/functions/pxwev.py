@@ -7,7 +7,7 @@ class UserObject(dict):
             "function": """
                 CREATE OR REPLACE FUNCTION pxwev(x text) RETURNS bool AS $$
                     return True if x[0:2] in 'PX' else False
-                $$ language plpythonu;
+                $$ language plpython3u;
             """
         }
         super(UserObject, s).__init__(**object)

@@ -149,7 +149,7 @@ function fdisplay_help
 }
 function fversion
 {
-     echo "Version 1.1 generated on 2016/08/10">VERSION
+     echo "Version 1.2 generated on 2020/02/07">VERSION
      tar cf ${TEMPFILE} VERSION
      rm VERSION
 }
@@ -189,7 +189,7 @@ function fconnectstring
      esac
      case ${AWR} in
           0) c="$c" ;;
-          *) c="/ as sysdba" ;;
+          *) c="sys/${PASSWD}@${INSTANCENAME} as sysdba" ;;
      esac
      printf "$c"
 }
@@ -673,21 +673,13 @@ function fdbahistsqlstat
      if [[ "$ORAVERS" = "10.2" ]]
      then
           fdbahistsqlstat111 $1 $2
-     fi
-     if [[ "$ORAVERS" = "11.1" ]]
+     elif [[ "$ORAVERS" = "11.1" ]]
      then
           fdbahistsqlstat111 $1 $2
-     fi
-     if [[ "$ORAVERS" = "11.2" ]]
+     elif [[ "$ORAVERS" = "11.2" ]]
      then
           fdbahistsqlstat111 $1 $2
-     fi
-     if [[ "$ORAVERS" = "12.1" ]]
-     then
-          fdbahistsqlstat121 $1 $2
-     fi
-     if [[ "$ORAVERS" = "12.2" ]]
-     then
+     else
           fdbahistsqlstat121 $1 $2
      fi
 }
@@ -803,21 +795,13 @@ function fsysmetric
      if [[ "$ORAVERS" = "10.2" ]]
      then
           fsysmetric112 $1 $2
-     fi
-     if [[ "$ORAVERS" = "11.1" ]]
+     elif [[ "$ORAVERS" = "11.1" ]]
      then
           fsysmetric112 $1 $2
-     fi
-     if [[ "$ORAVERS" = "11.2" ]]
+     elif [[ "$ORAVERS" = "11.2" ]]
      then
           fsysmetric112 $1 $2
-     fi
-     if [[ "$ORAVERS" = "12.1" ]]
-     then
-          fsysmetric121 $1 $2
-     fi
-     if [[ "$ORAVERS" = "12.2" ]]
-     then
+     else
           fsysmetric121 $1 $2
      fi
 }
@@ -886,21 +870,13 @@ function fdbahistsqltext
      if [[ "$ORAVERS" = "10.2" ]]
      then
           fdbahistsqltext112 $1 $2
-     fi
-     if [[ "$ORAVERS" = "11.1" ]]
+     elif [[ "$ORAVERS" = "11.1" ]]
      then
           fdbahistsqltext112 $1 $2
-     fi
-     if [[ "$ORAVERS" = "11.2" ]]
+     elif [[ "$ORAVERS" = "11.2" ]]
      then
           fdbahistsqltext112 $1 $2
-     fi
-     if [[ "$ORAVERS" = "12.1" ]]
-     then
-          fdbahistsqltext121 $1 $2
-     fi
-     if [[ "$ORAVERS" = "12.2" ]]
-     then
+     else
           fdbahistsqltext121 $1 $2
      fi
 }
@@ -947,21 +923,13 @@ function fdbahistactivesesshistory
      if [[ "$ORAVERS" = "10.2" ]]
      then
           fdbahistactivesesshistory102 $1 $2
-     fi
-     if [[ "$ORAVERS" = "11.1" ]]
+     elif [[ "$ORAVERS" = "11.1" ]]
      then
           fdbahistactivesesshistory111 $1 $2
-     fi
-     if [[ "$ORAVERS" = "11.2" ]]
+     elif [[ "$ORAVERS" = "11.2" ]]
      then
           fdbahistactivesesshistory112 $1 $2
-     fi
-     if [[ "$ORAVERS" = "12.1" ]]
-     then
-          fdbahistactivesesshistory121 $1 $2
-     fi
-     if [[ "$ORAVERS" = "12.2" ]]
-     then
+     else
           fdbahistactivesesshistory121 $1 $2
      fi
 }
@@ -1569,21 +1537,10 @@ printf "PREFIX=$PREFIX\n"
 if [[ ${ORAVERS} = "10.1" ]]
 then
      FORMAT=text
-fi
-if [[ ${ORAVERS} = "10.2" ]]
+elif [[ ${ORAVERS} = "10.2" ]]
 then
      FORMAT=text
-fi
-if [[ ${ORAVERS} = "11.1" ]]
-then
-     FORMAT=html
-fi
-if [[ ${ORAVERS} = "11.2" ]]
-then
-     FORMAT=html
-fi
-if [[ ${ORAVERS} = "12.1" ]]
-then
+else
      FORMAT=html
 fi
 TEMPFILE=$PREFIX.tar

@@ -16,7 +16,7 @@ class UserObject(dict):
                     "maxvalue": null,
                     "renderers": [
                         {
-                            "type": "SA",
+                            "type": "SC",
                             "datasets": [
                                 {
                                     "query": "PGDBOVDELETES$$1",
