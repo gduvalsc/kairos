@@ -13,53 +13,53 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 
-import multiprocessing, zipfile, tarfile
+import multiprocessing, zipfile, tarfile, logging, time, io
 
 class Arcfile:
-    def __init__(s,file,mode='r'):
-        s.lock = multiprocessing.Lock()
+    def __init__(self, file, mode='r'):
+        self.lock = multiprocessing.Lock()
         opmode=mode.split(':')
-        s.type='unknown'
+        self.type='unknown'
         if opmode[0] in ['r','a']:
             if zipfile.is_zipfile(file):
-                s.archive=zipfile.ZipFile(file,mode)
-                s.type='zipfile'
+                self.archive=zipfile.ZipFile(file,mode)
+                self.type='zipfile'
             else:
                 file.seek(0)
                 try:
-                    s.archive=tarfile.open(fileobj=file)
-                    s.type='tarfile'
+                    self.archive=tarfile.open(fileobj=file)
+                    self.type='tarfile'
                 except:
                     logging.error('Unknown file type')
         else:
             if len(opmode)>1 and opmode[1] in ['zip']:
-                s.type='zipfile'
-                s.archive=zipfile.ZipFile(file,opmode[0],zipfile.ZIP_DEFLATED)
-            else: s.archive=tarfile.open(name='stream', mode='w+b', fileobj=file)
-    def close(s):
-        return s.archive.close()
-    def list(s):
-        if s.type=='tarfile': return s.archive.getnames()
-        else: return s.archive.namelist()
-    def read(s,member):
-        s.lock.acquire()
-        if s.type=='tarfile':
+                self.type='zipfile'
+                self.archive=zipfile.ZipFile(file,opmode[0],zipfile.ZIP_DEFLATED)
+            else: self.archive=tarfile.open(name='stream', mode='w+b', fileobj=file)
+    def close(self):
+        return self.archive.close()
+    def list(self):
+        if self.type=='tarfile': return self.archive.getnames()
+        else: return self.archive.namelist()
+    def read(self, member):
+        self.lock.acquire()
+        if self.type=='tarfile':
             try: 
-                r = bz2.decompress(s.archive.extractfile(s.archive.getmember(member).name).read())
+                r = bz2.decompress(self.archive.extractfile(self.archive.getmember(member).name).read())
             except: 
-                r = s.archive.extractfile(s.archive.getmember(member).name).read()
+                r = self.archive.extractfile(self.archive.getmember(member).name).read()
         else:
             try: 
-                r = bz2.decompress(s.archive.read(member))
+                r = bz2.decompress(self.archive.read(member))
             except: 
-                r = s.archive.read(member)
-        s.lock.release()
+                r = self.archive.read(member)
+        self.lock.release()
         return r
-    def write(s,member,stream):
-        if s.type=='tarfile':
+    def write(self, member, stream):
+        if self.type=='tarfile':
             inf=tarfile.TarInfo()
             inf.name=member
             inf.size=len(stream)
             inf.mtime = time.time()
-            return s.archive.addfile(inf,StringIO.StringIO(stream))
-        else: return s.archive.writestr(member,stream)
+            return self.archive.addfile(inf, io.StringIO(stream))
+        else: return self.archive.writestr(member,stream)

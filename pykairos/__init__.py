@@ -82,7 +82,7 @@ def intercept_internal_error(func):
     return wrapper
     
 class KairosWorker:
-    def __init__(s, jpypeflag=True):
+    def __init__(self, jpypeflag=True):
         
         app = web.Application()
         app['websockets'] = []
@@ -94,88 +94,88 @@ class KairosWorker:
 
         app.on_shutdown.append(on_shutdown)
 
-        app.router.add_get('/', s.file_index)
-        app.router.add_get('/index.html', s.file_index)
-        app.router.add_get('/charter.js', s.file_charter)
-        app.router.add_get('/client.js', s.file_client)
-        app.router.add_get('/checkserverconfig', s.checkserverconfig)
-        app.router.add_get('/createsystem', s.createsystem)
-        app.router.add_get('/getsettings', s.getsettings)
-        app.router.add_get('/getmenus', s.getmenus)
-        app.router.add_get('/gettree', s.gettree)
-        app.router.add_get('/getnode', s.getnode)
-        app.router.add_get('/getchart', s.getchart)
-        app.router.add_get('/getjsonobject', s.getjsonobject)
-        app.router.add_get('/getchoice', s.getchoice)
-        app.router.add_get('/getlayout', s.getlayout)
-        app.router.add_get('/gettemplate', s.gettemplate)
-        app.router.add_get('/getcolors', s.getcolors)
-        app.router.add_get('/getqueries', s.getqueries)
-        app.router.add_get('/getcharts', s.getcharts)
-        app.router.add_get('/getchoices', s.getchoices)
-        app.router.add_get('/getobject', s.getobject)
-        app.router.add_get('/executequery', s.executequery)
-        app.router.add_get('/getmemberlist', s.getmemberlist)
-        app.router.add_get('/getcollections', s.getcollections)
-        app.router.add_get('/getmember', s.getmember)
-        app.router.add_get('/buildallcollectioncaches', s.buildallcollectioncaches)
-        app.router.add_get('/buildcollectioncache', s.buildcollectioncache)
-        app.router.add_get('/clearcollectioncache', s.clearcollectioncache)
-        app.router.add_get('/dropcollectioncache', s.dropcollectioncache)
-        app.router.add_get('/displaycollection', s.displaycollection)
-        app.router.add_get('/createnode', s.createnode)
-        app.router.add_get('/renamenode', s.renamenode)
-        app.router.add_get('/deletenode', s.deletenode)
-        app.router.add_get('/movenode', s.movenode)
-        app.router.add_get('/emptytrash', s.emptytrash)
-        app.router.add_get('/listdatabases', s.listdatabases)
-        app.router.add_get('/listroles', s.listroles)
-        app.router.add_get('/listusers', s.listusers)
-        app.router.add_get('/listgrants', s.listgrants)
-        app.router.add_get('/listsystemdb', s.listsystemdb)
-        app.router.add_get('/listnodesdb', s.listnodesdb)
-        app.router.add_get('/listtemplates', s.listtemplates)
-        app.router.add_get('/listaggregators', s.listaggregators)
-        app.router.add_get('/listliveobjects', s.listliveobjects)
-        app.router.add_get('/listwallpapers', s.listwallpapers)
-        app.router.add_get('/listcolors', s.listcolors)
-        app.router.add_get('/listobjects', s.listobjects)
-        app.router.add_get('/createrole', s.createrole)
-        app.router.add_get('/createuser', s.createuser)
-        app.router.add_get('/creategrant', s.creategrant)
-        app.router.add_get('/deleterole', s.deleterole)
-        app.router.add_get('/deleteuser', s.deleteuser)
-        app.router.add_get('/resetpassword', s.resetpassword)
-        app.router.add_get('/deletegrant', s.deletegrant)
-        app.router.add_get('/updatesettings', s.updatesettings)
-        app.router.add_get('/get_kairos_log', s.websocket_handler)
-        app.router.add_get('/get_webserver_log', s.websocket_handler)
-        app.router.add_get('/get_postgres_logfile', s.websocket_handler)
-        app.router.add_get('/deleteobject', s.deleteobject)
-        app.router.add_get('/downloadobject', s.downloadobject)
-        app.router.add_get('/downloadsource', s.downloadsource)
-        app.router.add_get('/getBchildren', s.getBchildren)
-        app.router.add_get('/unload', s.unload)
-        app.router.add_get('/compareaddnode', s.compareaddnode)
-        app.router.add_get('/aggregateaddnode', s.aggregateaddnode)
-        app.router.add_get('/linkfathernode', s.linkfathernode)
-        app.router.add_get('/applyaggregator', s.applyaggregator)
-        app.router.add_get('/applyliveobject', s.applyliveobject)
-        app.router.add_get('/uploadnode', s.uploadnode)
-        app.router.add_get('/uploadobject', s.uploadobject)
-        app.router.add_get('/getid', s.getid)
-        app.router.add_get('/export', s.exportdatabase)
-        app.router.add_get('/import', s.importdatabase)
-        app.router.add_get('/clearprogenycaches', s.clearprogenycaches)
-        app.router.add_get('/buildprogenycaches', s.buildprogenycaches)
-        app.router.add_get('/runchart', s.runchart)
-        app.router.add_post('/changepassword', s.changepassword)
-        app.router.add_post('/uploadobject', s.uploadobject)
-        app.router.add_post('/setobject', s.setobject)
-        app.router.add_post('/checkuserpassword', s.checkuserpassword)
-        app.router.add_post('/uploadnode', s.uploadnode)
+        app.router.add_get('/', self.file_index)
+        app.router.add_get('/index.html', self.file_index)
+        app.router.add_get('/charter.js', self.file_charter)
+        app.router.add_get('/client.js', self.file_client)
+        app.router.add_get('/checkserverconfig', self.checkserverconfig)
+        app.router.add_get('/createsystem', self.createsystem)
+        app.router.add_get('/getsettings', self.getsettings)
+        app.router.add_get('/getmenus', self.getmenus)
+        app.router.add_get('/gettree', self.gettree)
+        app.router.add_get('/getnode', self.getnode)
+        app.router.add_get('/getchart', self.getchart)
+        app.router.add_get('/getjsonobject', self.getjsonobject)
+        app.router.add_get('/getchoice', self.getchoice)
+        app.router.add_get('/getlayout', self.getlayout)
+        app.router.add_get('/gettemplate', self.gettemplate)
+        app.router.add_get('/getcolors', self.getcolors)
+        app.router.add_get('/getqueries', self.getqueries)
+        app.router.add_get('/getcharts', self.getcharts)
+        app.router.add_get('/getchoices', self.getchoices)
+        app.router.add_get('/getobject', self.getobject)
+        app.router.add_get('/executequery', self.executequery)
+        app.router.add_get('/getmemberlist', self.getmemberlist)
+        app.router.add_get('/getcollections', self.getcollections)
+        app.router.add_get('/getmember', self.getmember)
+        app.router.add_get('/buildallcollectioncaches', self.buildallcollectioncaches)
+        app.router.add_get('/buildcollectioncache', self.buildcollectioncache)
+        app.router.add_get('/clearcollectioncache', self.clearcollectioncache)
+        app.router.add_get('/dropcollectioncache', self.dropcollectioncache)
+        app.router.add_get('/displaycollection', self.displaycollection)
+        app.router.add_get('/createnode', self.createnode)
+        app.router.add_get('/renamenode', self.renamenode)
+        app.router.add_get('/deletenode', self.deletenode)
+        app.router.add_get('/movenode', self.movenode)
+        app.router.add_get('/emptytrash', self.emptytrash)
+        app.router.add_get('/listdatabases', self.listdatabases)
+        app.router.add_get('/listroles', self.listroles)
+        app.router.add_get('/listusers', self.listusers)
+        app.router.add_get('/listgrants', self.listgrants)
+        app.router.add_get('/listsystemdb', self.listsystemdb)
+        app.router.add_get('/listnodesdb', self.listnodesdb)
+        app.router.add_get('/listtemplates', self.listtemplates)
+        app.router.add_get('/listaggregators', self.listaggregators)
+        app.router.add_get('/listliveobjects', self.listliveobjects)
+        app.router.add_get('/listwallpapers', self.listwallpapers)
+        app.router.add_get('/listcolors', self.listcolors)
+        app.router.add_get('/listobjects', self.listobjects)
+        app.router.add_get('/createrole', self.createrole)
+        app.router.add_get('/createuser', self.createuser)
+        app.router.add_get('/creategrant', self.creategrant)
+        app.router.add_get('/deleterole', self.deleterole)
+        app.router.add_get('/deleteuser', self.deleteuser)
+        app.router.add_get('/resetpassword', self.resetpassword)
+        app.router.add_get('/deletegrant', self.deletegrant)
+        app.router.add_get('/updatesettings', self.updatesettings)
+        app.router.add_get('/get_kairos_log', self.websocket_handler)
+        app.router.add_get('/get_webserver_log', self.websocket_handler)
+        app.router.add_get('/get_postgres_logfile', self.websocket_handler)
+        app.router.add_get('/deleteobject', self.deleteobject)
+        app.router.add_get('/downloadobject', self.downloadobject)
+        app.router.add_get('/downloadsource', self.downloadsource)
+        app.router.add_get('/getBchildren', self.getBchildren)
+        app.router.add_get('/unload', self.unload)
+        app.router.add_get('/compareaddnode', self.compareaddnode)
+        app.router.add_get('/aggregateaddnode', self.aggregateaddnode)
+        app.router.add_get('/linkfathernode', self.linkfathernode)
+        app.router.add_get('/applyaggregator', self.applyaggregator)
+        app.router.add_get('/applyliveobject', self.applyliveobject)
+        app.router.add_get('/uploadnode', self.uploadnode)
+        app.router.add_get('/uploadobject', self.uploadobject)
+        app.router.add_get('/getid', self.getid)
+        app.router.add_get('/export', self.exportdatabase)
+        app.router.add_get('/import', self.importdatabase)
+        app.router.add_get('/clearprogenycaches', self.clearprogenycaches)
+        app.router.add_get('/buildprogenycaches', self.buildprogenycaches)
+        app.router.add_get('/runchart', self.runchart)
+        app.router.add_post('/changepassword', self.changepassword)
+        app.router.add_post('/uploadobject', self.uploadobject)
+        app.router.add_post('/setobject', self.setobject)
+        app.router.add_post('/checkuserpassword', self.checkuserpassword)
+        app.router.add_post('/uploadnode', self.uploadnode)
         app.router.add_static('/resources/', path='/kairosx/resources', name='resources')
-        s.application = app
+        self.application = app
         logging.basicConfig(format='%(asctime)s %(process)5s %(levelname)8s %(message)s', level=logging.INFO, filename="/var/log/kairos/kairos.log")
         import setproctitle
         setproctitle.setproctitle('KairosWorker')
@@ -183,7 +183,7 @@ class KairosWorker:
         logging.info('Process id: ' + str(os.getpid()))
 
     @trace_call
-    async def websocket_handler(s, request):
+    async def websocket_handler(self, request):
         ws = web.WebSocketResponse()
         await ws.prepare(request)
         request.app['websockets'].append(ws)
@@ -204,20 +204,18 @@ class KairosWorker:
             request.app['websockets'].remove(ws)
         return ws
 
-    def file_index(s, request):
+    def file_index(self, request):
         return web.Response(content_type='text/html', text=open('/kairosx/index.html').read())
 
-    def file_charter(s, request):
+    def file_charter(self, request):
         return web.Response(content_type='application/octet-stream', text=open('/kairosx/charter.js').read())
 
-    def file_client(s, request):
+    def file_client(self, request):
         return web.Response(content_type='application/octet-stream', text=open('/kairosx/client.js').read())
-
-
                 
     @intercept_logging_and_internal_error
     @trace_call
-    def getid(s, request):
+    def getid(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         pattern = params['pattern'][0]
@@ -228,7 +226,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def checkserverconfig(s, request):
+    def checkserverconfig(self, request):
         context = Context(postgres=True)
         context.createsystem()
         context.createuser('admin', skiperror=True)
@@ -237,7 +235,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def createsystem(s, request):
+    def createsystem(self, request):
         context = Context(postgres=True)
         context.createsystem()
         context.free()
@@ -245,7 +243,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    async def checkuserpassword(s, request):
+    async def checkuserpassword(self, request):
         multipart = await request.post()
         params = parse_qs(request.query_string)
         user = multipart['user'] if 'user' in multipart else params['user'][0]
@@ -263,7 +261,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    async def setobject(s, request):
+    async def setobject(self, request):
         multipart = await request.post()
         params = parse_qs(request.query_string)
         database = multipart['database'] if 'database' in multipart else params['database'][0]
@@ -281,7 +279,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getsettings(s, request):
+    def getsettings(self, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
         context = Context(nodesdb='kairos_user_' + user)
@@ -291,7 +289,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listdatabases(s, request):
+    def listdatabases(self, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
         adminrights = True if params['admin'][0] == "true" else False
@@ -302,7 +300,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listsystemdb(s, request):
+    def listsystemdb(self, request):
         context = Context(postgres=True)
         data = context.listsystemdb()
         context.free()
@@ -310,7 +308,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listnodesdb(s, request):
+    def listnodesdb(self, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
         context = Context(postgres=True)
@@ -320,7 +318,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listtemplates(s, request):
+    def listtemplates(self, request):
         params = parse_qs(request.query_string)
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
@@ -332,7 +330,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listaggregators(s, request):
+    def listaggregators(self, request):
         params = parse_qs(request.query_string)
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
@@ -343,7 +341,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listliveobjects(s, request):
+    def listliveobjects(self, request):
         params = parse_qs(request.query_string)
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
@@ -354,7 +352,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listwallpapers(s, request):
+    def listwallpapers(self, request):
         params = parse_qs(request.query_string)
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]      
@@ -366,7 +364,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listcolors(s, request):
+    def listcolors(self, request):
         params = parse_qs(request.query_string)
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
@@ -378,7 +376,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listobjects(s, request):
+    def listobjects(self, request):
         params = parse_qs(request.query_string)
         systemdb = params['systemdb'][0]
         nodesdb = params['nodesdb'][0]
@@ -389,7 +387,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getobject(s, request):
+    def getobject(self, request):
         params = parse_qs(request.query_string)
         database = params['database'][0]
         objtype = params['type'][0]
@@ -401,7 +399,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def updatesettings(s, request):
+    def updatesettings(self, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
         systemdb = params['systemdb'][0]
@@ -420,7 +418,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    async def uploadobject(s, request):
+    async def uploadobject(self, request):
         params = parse_qs(request.query_string)
         if 'mode' in params:
             mode = params['mode'][0]
@@ -435,7 +433,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    async def uploadnode(s, request):
+    async def uploadnode(self, request):
         params = parse_qs(request.query_string)
         if 'mode' in params:
             mode = params['mode'][0]
@@ -452,7 +450,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listroles(s, request):
+    def listroles(self, request):
         context = Context(postgres=True)
         data = context.listroles()
         context.free()
@@ -460,7 +458,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listusers(s, request):
+    def listusers(self, request):
         context = Context(postgres=True)
         data = context.listusers()
         context.free()
@@ -468,7 +466,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def listgrants(s, request):
+    def listgrants(self, request):
         context = Context(postgres=True)
         data = context.listgrants()
         context.free()
@@ -476,7 +474,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def createrole(s, request):
+    def createrole(self, request):
         params = parse_qs(request.query_string)
         role = params['role'][0]
         context = Context(postgres=True)
@@ -486,7 +484,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def createuser(s, request):
+    def createuser(self, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
         context = Context(postgres=True)
@@ -496,7 +494,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def creategrant(s, request):
+    def creategrant(self, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
         role = params['role'][0]
@@ -507,7 +505,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def deleterole(s, request):
+    def deleterole(self, request):
         params = parse_qs(request.query_string)
         role = params['role'][0]
         context = Context(postgres=True)
@@ -517,7 +515,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def deleteuser(s, request):
+    def deleteuser(self, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
         context = Context(postgres=True)
@@ -527,7 +525,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def resetpassword(s, request):
+    def resetpassword(self, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
         context = Context(postgres=True)
@@ -537,7 +535,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def deletegrant(s, request):
+    def deletegrant(self, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
         role = params['role'][0]
@@ -548,7 +546,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    async def changepassword(s, request):
+    async def changepassword(self, request):
         multipart = await request.post()
         params = parse_qs(request.query_string)
         user = multipart['user'] if 'user' in multipart else params['user'][0]
@@ -569,7 +567,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def deleteobject(s, request):
+    def deleteobject(self, request):
         params = parse_qs(request.query_string)
         database = params['database'][0]
         if 'kairos_system_' in database:
@@ -584,7 +582,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def downloadobject(s, request):
+    def downloadobject(self, request):
         params = parse_qs(request.query_string)
         database = params['database'][0]
         id = params['id'][0]
@@ -596,7 +594,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def downloadsource(s, request):
+    def downloadsource(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0]
@@ -607,18 +605,18 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getBchildren(s, request):
+    def getBchildren(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0]
         context = Context(nodesdb=nodesdb)
-        data = context.getchildren(id)
+        data = context.getBchildren(id)
         context.free()
         return getresponse(context, dict(data=data))
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getmemberlist(s, request):
+    def getmemberlist(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0]
@@ -632,7 +630,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getcollections(s, request):
+    def getcollections(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -644,7 +642,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getmember(s, request):
+    def getmember(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         member = params['member'][0]
@@ -664,7 +662,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getmenus(s, request):
+    def getmenus(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -675,7 +673,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def gettree(s, request):
+    def gettree(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         parent = params['id'][0]
@@ -686,7 +684,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getnode(s, request):
+    def getnode(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0]
@@ -699,7 +697,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def createnode(s, request):
+    def createnode(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0]
@@ -711,7 +709,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def renamenode(s, request):
+    def renamenode(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0]
@@ -723,7 +721,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def deletenode(s, request):
+    def deletenode(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0]
@@ -734,7 +732,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def emptytrash(s, request):
+    def emptytrash(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         context = Context(nodesdb=nodesdb)
@@ -744,7 +742,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def movenode(s, request):
+    def movenode(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         pfrom = params['from'][0]
@@ -756,7 +754,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getchart(s, request):
+    def getchart(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -770,7 +768,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getjsonobject(s, request):
+    def getjsonobject(self, request):
         params = parse_qs(request.query_string)
         database = params['database'][0]
         id = params['id'][0]
@@ -782,13 +780,13 @@ class KairosWorker:
     
     @intercept_logging_and_internal_error
     @trace_call
-    def getlayout(s, request):
+    def getlayout(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
         layout = params['layout'][0]
         variables = json.loads(params['variables'][0])
-        context = Context(nodesdb=database, systemdb=database)
+        context = Context(nodesdb=nodesdb, systemdb=systemdb)
         for v in variables: context.variables[v] = variables[v]
         layout = context.getlayout(layout)
         context.free()
@@ -796,7 +794,7 @@ class KairosWorker:
     
     @intercept_logging_and_internal_error
     @trace_call
-    def getchoice(s, request):
+    def getchoice(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -810,31 +808,31 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def gettemplate(s, request):
+    def gettemplate(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
         template = params['template'][0]
-        context = Context(nodesdb=database, systemdb=database)
+        context = Context(nodesdb=nodesdb, systemdb=systemdb)
         template = context.gettemplate(template)
         context.free()
         return getresponse(context, dict(data=template))
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getcolors(s, request):
+    def getcolors(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
         colors = params['colors'][0]
-        context = Context(nodesdb=database, systemdb=database)
+        context = Context(nodesdb=nodesdb, systemdb=systemdb)
         colors = context.getcolors(colors)
         context.free()
         return getresponse(context, dict(data=colors))
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getqueries(s, request):
+    def getqueries(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -845,7 +843,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getcharts(s, request):
+    def getcharts(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -856,7 +854,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def getchoices(s, request):
+    def getchoices(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -867,7 +865,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def executequery(s, request):
+    def executequery(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -883,7 +881,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def displaycollection(s, request):
+    def displaycollection(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -896,7 +894,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def buildcollectioncache(s, request):
+    def buildcollectioncache(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -909,20 +907,20 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def buildallcollectioncaches(s, request):
+    def buildallcollectioncaches(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
         id = params['id'][0]
         context = Context(nodesdb=nodesdb, systemdb=systemdb)
-        node = context.getnode(id)
+        _ = context.getnode(id)
         context.buildcollectioncache(id, {'*'})
         context.free()
         return getresponse(context, dict())
 
     @intercept_logging_and_internal_error
     @trace_call
-    def clearcollectioncache(s, request):
+    def clearcollectioncache(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0]
@@ -933,7 +931,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def dropcollectioncache(s, request):
+    def dropcollectioncache(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = params['id'][0] 
@@ -945,7 +943,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def compareaddnode(s, request):
+    def compareaddnode(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         fromid = int(params['from'][0])
@@ -957,7 +955,7 @@ class KairosWorker:
     
     @intercept_logging_and_internal_error
     @trace_call
-    def aggregateaddnode(s, request):
+    def aggregateaddnode(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         fromid = int(params['from'][0])
@@ -969,7 +967,7 @@ class KairosWorker:
     
     @intercept_logging_and_internal_error
     @trace_call
-    def applyaggregator(s, request):
+    def applyaggregator(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         id = int(params['id'][0])
@@ -986,7 +984,7 @@ class KairosWorker:
      
     @intercept_logging_and_internal_error
     @trace_call
-    def unload(s, request):
+    def unload(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -998,7 +996,7 @@ class KairosWorker:
     
     @intercept_logging_and_internal_error
     @trace_call
-    def linkfathernode(s, request):
+    def linkfathernode(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         fromid = int(params['from'][0])
@@ -1010,7 +1008,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def applyliveobject(s, request):
+    def applyliveobject(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -1023,7 +1021,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def exportdatabase(s, request):
+    def exportdatabase(self, request):
         params = parse_qs(request.query_string)
         nodesdb = [params['nodesdb'][0]] if 'nodesdb' in params else []
         context = Context(postgres=True)
@@ -1033,7 +1031,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def importdatabase(s, request):
+    def importdatabase(self, request):
         params = parse_qs(request.query_string)
         nodesdb = [params['nodesdb'][0]] if 'nodesdb' in params else []
         context = Context(postgres=True)
@@ -1042,7 +1040,7 @@ class KairosWorker:
         return getresponse(context, dict(data=dict(msg="Database(s): " + str(nodesdb) + " has(ve) been imported sucessfully!")))
 
     @trace_call
-    def clearprogenycaches(s, request):
+    def clearprogenycaches(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -1053,7 +1051,7 @@ class KairosWorker:
         return getresponse(context, dict(data=dict(msg="Caches have been cleared sucessfully!")))
 
     @trace_call
-    def buildprogenycaches(s, request):
+    def buildprogenycaches(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]
@@ -1065,7 +1063,7 @@ class KairosWorker:
 
     @intercept_logging_and_internal_error
     @trace_call
-    def runchart(s, request):
+    def runchart(self, request):
         params = parse_qs(request.query_string)
         nodesdb = params['nodesdb'][0]
         systemdb = params['systemdb'][0]

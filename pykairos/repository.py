@@ -16,59 +16,64 @@
 import logging, psycopg2, psycopg2.extensions, psycopg2.extras, os, json
 from datetime import datetime
 
+
+logging.TRACE = 5
+logging.addLevelName(5, "TRACE")
+logging.trace = lambda m: logging.log(logging.TRACE, m)
+
 class Repository:
 
-    def __init__(s, db=None):
-        s.database = db
+    def __init__(self, db=None):
+        self.database = db
         postgresstr = "host='localhost' user='postgres' dbname='" + db + "'" if db != None else "host='localhost' user='postgres'"
-        s.loglevel = logging.getLogger().getEffectiveLevel()
-        s.tracefile = '/var/log/kairos/postgres_' + str(os.getpid()) + '.sql'
-        s.trace('\n\n-- '+ str(datetime.now()))
-        if db: s.trace('psql -d ' + db)
-        else: s.trace('psql')
-        s.trace('')
-        s.postgres = psycopg2.connect(postgresstr)
-        s.cursor =  s.postgres.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        s.setschema()
-        s.postgres.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        self.loglevel = logging.getLogger().getEffectiveLevel()
+        self.tracefile = '/var/log/kairos/postgres_' + str(os.getpid()) + '.sql'
+        self.trace('\n\n-- '+ str(datetime.now()))
+        if db: self.trace('psql -d ' + db)
+        else: self.trace('psql')
+        self.trace('')
+        self.postgres = psycopg2.connect(postgresstr)
+        self.cursor =  self.postgres.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        self.setschema()
+        self.postgres.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
     
-    def setschema(s, schema=None):
-        s.schema = 'public' if schema == None else schema
-        s.execute('set search_path=' + s.schema)
+    def setschema(self, schema=None):
+        self.schema = 'public' if schema == None else schema
+        self.execute('set search_path=' + self.schema)
 
-    def trace(s, stmt):
-        if s.loglevel == logging.TRACE:
-            ftrace = open(s.tracefile, 'a')
+    def trace(self, stmt):
+        if self.loglevel == logging.TRACE:
+            ftrace = open(self.tracefile, 'a')
             print(stmt, file=ftrace)
             ftrace.close()  
 
-    def execute(s,*req):
-        logging.debug('Database: ' + str(s.database) + ', schema: ' + s.schema + ', request: ' + req[0])
-        s.trace(req[0] + ';')
-        s.cursor.execute(*req)
-        return s.cursor
+    def execute(self,*req):
+        logging.debug('Database: ' + str(self.database) + ', schema: ' + self.schema + ', request: ' + req[0])
+        self.trace(req[0] + ';')
+        self.cursor.execute(*req)
+        return self.cursor
 
-    def executep(s,req,prm):
-        logging.debug('Database: ' + str(s.database) + ', schema: ' + s.schema + ', request: ' + req)
-        c = s.postgres.cursor()
+    def executep(self,req,prm):
+        logging.debug('Database: ' + str(self.database) + ', schema: ' + self.schema + ', request: ' + req)
+        c = self.postgres.cursor()
         c.execute(req, prm)
         return c
 
-    def copy(s, buffer, table, description):
-        logging.debug('Database: ' + str(s.database) + ', schema: ' + s.schema + ', copy into: ' + table + " using: " + str(description))
-        s.trace('COPY ' + table + " " + json.dumps(description).replace('[','(').replace(']',')') + ' FROM stdin;')
-        s.trace(buffer.getvalue()[:-1])
-        s.trace('\\.')
-        c = s.postgres.cursor()
+    def copy(self, buffer, table, description):
+        logging.debug('Database: ' + str(self.database) + ', schema: ' + self.schema + ', copy into: ' + table + " using: " + str(description))
+        self.trace('COPY ' + table + " " + json.dumps(description).replace('[','(').replace(']',')') + ' FROM stdin;')
+        self.trace(buffer.getvalue()[:-1])
+        self.trace('\\.')
+        c = self.postgres.cursor()
         c.copy_from(buffer, table, columns=description)
 
-    def exists(s, table):
+    def exists(self, table):
         result = False
-        x = s.execute("select 1 from information_schema.tables where table_schema = '" + s.schema + "' and table_name = '" + table + "'")
-        for rx in x.fetchall(): result = True
+        x = self.execute("select 1 from information_schema.tables where table_schema = '" + self.schema + "' and table_name = '" + table + "'")
+        for _ in x.fetchall(): result = True
         return result
 
-    def disconnect(s):
-        s.trace('\\q')
-        s.cursor.close()
-        s.postgres.close()
+    def disconnect(self):
+        self.trace('\\q')
+        self.cursor.close()
+        self.postgres.close()

@@ -2349,7 +2349,7 @@ dhtmlxEvent(window,"load",function(){
                                     a.parentNode.removeChild(a);
                                     setTimeout(function() {
                                         download_next(i + 1);
-                                    }, 500);
+                                    }, 5000);
                                 };
                                 download_next(0);
                             };

@@ -16,27 +16,27 @@
 import multiprocessing
 
 class Parallel:
-    def __init__(s, action, workers=multiprocessing.cpu_count()):
-        s.limit = int(workers)
-        s.workers = dict()
-        s.action = action
-    def push(s, arg):
-        if len(s.workers.keys()) < s.limit:
-            p = multiprocessing.Process(target=s.action, args=(arg,))
+    def __init__(self, action, workers=multiprocessing.cpu_count()):
+        self.limit = int(workers)
+        self.workers = dict()
+        self.action = action
+    def push(self, arg):
+        if len(self.workers.keys()) < self.limit:
+            p = multiprocessing.Process(target=self.action, args=(arg,))
             p.start()
-            s.workers[p.sentinel] = p
+            self.workers[p.sentinel] = p
         else:
-            if len(s.workers.keys()) == s.limit:
-                x = multiprocessing.connection.wait(s.workers.keys())
+            if len(self.workers.keys()) == self.limit:
+                x = multiprocessing.connection.wait(self.workers.keys())
                 for e in x:
-                    s.workers[e].join()
-                    del s.workers[e]
-                p = multiprocessing.Process(target=s.action, args=(arg,))
+                    self.workers[e].join()
+                    del self.workers[e]
+                p = multiprocessing.Process(target=self.action, args=(arg,))
                 p.start()
-                s.workers[p.sentinel] = p
-    def join(s):
-        while len(s.workers):
-            x = multiprocessing.connection.wait(s.workers.keys())
+                self.workers[p.sentinel] = p
+    def join(self):
+        while len(self.workers):
+            x = multiprocessing.connection.wait(self.workers.keys())
             for e in x:
-                s.workers[e].join()
-                del s.workers[e]
+                self.workers[e].join()
+                del self.workers[e]

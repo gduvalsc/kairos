@@ -14,7 +14,7 @@
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging, shutil, os, binascii, urllib, json, multiprocessing, zipfile, io, sys, re, pandas, plotly, hashlib, subprocess
-from collections import *
+from collections import OrderedDict
 from datetime import datetime
 from pykairos.repository import Repository
 from pykairos.arcfile import Arcfile
@@ -244,66 +244,66 @@ class Object: pass
 
 
 class Status:
-    def __init__(s):
-        s.errors = 0
-        s.errormessages = []
+    def __init__(self):
+        self.errors = 0
+        self.errormessages = []
     
-    def pusherrmessage(s, m):
+    def pusherrmessage(self, m):
         logging.error(m)
-        s.errormessages.append(m)
-        s.errors = s.errors + 1
+        self.errormessages.append(m)
+        self.errors = self.errors + 1
 
 class Context:
     
-    def __init__(s, nodesdb=None, systemdb=None, postgres=False, autocommit=True):
-        s.nodesdb = nodesdb
-        s.systemdb = systemdb
-        s.postgresdb = postgres
-        s.removecollections  = []
-        s.createcollections  = []
-        s.grepo = Repository() if postgres else None
-        s.nrepo = Repository(nodesdb) if nodesdb else None
-        s.srepo = Repository(systemdb) if systemdb else None
-        s.cache = dict(nodes=dict(), objects=dict(chart=dict(), query=dict(), analyzer=dict(), liveobject=dict(), template=dict(), color=dict(), aggregator=dict(), function=dict(), layout=dict(), choice=dict()))
-        s.status = Status()
-        s.variables = dict()
-        s.nocache = False
+    def __init__(self, nodesdb=None, systemdb=None, postgres=False, autocommit=True):
+        self.nodesdb = nodesdb
+        self.systemdb = systemdb
+        self.postgresdb = postgres
+        self.removecollections  = []
+        self.createcollections  = []
+        self.grepo = Repository() if postgres else None
+        self.nrepo = Repository(nodesdb) if nodesdb else None
+        self.srepo = Repository(systemdb) if systemdb else None
+        self.cache = dict(nodes=dict(), objects=dict(chart=dict(), query=dict(), analyzer=dict(), liveobject=dict(), template=dict(), color=dict(), aggregator=dict(), function=dict(), layout=dict(), choice=dict()))
+        self.status = Status()
+        self.variables = dict()
+        self.nocache = False
     
-    def free(s):
-        if s.postgresdb: s.grepo.disconnect()
-        if s.nodesdb: s.nrepo.disconnect()
-        if s.systemdb: s.srepo.disconnect()
-        if s.status.errors > 0:
-            for m in s.status.errormessages: logging.error(m)
+    def free(self):
+        if self.postgresdb: self.grepo.disconnect()
+        if self.nodesdb: self.nrepo.disconnect()
+        if self.systemdb: self.srepo.disconnect()
+        if self.status.errors > 0:
+            for m in self.status.errormessages: logging.error(m)
 
-    def setschema(s, schema=None):
-        s.nrepo.setschema(schema)
+    def setschema(self, schema=None):
+        self.nrepo.setschema(schema)
 
-    def createsystem(s):
-        r = s.grepo
+    def createsystem(self):
+        r = self.grepo
         databases = getdatabases(r)
         if 'kairos_system_system' in databases: return
         r.execute("create database kairos_system_system with encoding 'utf8'")
-        s.systemdb = 'kairos_system_system'
-        s.srepo = Repository(s.systemdb)
-        r = s.srepo
+        self.systemdb = 'kairos_system_system'
+        self.srepo = Repository(self.systemdb)
+        r = self.srepo
         r.execute("create language plpython3u")
         r.execute("create sequence objid start 1")
         r.execute("create table objects(rid integer primary key, id text, type name, created timestamp, filename text, stream bytea)")
         r.execute("create unique index iobjects on objects(type, id)")        
 
-    def createuser(s, user, skiperror=False):
+    def createuser(self, user, skiperror=False):
         curdatabase = "kairos_user_" + user
-        r = s.grepo
+        r = self.grepo
         databases = getdatabases(r)
         if curdatabase in databases:
-            if not skiperror: s.status.pusherrmessage(user + ' user already exists!')
+            if not skiperror: self.status.pusherrmessage(user + ' user already exists!')
             return dict()
         r.execute("create database kairos_user_" + user + " with encoding 'utf8'")
         r.execute("create user " + user + " password '" + user + "'")
-        s.nodesdb = curdatabase
-        s.nrepo = Repository(s.nodesdb)
-        r = s.nrepo
+        self.nodesdb = curdatabase
+        self.nrepo = Repository(self.nodesdb)
+        r = self.nrepo
         r.execute("create language plpython3u")
         r.execute("create extension oracle_fdw")
         r.execute("create extension postgres_fdw")
@@ -323,18 +323,18 @@ class Context:
         os.mkdir('/autoupload/' + curdatabase)
         return dict(data=dict(msg=user + " user has been successfully created!"))
         
-    def createrole(s, role):
+    def createrole(self, role):
         curdatabase = "kairos_group_" + role
-        r = s.grepo
+        r = self.grepo
         databases = getdatabases(r)
         if curdatabase in databases:
-            s.status.pusherrmessage(role + ' role already exists!')
+            self.status.pusherrmessage(role + ' role already exists!')
             return dict()
         r.execute("create database kairos_group_" + role + " with encoding 'utf8'")
         r.execute("create role " + role)
-        s.nodesdb = curdatabase
-        s.nrepo = Repository(s.nodesdb)
-        r = s.nrepo
+        self.nodesdb = curdatabase
+        self.nrepo = Repository(self.nodesdb)
+        r = self.nrepo
         r.execute("create language plpython3u")
         r.execute("create extension oracle_fdw")
         r.execute("create extension postgres_fdw")
@@ -352,75 +352,74 @@ class Context:
         os.mkdir('/autoupload/' + curdatabase)
         return dict(data=dict(msg=role + " role has been successfully created!"))
 
-    def deleteuser(s, user):
+    def deleteuser(self, user):
         if user=='admin': 
-            s.status.pusherrmessage('admin user cannot be removed!')
+            self.status.pusherrmessage('admin user cannot be removed!')
             return dict()
         dbuser = "kairos_user_" + user
-        r = s.grepo
+        r = self.grepo
         r.execute("drop database " + dbuser)
         r.execute("drop user " + user)
         return dict(data=dict(msg=user + " user has been successfully removed!"))
 
-    def deleterole(s, role):
+    def deleterole(self, role):
         dbgroup = "kairos_group_" + role
-        r = s.grepo
+        r = self.grepo
         r.execute("drop database " + dbgroup)
         r.execute("drop role " + role)
         return dict(data=dict(msg=role + " role has been successfully removed!"))
 
-    def creategrant(s, user, role):
-        r = s.grepo
+    def creategrant(self, user, role):
+        r = self.grepo
         databases = getdatabases(r)
         dbgroup = "kairos_group_" + role
         dbuser = "kairos_user_" + user
         if dbgroup not in databases:
-            s.status.pusherrmessage(role + " role doesn't exist!")
+            self.status.pusherrmessage(role + " role doesn't exist!")
             return dict()
         if dbuser not in databases:
-            s.status.pusherrmessage(user + " user doesn't exist!")
+            self.status.pusherrmessage(user + " user doesn't exist!")
             return dict()
         x = r.execute("select groname,usename from pg_group,pg_user where usesysid = any(grolist) and groname='" + role + "' and usename='" + user + "'")
         if len([row for row in x.fetchall()]) > 0:
-            s.status.pusherrmessage(user + " user is already granted with " + role + " role!")
+            self.status.pusherrmessage(user + " user is already granted with " + role + " role!")
             return(dict())
         for row in x.fetchall(): data.append(dict(_id=row['usename'] + ':' + row['groname'], user=row['usename'], role=row['groname']))
         r.execute("grant " + role + " to " + user)
         return dict(data=dict(msg=role + " role has been successfully granted to " + user + " user!"))
 
-    def deletegrant(s, user, role):
-        r = s.grepo
+    def deletegrant(self, user, role):
+        r = self.grepo
         r.execute("revoke " + role + " from " + user)
         return dict(data=dict(msg=user + " user has been successfully revoked from " + role + " role!"))
 
-    def resetpassword(s, user):
+    def resetpassword(self, user):
         if user=='admin':
-            s.status.pusherrmessage('admin password cannot be reset!')
+            self.status.pusherrmessage('admin password cannot be reset!')
             return dict()
-        dbuser = "kairos_user_" + user
-        r = s.grepo
+        r = self.grepo
         r.execute("alter user " + user + " password '" + user + "'")
         return dict(data=dict(msg=user + " password has been successfully reset!"))
 
-    def changepassword(s, user, password):
-        r = s.grepo
+    def changepassword(self, user, password):
+        r = self.grepo
         r.execute("alter user " + user + " password '" + password + "'")
 
-    def getsettings(s):
-        r = s.nrepo
+    def getsettings(self):
+        r = self.nrepo
         y = r.execute("select top, colors, logging, nodesdb, systemdb, template, wallpaper, plotorientation from settings")
         settings = dict()
         for row in y.fetchall():
             for x in row.keys(): settings[x] = row[x]
         return settings
 
-    def updatesettings(s, newsettings):
-        r = s.nrepo
+    def updatesettings(self, newsettings):
+        r = self.nrepo
         r.execute("delete from settings")
         r.execute("insert into settings(colors, logging, nodesdb, plotorientation, systemdb, template, top, wallpaper) values ('" + newsettings['colors'] +"', '" + newsettings['logging'] +"', '" + newsettings['nodesdb'] +"', '" + newsettings['plotorientation'] + "', '" + newsettings['systemdb'] + "', '" + newsettings['template'] + "', " + str(newsettings['top']) + ", '" + newsettings['wallpaper'] + "')")
 
-    def listdatabases(s, user, adminrights):
-        r = s.grepo
+    def listdatabases(self, user, adminrights):
+        r = self.grepo
         data = []
         databases = getdbsizes(r)
         groups = getgroupdatabases(r, user)
@@ -435,43 +434,43 @@ class Context:
                         data.append(dict(name=k, size=databases[k] * 1.0 / 1024 / 1024))
         return data
     
-    def listroles(s):
-        r = s.grepo
+    def listroles(self):
+        r = self.grepo
         databases = getdatabases(r)
         data = [dict(_id=k.replace('kairos_group_',''), role=k.replace('kairos_group_','')) for k in databases if 'kairos_group_' in k]
         return data
     
-    def listusers(s):
-        r = s.grepo
+    def listusers(self):
+        r = self.grepo
         databases = getdatabases(r)
         data = [dict(_id=k.replace('kairos_user_',''), user=k.replace('kairos_user_','')) for k in databases if 'kairos_user_' in k]
         return data
 
-    def listgrants(s):
-        r = s.grepo
+    def listgrants(self):
+        r = self.grepo
         data = [dict(_id=row['usename'] + ':' + row['groname'], user=row['usename'], role=row['groname']) for row in r.execute("select groname,usename from pg_group,pg_user where usesysid = any(grolist)")]
         return data
 
-    def listsystemdb(s):
-        r = s.grepo
+    def listsystemdb(self):
+        r = self.grepo
         databases = getdatabases(r)
         data = [dict(name=k) for k in databases if 'kairos_system_' in k]
         return data
 
-    def listnodesdb(s, user):
-        r = s.grepo
+    def listnodesdb(self, user):
+        r = self.grepo
         databases = getdatabases(r)
         groupdb = getgroupdatabases(r, user)
         data = [dict(name=k) for k in databases if k == 'kairos_user_' + user or k in groupdb]
         return data
 
-    def listobjects(s, where):
+    def listobjects(self, where):
         data = []
         listdb = []
-        if s.nodesdb: listdb.append(s.nodesdb)
-        if s.systemdb: listdb.append(s.systemdb)
+        if self.nodesdb: listdb.append(self.nodesdb)
+        if self.systemdb: listdb.append(self.systemdb)
         for db in listdb:
-            r = s.nrepo if db == s.nodesdb else s.srepo
+            r = self.nrepo if db == self.nodesdb else self.srepo
             for row in r.execute("select rid, id, type, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created from objects " + where):
                 item = dict()
                 for x in row.keys(): item[x] = row[x]
@@ -479,18 +478,17 @@ class Context:
                 data.append(item)
         return data
     
-    def readobjects(s, where, evalobject=True, allbases=False):
+    def readobjects(self, where, evalobject=True, allbases=False):
         data = []
         interrupt = False
-        for db in [s.nodesdb, s.systemdb]:
+        for db in [self.nodesdb, self.systemdb]:
             if interrupt and not allbases: break
-            r = s.nrepo if db == s.nodesdb else s.srepo
+            r = self.nrepo if db == self.nodesdb else self.srepo
             for row in r.execute("select filename, stream as content, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created from objects " + where):
                 source = binascii.a2b_base64(row['content'])
                 filename = row['filename']
                 created = row['created']
                 p = compile(source, filename, 'exec')
-                #locals()['kairos'] = s.variables
                 true = True
                 false = False
                 null = None
@@ -498,72 +496,72 @@ class Context:
                 obj = locals()['UserObject']()
                 obj['origin'] = db
                 obj['created'] = created
-                if evalobject: obj = replaceeval(obj, s.variables)
+                if evalobject: obj = replaceeval(obj, self.variables)
                 data.append(obj)
                 interrupt = True
         return data
 
-    def getobject(s, id, typeobj):
-        if id not in s.cache['objects'][typeobj]:
-            objs = s.readobjects("where id='" + id + "' and type='" + typeobj + "'")
+    def getobject(self, id, typeobj):
+        if id not in self.cache['objects'][typeobj]:
+            objs = self.readobjects("where id='" + id + "' and type='" + typeobj + "'")
             if len(objs) == 0: return None
-            s.cache['objects'][typeobj][id]= objs[0]
-        return s.cache['objects'][typeobj][id]
+            self.cache['objects'][typeobj][id]= objs[0]
+        return self.cache['objects'][typeobj][id]
 
-    def getanalyzer(s, id): 
-        analyzer = s.getobject(id, 'analyzer')
-        if analyzer == None: s.status.pusherrmessage("Analyzer '" + id +"' doesn't exist!")
+    def getanalyzer(self, id): 
+        analyzer = self.getobject(id, 'analyzer')
+        if analyzer == None: self.status.pusherrmessage("Analyzer '" + id +"' doesn't exist!")
         return analyzer
 
-    def getliveobject(s, id): 
-        liveobject = s.getobject(id, 'liveobject')
-        if liveobject == None: s.status.pusherrmessage("Liveobject '" + id +"' doesn't exist!")
+    def getliveobject(self, id): 
+        liveobject = self.getobject(id, 'liveobject')
+        if liveobject == None: self.status.pusherrmessage("Liveobject '" + id +"' doesn't exist!")
         return liveobject
 
-    def gettemplate(s, id): 
-        template = s.getobject(id, 'template')
-        if template == None: s.status.pusherrmessage("Template '" + id +"' doesn't exist!")
+    def gettemplate(self, id): 
+        template = self.getobject(id, 'template')
+        if template == None: self.status.pusherrmessage("Template '" + id +"' doesn't exist!")
         return template
 
-    def getcolors(s, id): 
-        colors = s.getobject(id, 'color')
-        if colors == None: s.status.pusherrmessage("Colors '" + id +"' doesn't exist!")
+    def getcolors(self, id): 
+        colors = self.getobject(id, 'color')
+        if colors == None: self.status.pusherrmessage("Colors '" + id +"' doesn't exist!")
         return colors
 
-    def getchart(s, id): 
-        chart = s.getobject(id, 'chart')
-        if chart == None: s.status.pusherrmessage("Chart '" + id +"' doesn't exist!")
+    def getchart(self, id): 
+        chart = self.getobject(id, 'chart')
+        if chart == None: self.status.pusherrmessage("Chart '" + id +"' doesn't exist!")
         return chart
 
-    def getaggregator(s, id): 
-        aggregator = s.getobject(id, 'aggregator')
-        if aggregator == None: s.status.pusherrmessage("Aggregator '" + id +"' doesn't exist!")
+    def getaggregator(self, id): 
+        aggregator = self.getobject(id, 'aggregator')
+        if aggregator == None: self.status.pusherrmessage("Aggregator '" + id +"' doesn't exist!")
         return aggregator
 
-    def getfunction(s, id): 
-        function = s.getobject(id, 'function')
-        if function == None: s.status.pusherrmessage("Function '" + id +"' doesn't exist!")
+    def getfunction(self, id): 
+        function = self.getobject(id, 'function')
+        if function == None: self.status.pusherrmessage("Function '" + id +"' doesn't exist!")
         return function
 
-    def getlayout(s, id): 
-        layout = s.getobject(id, 'layout')
-        if layout == None: s.status.pusherrmessage("Layout '" + id +"' doesn't exist!")
+    def getlayout(self, id): 
+        layout = self.getobject(id, 'layout')
+        if layout == None: self.status.pusherrmessage("Layout '" + id +"' doesn't exist!")
         return layout
 
-    def getchoice(s, id): 
-        choice = s.getobject(id, 'choice')
-        if choice == None: s.status.pusherrmessage("Choice '" + id +"' doesn't exist!")
+    def getchoice(self, id): 
+        choice = self.getobject(id, 'choice')
+        if choice == None: self.status.pusherrmessage("Choice '" + id +"' doesn't exist!")
         return choice
 
-    def getquery(s, id): 
-        query = s.getobject(id, 'query')
+    def getquery(self, id): 
+        query = self.getobject(id, 'query')
         return query
 
-    def getmenus(s):
-        return s.readobjects("where type='menu'", allbases=True)
+    def getmenus(self):
+        return self.readobjects("where type='menu'", allbases=True)
 
-    def writeobject(s, source):
-        r = s.nrepo
+    def writeobject(self, source):
+        r = self.nrepo
         p = compile(source, 'stream', 'exec')
         kairos = dict()
         true = True
@@ -580,14 +578,14 @@ class Context:
         r.executep("insert into objects(rid, id, type, created, filename, stream) values (%s, %s, %s, now(), %s, %s)", (objid, id, typeobj, filename, content))
         return (id, typeobj)
 
-    def getobjectstream(s, id, otype):
-        r = s.nrepo
+    def getobjectstream(self, id, otype):
+        r = self.nrepo
         result = dict()
         for row in r.execute("select filename, stream from objects where id='" + str(id) +"' and type = '" + otype + "'"):
             for x in row.keys(): result[x] = row[x]
         return (result['filename'], binascii.a2b_base64(result['stream']))
 
-    def uploadobject(s, multipart):
+    def uploadobject(self, multipart):
         upload = multipart['file']
         filename = upload.filename
         content = upload.file.read()
@@ -606,22 +604,22 @@ class Context:
             typeobj = obj['type']
             id = obj['id']
         content = binascii.b2a_base64(content)
-        r = s.nrepo
+        r = self.nrepo
         r.execute("delete from objects where id='" + str(id) + "' and type='" + typeobj +"'")
         objid = getnextid(r)
         r.executep("insert into objects(rid, id, type, created, filename, stream) values (%s, %s, %s, now(), %s, %s)", (objid, id, typeobj, filename, content))
         return (id, filename, typeobj)
     
-    def deleteobject(s, id, typeobj):
-        r = s.nrepo
+    def deleteobject(self, id, typeobj):
+        r = self.nrepo
         r.execute("delete from objects where id='" + str(id) + "' and type='" + typeobj + "'")
 
-    def deletesource(s, id):
-        r = s.nrepo
+    def deletesource(self, id):
+        r = self.nrepo
         r.execute("delete from sources where id=" + str(id))
 
-    def createsource(s, nid, stream, filename):
-        filepath = '/tmp/' + s.nodesdb + '_' + str(nid) + '.zip'
+    def createsource(self, nid, stream, filename):
+        filepath = '/tmp/' + self.nodesdb + '_' + str(nid) + '.zip'
         infile = Arcfile(stream, 'r')
         ziparchive = Arcfile(filepath, 'w:zip')
         for m in infile.list(): ziparchive.write(m, infile.read(m))
@@ -631,7 +629,7 @@ class Context:
             for x in v['collections']:
                 if x not in collections: collections[x] = dict(analyzer=v['analyzer'],members=[])
                 collections[x]['members'].append(v['member'])
-        analmain = s.getanalyzer('ANALMAIN')
+        analmain = self.getanalyzer('ANALMAIN')
         analyzer = Analyzer(analmain, {}, listener, None)
         def do(member):
             analyzer.analyze(ziparchive.read(member), member)
@@ -639,7 +637,7 @@ class Context:
         ziparchive = Arcfile(filepath, 'r')
         for member in ziparchive.list(): do(member)
         ziparchive.close()
-        r = s.nrepo
+        r = self.nrepo
         f=open(filepath, 'rb')
         content = binascii.b2a_base64(f.read())
         f.close()
@@ -647,8 +645,8 @@ class Context:
         r.executep("insert into sources (id, created, collections, stream) values(%s, now(), %s, %s)", (nid, json.dumps(collections), content))
         r.execute("update nodes set type = 'B' where id = " + str(nid))
 
-    def readnode(s, id):
-        r = s.nrepo
+    def readnode(self, id):
+        r = self.nrepo
         projection = "id as rid, type, name, status, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created, liveobject, aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip, aggregatormethod, aggregatortimefilter, to_char(aggregated, 'YYYY-MM-DD HH24:MI:SS.MS') as aggregated, producers"
         selectednodes = [row for row in r.execute("select " + projection + " from nodes where id = " + str(id))]
         nodes=[]
@@ -673,237 +671,235 @@ class Context:
                 node['datasource']['liveobject'] = row['liveobject']
                 d = dict()
                 with suppress(Exception):
-                    liveobject = s.getliveobject(row['liveobject'])
+                    liveobject = self.getliveobject(row['liveobject'])
                     for e in liveobject['tables']: d[e] = True
                 node['datasource']['collections'] = d
             nodes.append(node)
         return nodes
     
-    def countchildren(s, node):
-        r = s.nrepo
+    def countchildren(self, node):
+        r = self.nrepo
         for row in r.execute("select count(*) as count from nodes where parent = " + str(node['id'])): node['kids'] = row['count']
 
-    def getnode(s, id):
-        r = s.nrepo
-        if id not in s.cache['nodes']:
-            lnodes = s.readnode(id)
+    def getnode(self, id):
+        if id not in self.cache['nodes']:
+            lnodes = self.readnode(id)
             if len(lnodes) == 0: return None
-            s.cache['nodes'][id] = lnodes[0]
-        return s.cache['nodes'][id]
+            self.cache['nodes'][id] = lnodes[0]
+        return self.cache['nodes'][id]
 
-    def deletenode(s, id):
-        r = s.nrepo
-        node = s.getnode(id)
+    def deletenode(self, id):
+        r = self.nrepo
+        node = self.getnode(id)
         if node == None:
-            s.status.pusherrmessage('Node with id: ' + str(id) + " doesn't exist!")
+            self.status.pusherrmessage('Node with id: ' + str(id) + " doesn't exist!")
             return
-        s.getcache(node)
-        s.getsource(node)
+        self.getcache(node)
+        self.getsource(node)
         rootid = getrootid(r)
         trashid = getnodeidfrompn(r, rootid, 'Trash')
         if rootid == node['id']: 
-            s.status.pusherrmessage('Root node cannot be removed!')
+            self.status.pusherrmessage('Root node cannot be removed!')
             return
         if trashid == node['id']: 
-            s.status.pusherrmessage('A trash cannot be removed!')
+            self.status.pusherrmessage('A trash cannot be removed!')
             return
         listnodes = getprogeny(r, id)
         listnodes.append(id)
         if node['status'] == 'DELETED':
             for rid in listnodes:
-                s.deletesource(rid)
-                s.deletecache(rid)
+                self.deletesource(rid)
+                self.deletecache(rid)
                 r.execute("delete from nodes where id = " + str(rid))
         else:
             r.execute("update nodes set parent = " + str(trashid) + " where id = " + str(id))
             for rid in listnodes: r.execute("update nodes set status = 'DELETED' where id = " + str(rid))
     
-    def uploadnode(s, id, multipart):
-        r = s.nrepo
+    def uploadnode(self, id, multipart):
+        r = self.nrepo
         upload = multipart['file']
         filename = urllib.parse.unquote(upload.filename)
         id = getrootid(r) if id == None else id
-        node = s.getnode(id)
+        node = self.getnode(id)
         (base, ext) = os.path.splitext(filename)
         while ext != '': (base, ext) = os.path.splitext(base)
         nodes = base.split('_')
         for d in nodes:
             nid = getnodeidfrompn(r, node['id'], d)
             if nid == None:
-                child = s.createnode(node['id'], d)
-                node = s.getnode(child)
+                child = self.createnode(node['id'], d)
+                node = self.getnode(child)
             else:
-                node = s.getnode(nid)
+                node = self.getnode(nid)
         id = node['id']
-        s.deletesource(id)
-        s.createsource(id, upload.file, filename)
+        self.deletesource(id)
+        self.createsource(id, upload.file, filename)
         return filename
     
-    def createnode(s, pid, name=None):
-        r = s.nrepo
+    def createnode(self, pid, name=None):
+        r = self.nrepo
         name = getdefaultnodename(r) if not name else name
         objid = getnextid(r)
         r.execute("insert into nodes(id, parent, name, type, created, status) values (" + str(objid) + ", " + str(pid) + ", '" + name + "', 'N', now(), 'ACTIVE')")
         return objid
 
-    def renamenode(s, id, new):
-        r = s.nrepo
-        node = s.getnode(id)
+    def renamenode(self, id, new):
+        r = self.nrepo
+        node = self.getnode(id)
         rootid = getrootid(r)
         if rootid == node['id']:
-            s.status.pusherrmessage('Root node cannot be renamed!')
+            self.status.pusherrmessage('Root node cannot be renamed!')
             return node
         if node['datasource']['type'] == 'T':
-            s.status.pusherrmessage('A trash cannot be renamed!')
+            self.status.pusherrmessage('A trash cannot be renamed!')
             return node
         pid = getnodeparentid(r, id)
-        parent = s.getnode(pid)
+        parent = self.getnode(pid)
         x = getnodeidfrompn(r, pid, new)
         if x!= None:
-            s.status.pusherrmessage(new + " is already a child for node: " + parent['name'])
+            self.status.pusherrmessage(new + " is already a child for node: " + parent['name'])
             return node
         r.execute("update nodes set name = '" + new + "' where id = " + str(id))
-        del s.cache['nodes'][id]
-        node = s.getnode(id)
+        del self.cache['nodes'][id]
+        node = self.getnode(id)
         return node
     
-    def movenode(s, pfrom, pto):
-        r = s.nrepo
-        fromnode = s.getnode(pfrom)
+    def movenode(self, pfrom, pto):
+        r = self.nrepo
+        fromnode = self.getnode(pfrom)
         if fromnode['datasource']['type'] == 'T':
-            s.status.pusherrmessage('A trash cannot be moved!')
+            self.status.pusherrmessage('A trash cannot be moved!')
             return fromnode
-        tonode = s.getnode(pto)
         r.execute("update nodes set parent = " + str(pto) + " where id = "  + str(pfrom))
         status = [row['status'] for row in r.execute("select status from nodes where id = " + str(pto))][0]
         listnodes = getprogeny(r, pfrom)
         for rid in listnodes: r.execute("update nodes set status = '" + status + "' where id = " + str(rid))
-        del s.cache['nodes'][pfrom]
-        node = s.getnode(pfrom)
+        del self.cache['nodes'][pfrom]
+        node = self.getnode(pfrom)
         return node
 
-    def compareaddnode(s, fid, tid):
-        r = s.nrepo
-        fnode = s.getnode(fid)
-        tnode = s.getnode(tid)
+    def compareaddnode(self, fid, tid):
+        r = self.nrepo
+        fnode = self.getnode(fid)
+        tnode = self.getnode(tid)
         if fnode['status'] == 'DELETED' or tnode['status'] == 'DELETED':
-            s.status.pusherrmessage('A deleted element cannot be part of a compare operation!')
+            self.status.pusherrmessage('A deleted element cannot be part of a compare operation!')
             return tnode
         for e in tnode['datasource']['producers']:
             if fid == e['id']:
-                s.status.pusherrmessage(str(fid) + ": this node is already included in the list of producers!")
+                self.status.pusherrmessage(str(fid) + ": this node is already included in the list of producers!")
                 return tnode
         producers = tnode['datasource']['producers']
-        producers.append(dict(path=getpath(s, r, fid), id=fid))
-        s.getsource(tnode)
+        producers.append(dict(path=getpath(self, r, fid), id=fid))
+        self.getsource(tnode)
         r.execute("update nodes set type='C', producers='" + json.dumps(producers) + "' where id =" + str(tid))
-        del s.cache['nodes'][tid]
-        tnode = s.getnode(tid)
-        s.getsource(tnode)
+        del self.cache['nodes'][tid]
+        tnode = self.getnode(tid)
+        self.getsource(tnode)
         return tnode
 
-    def aggregateaddnode(s, fid, tid):
-        r = s.nrepo
-        fnode = s.getnode(fid)
-        tnode = s.getnode(tid)
+    def aggregateaddnode(self, fid, tid):
+        r = self.nrepo
+        fnode = self.getnode(fid)
+        tnode = self.getnode(tid)
         if fnode['status'] == 'DELETED' or tnode['status'] == 'DELETED':
-            s.status.pusherrmessage('A deleted element cannot be part of an aggreagte operation!')
+            self.status.pusherrmessage('A deleted element cannot be part of an aggreagte operation!')
             return tnode
         for e in tnode['datasource']['producers']:
             if fid == e['id']:
-                s.status.pusherrmessage(str(fromid) + ": this node is already included in the list of producers!")
+                self.status.pusherrmessage(str(fid) + ": this node is already included in the list of producers!")
                 return tnode
         producers = tnode['datasource']['producers']
-        producers.append(dict(path=getpath(s, r, fid), id=fid))
-        s.getsource(tnode)
+        producers.append(dict(path=getpath(self, r, fid), id=fid))
+        self.getsource(tnode)
         if 'aggregatorselector' not in tnode['datasource']:
-            r.execute("update nodes set type='A', producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + getpath(s, r, fid) + '$' + "', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none' where id =" + str(tid))
+            r.execute("update nodes set type='A', producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + getpath(self, r, fid) + '$' + "', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none' where id =" + str(tid))
         else:
-            r.execute("update nodes set producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + tnode['datasource']['aggregatorselector'] + '|' + getpath(s, r, fid) + '$' +"', aggregatortake=" + str(int(tnode['datasource']['aggregatortake']) +  1) + " where id =" + str(tid))
-        del s.cache['nodes'][tid]
-        tnode = s.getnode(tid)
-        s.getsource(tnode)
+            r.execute("update nodes set producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + tnode['datasource']['aggregatorselector'] + '|' + getpath(self, r, fid) + '$' +"', aggregatortake=" + str(int(tnode['datasource']['aggregatortake']) +  1) + " where id =" + str(tid))
+        del self.cache['nodes'][tid]
+        tnode = self.getnode(tid)
+        self.getsource(tnode)
         return tnode
     
-    def applyaggregator(s, id, aggregatorselector, aggregatortake, aggregatorskip, aggregatortimefilter, aggregatorsort, aggregatormethod):
-        r = s.nrepo
-        node = s.getnode(id)
+    def applyaggregator(self, id, aggregatorselector, aggregatortake, aggregatorskip, aggregatortimefilter, aggregatorsort, aggregatormethod):
+        r = self.nrepo
+        node = self.getnode(id)
         if node['datasource']['type'] in ['A']:
             if node['datasource']['aggregatormethod'] != aggregatormethod or node['datasource']['aggregatortimefilter'] != aggregatortimefilter:
                 logging.info("Node: " + str(id) + ", Type: " + node['datasource']['type'] + ", deleting cache ...")
-                s.deletecache(id)
+                self.deletecache(id)
         if node['datasource']['type'] in ['A', 'N']:  
-            producers = s.expand(aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip)
+            producers = self.expand(aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip)
             for pid in [p['id'] for p in producers]:
-                pnode = s.getnode(pid)
+                pnode = self.getnode(pid)
                 ds = pnode['datasource']
-                if pnode['datasource']['type'] in ['A']: s.applyaggregator(pid, ds['aggregatorselector'], ds['aggregatortake'], ds['aggregatorskip'], ds['aggregatortimefilter'], ds['aggregatorsort'], ds['aggregatormethod'])
-            s.getsource(node)
+                if pnode['datasource']['type'] in ['A']: self.applyaggregator(pid, ds['aggregatorselector'], ds['aggregatortake'], ds['aggregatorskip'], ds['aggregatortimefilter'], ds['aggregatorsort'], ds['aggregatormethod'])
+            self.getsource(node)
             r.execute("update nodes set type='A', producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + aggregatorselector + "', aggregatortake=" + str(aggregatortake) + ", aggregatortimefilter='" + aggregatortimefilter + "', aggregatorskip=" + str(aggregatorskip) + ", aggregatorsort='" + aggregatorsort + "', aggregatormethod='" + aggregatormethod + "' where id =" + str(id))
         if node['datasource']['type'] in ['L']:
             cproducers = dict()
-            producers = s.expand(aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip)
+            producers = self.expand(aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip)
             r.execute("update nodes set type='L', producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + aggregatorselector + "', aggregatortake=" + str(aggregatortake) + ", aggregatortimefilter='" + aggregatortimefilter + "', aggregatorskip=" + str(aggregatorskip) + ", aggregatorsort='" + aggregatorsort + "', aggregatormethod='" + aggregatormethod + "' where id =" + str(id))
             for p in producers:
                 pchilds = getnodesidfromp(r, p['id'])
                 for c in pchilds:
-                    child = s.getnode(c)
+                    child = self.getnode(c)
                     if child['datasource']['type'] in ['B','D']:
                         if child['name'] not in cproducers:
-                            cproducers[child['name']] = [dict(id=child['id'], path=getpath(s, r, child['id']))]
+                            cproducers[child['name']] = [dict(id=child['id'], path=getpath(self, r, child['id']))]
                         else:
-                            cproducers[child['name']].append(dict(id=child['id'], path=getpath(s, r, child['id'])))
-            nchilds = [s.getnode(x) for x in getnodesidfromp(r, id)]
+                            cproducers[child['name']].append(dict(id=child['id'], path=getpath(self, r, child['id'])))
+            nchilds = [self.getnode(x) for x in getnodesidfromp(r, id)]
             pnames = {x for x in cproducers.keys()}
             nnames = {x['name'] for x in nchilds}
             dids = {x['id'] for x in nchilds if x['name'] not in pnames}
             for e in dids:
                 logging.info("Node: " + str(id) + ", Type: " + node['datasource']['type'] + ", deleting obsolete child: '" + str(e) + "' ...")
-                s.deletenode(e)
+                self.deletenode(e)
             for n in pnames - nnames:
                 logging.info("Node: " + str(id) + ", Type: " + node['datasource']['type'] + ", creating new child: '" + n + "' ...")
-                s.createnode(node['id'], n)
-            nchilds = [s.getnode(x) for x in getnodesidfromp(r, id)]
+                self.createnode(node['id'], n)
+            nchilds = [self.getnode(x) for x in getnodesidfromp(r, id)]
             for c in nchilds:
                 if 'aggregatormethod' in c['datasource'] and 'aggregatortimefilter' in c['datasource']:
                     if c['datasource']['aggregatormethod'] != aggregatormethod or c['datasource']['aggregatortimefilter'] != aggregatortimefilter:
                         logging.info("Node: " + str(c['id'])+ ", Type: " + c['datasource']['type'] + ", deleting cache if exists ...")
-                        s.deletecache(c['id'])
+                        self.deletecache(c['id'])
                 tpath = [x['path'] for x in cproducers[c['name']]]
                 aggregatorselector = '|'.join(tpath)
                 r.execute("update nodes set type='A', producers='" + json.dumps(cproducers[c['name']]) + "', aggregated=now(), aggregatorselector='" + aggregatorselector + "', aggregatortake=" + str(aggregatortake) + ", aggregatortimefilter='" + aggregatortimefilter + "', aggregatorskip=" + str(aggregatorskip) + ", aggregatorsort='" + aggregatorsort + "', aggregatormethod='" + aggregatormethod + "' where id =" + str(c['id']))
-        del s.cache['nodes'][id]
-        node = s.getnode(id)
-        s.getsource(node)
+        del self.cache['nodes'][id]
+        node = self.getnode(id)
+        self.getsource(node)
         return node
 
-    def linkfathernode(s, fid, tid):
-        r = s.nrepo
-        fnode = s.getnode(fid)
-        tnode = s.getnode(tid)
-        fpath = getpath(s, r, fid)
+    def linkfathernode(self, fid, tid):
+        r = self.nrepo
+        fnode = self.getnode(fid)
+        tnode = self.getnode(tid)
+        fpath = getpath(self, r, fid)
         if fnode['status'] == 'DELETED' or tnode['status'] == 'DELETED':
-            s.status.pusherrmessage('A trash cannot be part of a link operation!')
+            self.status.pusherrmessage('A trash cannot be part of a link operation!')
             return tnode
         producers = tnode['datasource']['producers']
         if fid in [producer['id'] for producer in producers]:
-            s.status.pusherrmessage(fpath + ': this node is already included in the list of producers!')
+            self.status.pusherrmessage(fpath + ': this node is already included in the list of producers!')
             return tnode
-        producers.append(dict(path=getpath(s, r, fid), id=fid))
-        if 'aggregatorselector' not in tnode['datasource']: r.execute("update nodes set type='L', producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + getpath(s, r, fid) + '$' + "', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none' where id =" + str(tid))
-        else: r.execute("update nodes set producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + tnode['datasource']['aggregatorselector'] + '|' + getpath(s, r, fid) + '$' +"', aggregatortake=" + str(int(tnode['datasource']['aggregatortake']) +  1) + " where id =" + str(tid))
-        del s.cache['nodes'][tid]
-        tnode = s.getnode(tid)
+        producers.append(dict(path=getpath(self, r, fid), id=fid))
+        if 'aggregatorselector' not in tnode['datasource']: r.execute("update nodes set type='L', producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + getpath(self, r, fid) + '$' + "', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none' where id =" + str(tid))
+        else: r.execute("update nodes set producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + tnode['datasource']['aggregatorselector'] + '|' + getpath(self, r, fid) + '$' +"', aggregatortake=" + str(int(tnode['datasource']['aggregatortake']) +  1) + " where id =" + str(tid))
+        del self.cache['nodes'][tid]
+        tnode = self.getnode(tid)
         return tnode
     
-    def applyliveobject(s, id, loname):
-        r = s.nrepo
-        liveobject = s.getliveobject(loname)
-        node = s.getnode(id)
-        if node['datasource']['type'] in ['D']: s.deletecache(id)
-        s.createcache(id)
-        cache = s.readcache(id)
-        s.setschema(cache.name)
+    def applyliveobject(self, id, loname):
+        r = self.nrepo
+        liveobject = self.getliveobject(loname)
+        node = self.getnode(id)
+        if node['datasource']['type'] in ['D']: self.deletecache(id)
+        self.createcache(id)
+        cache = self.readcache(id)
+        self.setschema(cache.name)
         extension = liveobject['extension']
         server = liveobject['id']
         options = liveobject['options']
@@ -922,70 +918,70 @@ class Context:
             if extension == 'oracle_fdw': r.execute('create foreign table foreign_' + t + '(' + desc + ') server ' + server + " options (table '(" + request.replace("'", "''").replace('kairos_nodeid_to_be_replaced', str(id)) + ")')")
             if extension == 'postgres_fdw': r.execute('create foreign table foreign_' + t + '(' + desc + ') server ' + server + " options (schema_name '" + schema + "', table_name '" + t + "')")
             collections.append(t)
-        s.setschema()
+        self.setschema()
         r.execute("update nodes set type='D', aggregated=now(), liveobject='" + loname + "' where id = " + str(id))
-        del s.cache['nodes'][id]
-        node = s.getnode(id)
+        del self.cache['nodes'][id]
+        node = self.getnode(id)
         return node
 
-    def emptytrash(s):
-        r = s.nrepo
+    def emptytrash(self):
+        r = self.nrepo
         rootid = getrootid(r)
         trashid = getnodeidfrompn(r, rootid, 'Trash')
         for rid in getprogeny(r, trashid):
             if rid != trashid:
-                s.deletesource(rid)
-                s.deletecache(rid)
+                self.deletesource(rid)
+                self.deletecache(rid)
                 r.execute("delete from nodes where id = " + str(rid))
     
-    def expand(s, pattern, sort, take, skip):
-        r = s.nrepo
+    def expand(self, pattern, sort, take, skip):
+        r = self.nrepo
         skip=int(skip)
         take=int(take)
         d=dict()
         rootid = getrootid(r)
-        rootnode = s.getnode(rootid)
+        rootnode = self.getnode(rootid)
         for i in pattern.split('|'):
             nodes = [rootnode]
             for p in i.split('/')[1:]:
                 newnodes = []
                 for n in nodes:
-                    for e in [s.getnode(x) for x in getnodesidfromp(r, n['id'])]:
+                    for e in [self.getnode(x) for x in getnodesidfromp(r, n['id'])]:
                         if re.match(p, e['name']):
                             ds = e['datasource']
-                            if e['datasource']['type'] == 'L': e = s.applyaggregator(e['id'], ds['aggregatorselector'], ds['aggregatortake'], ds['aggregatorskip'], ds['aggregatortimefilter'], ds['aggregatorsort'], ds['aggregatormethod'])
+                            if e['datasource']['type'] == 'L': e = self.applyaggregator(e['id'], ds['aggregatorselector'], ds['aggregatortake'], ds['aggregatorskip'], ds['aggregatortimefilter'], ds['aggregatorsort'], ds['aggregatormethod'])
                             newnodes.append(e)
                 nodes = newnodes
-            for n in nodes: d[getpath(s, r, n['id'])] = n['id']
+            for n in nodes: d[getpath(self, r, n['id'])] = n['id']
         result = [dict(path=k, id=d[k]) for k in sorted(d.keys())] if sort != 'desc' else [dict(path=k, id=d[k]) for k in sorted(d.keys(), reverse=True)][skip:skip+take]
         return result
 
 
-    def getsource(s, node, getstream=False):
+    def getsource(self, node, getstream=False):
         if node['datasource']['type'] == 'B':
             if 'collections' not in node['datasource']: 
-                source = s.readsource(node['id'], stream=getstream)
+                source = self.readsource(node['id'], stream=getstream)
                 if hasattr(source, 'rid'):
                     node['datasource']['uploaded'] = source.created
                     node['datasource']['collections'] = source.collections
                     if getstream: node['datasource']['stream'] = source.stream
             if 'stream' not in node['datasource'] and getstream:
-                source = s.readsource(node['id'], stream=getstream)
+                source = self.readsource(node['id'], stream=getstream)
                 node['datasource']['stream'] = source.stream
         if node['datasource']['type'] in ['A', 'C']:
             if 'collections' not in node['datasource']:
-                allparts = s.getallparts(node['id'])
+                allparts = self.getallparts(node['id'])
                 collections = set()
                 for p in allparts:
-                    pnode = s.getnode(p)
+                    pnode = self.getnode(p)
                     if pnode['datasource']['type'] in ['B', 'D']:
-                        s.getsource(pnode)
+                        self.getsource(pnode)
                         collections = collections.union(set(pnode['datasource']['collections']))
                 node['datasource']['collections'] = dict()
                 for c in collections: node['datasource']['collections'][c] = dict()
     
-    def readsource(s, id, stream=False):
-        r = s.nrepo
+    def readsource(self, id, stream=False):
+        r = self.nrepo
         if stream: x = r.execute("select id as rid, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections, stream from sources where id = " + str(id))
         else: x = r.execute("select id as rid, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from sources where id = " + str(id))
         o = Object()
@@ -996,27 +992,27 @@ class Context:
             if stream: o.stream = binascii.a2b_base64(rx['stream'])
         return o
     
-    def downloadsource(s, id):
-        r = s.nrepo
-        node = s.getnode(id)
-        s.getsource(node, getstream=True)
-        filename = getpath(s, r, id)[1:].replace('/','_') + '.zip'
+    def downloadsource(self, id):
+        r = self.nrepo
+        node = self.getnode(id)
+        self.getsource(node, getstream=True)
+        filename = getpath(self, r, id)[1:].replace('/','_') + '.zip'
         return (filename, node['datasource']['stream'])
 
-    def unload(s, id):
-        r = s.nrepo
+    def unload(self, id):
+        r = self.nrepo
         logging.info("Unloading node: " + str(id) + " ...")
-        path = getpath(s, r, id)
+        path = getpath(self, r, id)
         archive = path.replace('/', '_')[1:] + '-unload.zip'
         fname = '/tmp/' + archive
         zip = Arcfile(fname, 'w:zip')
         cut = 10000
-        s.buildcollectioncache(id, {'*'})
-        node = s.getnode(id)
-        s.getsource(node)
-        s.getcache(node)
+        self.buildcollectioncache(id, {'*'})
+        node = self.getnode(id)
+        self.getsource(node)
+        self.getcache(node)
         schema = node['datasource']['cache']['name']
-        s.setschema(schema)
+        self.setschema(schema)
         for collection in node['datasource']['collections']:
             logging.info("Unloading collection: " + collection + " ...")
             d = dict(collection=collection, desc=dict(), data=[])
@@ -1051,29 +1047,29 @@ class Context:
         logging.info("Unloading node: " + id + ", file is ready to download !")
         return (archive, open(fname, 'rb').read())
 
-    def createcache(s, nid):
-        r = s.nrepo
+    def createcache(self, nid):
+        r = self.nrepo
         schname = 'cache_' + str(nid)
         r.execute("create schema " + schname)
         r.execute("insert into caches (id, name, created, queries, collections) values(%s, %s, now(), %s, %s)", (nid, schname, json.dumps(dict()), json.dumps(dict())))
     
-    def deletecache(s, nid):
-        r = s.nrepo
+    def deletecache(self, nid):
+        r = self.nrepo
         logging.info("Node: " + str(nid) + ", deleting cache: cache_" + str(nid) + "...")
         r.execute("delete from caches where id = " + str(nid))
         with suppress(Exception): r.execute("drop schema cache_" + str(nid) + " cascade")
 
-    def getcache(s, node):
+    def getcache(self, node):
         if node['icon'] in ['A', 'B', 'C', 'D']:
             if 'name' not in node['datasource']['cache']:
-                cache = s.readcache(node['id'])
+                cache = self.readcache(node['id'])
                 if hasattr(cache, 'rid'):
                     node['datasource']['cache']['collections'] = cache.collections
                     node['datasource']['cache']['queries'] = cache.queries
                     node['datasource']['cache']['name'] = cache.name
 
-    def readcache(s, id):
-        r = s.nrepo
+    def readcache(self, id):
+        r = self.nrepo
         o = Object()
         for rx in r.execute("select id as rid, name, queries, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from caches where id = " + str(id)):
             o.rid = rx['rid']
@@ -1083,65 +1079,65 @@ class Context:
             o.collections = json.loads(rx['collections'])
         return o
 
-    def gettree(s, pid):
-        r = s.nrepo
+    def gettree(self, pid):
+        r = self.nrepo
         root = True if pid == '0' else False
         if root:
             rootid = getrootid(r)
-            root = s.getnode(rootid)
+            root = self.getnode(rootid)
             (icon_file, icon_opened, icon_closed) = ficon(root)
             result = [dict(kids=True, id=root['id'], text='/', userdata=dict(type=ftype(root)), icons=dict(file=icon_file, folder_opened=icon_opened, folder_closed=icon_closed))]
         else:
             children = []
             for nid in getnodesidfromp(r, pid):
-                node = s.getnode(nid)
-                s.countchildren(node)
+                node = self.getnode(nid)
+                self.countchildren(node)
                 (icon_file, icon_opened, icon_closed) = ficon(node)
                 kids = True if node['kids'] > 0 else False
                 children.append(dict(kids=kids, id=node['id'], text=node['name'], userdata=dict(type=ftype(node)), icons=dict(file=icon_file, folder_opened=icon_opened, folder_closed=icon_closed)))
             result = [dict(id=pid, items=sorted(children, key=getkey))]
         return result
     
-    def getcollections(s, id):
-        node = s.getnode(id)
-        s.getsource(node)
+    def getcollections(self, id):
+        node = self.getnode(id)
+        self.getsource(node)
         data = []
         if node['datasource']['type'] == 'D':
             loname = node['datasource']['liveobject']
-            liveobject = s.getliveobject(loname)
+            liveobject = self.getliveobject(loname)
             for t in liveobject['tables']: data.append(dict(label=t))
         else:
             for collection in node['datasource']['collections']: data.append(dict(label=collection))
         return data
 
-    def executequery(s, id, qname, limit):
-        operations = s.schedulecacheoperations(id, 'query', qname)
-        if s.status.errors > 0: return
-        s.executecacheoperations(operations)
-        if s.status.errors > 0: return
-        result = s.queryexecute(id, qname, limit)
+    def executequery(self, id, qname, limit):
+        operations = self.schedulecacheoperations(id, 'query', qname)
+        if self.status.errors > 0: return
+        self.executecacheoperations(operations)
+        if self.status.errors > 0: return
+        result = self.queryexecute(id, qname, limit)
         return result
 
-    def queryexecute(s, nid, qid, limit):
-        r = s.nrepo
-        node = s.getnode(nid)
+    def queryexecute(self, nid, qid, limit):
+        r = self.nrepo
+        node = self.getnode(nid)
         ntype = node['datasource']['type']
         logging.info("Node: " + str(nid) + ", Type: " + ntype + ", executing query: '" + qid + "' ...")
-        s.getcache(node)
+        self.getcache(node)
         result = []
         if ntype in ['C', 'L']:
             for producer in node['datasource']['producers']:
                 pid = producer['id']
-                iresult = s.queryexecute(pid, qid, limit)
+                iresult = self.queryexecute(pid, qid, limit)
                 if ntype in ['L']: result = iresult
                 else: result.append(iresult)
         else:
-            query = s.getquery(qid)
+            query = self.getquery(qid)
             query = dict(id=qid) if query==None else query
             if 'name' not in node['datasource']['cache']: 
-                s.status.pusherrmessage('Cache for node id: ' + str(nid) + " doesn't exist!")
+                self.status.pusherrmessage('Cache for node id: ' + str(nid) + " doesn't exist!")
                 return
-            s.setschema(node['datasource']['cache']['name'])
+            self.setschema(node['datasource']['cache']['name'])
             table = qid.lower()
             for b in r.execute("select exists(select * from information_schema.tables where table_schema = current_schema() and table_name = '" + table + "') foo"): existstable = b['foo']
             if existstable: 
@@ -1151,17 +1147,17 @@ class Context:
                 else:
                     for x in r.execute("select * from " + table):
                         result.append(x)
-            else: s.status.pusherrmessage('Table ' + table.upper() + " doesn't exist within schema " + node['datasource']['cache']['name'])
+            else: self.status.pusherrmessage('Table ' + table.upper() + " doesn't exist within schema " + node['datasource']['cache']['name'])
         return result
     
-    def displaycollection(s, id, collection):
-        s.buildcollectioncache(id, {collection})
-        if s.status.errors > 0: return
-        result = s.queryexecute(id, collection, 0)
+    def displaycollection(self, id, collection):
+        self.buildcollectioncache(id, {collection})
+        if self.status.errors > 0: return
+        result = self.queryexecute(id, collection, 0)
         return result
     
-    def exportdatabases(s, nodesdb):
-        r = s.grepo
+    def exportdatabases(self, nodesdb):
+        r = self.grepo
         if len(nodesdb) == 0:
             databases = getdatabases(r)
             nodesdb = [databases[x] for x in databases if 'kairos_user_' in x or 'kairos_group_' in x]
@@ -1170,10 +1166,10 @@ class Context:
             os.mkdir('/export/' + db)
             os.chmod('/export/' + db, 0o777)
             ag = subprocess.run(['su', '-', 'postgres', '-c', 'pg_dump -F c -f /export/' + db + '/database.dump ' + db], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if  ag.returncode: s.status.pusherrmessage("Unable to export database: " + db + " for an uknown reason!")
+            if  ag.returncode: self.status.pusherrmessage("Unable to export database: " + db + " for an uknown reason!")
     
-    def importdatabases(s, nodesdb):
-        r = s.grepo
+    def importdatabases(self, nodesdb):
+        r = self.grepo
         if len(nodesdb) == 0:
             for d in os.listdir('/export'):
                 wdir = '/export/' + d
@@ -1183,48 +1179,51 @@ class Context:
             r.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '" + db + "'")
             ag = subprocess.run(['su', '-', 'postgres', '-c', 'psql -c "drop database ' + db + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
-                s.status.pusherrmessage("Unable to drop database: " + db + " during import!")
+                self.status.pusherrmessage("Unable to drop database: " + db + " during import!")
                 continue
             ag = subprocess.run(['su', '-', 'postgres', '-c', 'psql -c "create database ' + db + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
-                s.status.pusherrmessage("Unable to create database: " + db + " during import!")
+                self.status.pusherrmessage("Unable to create database: " + db + " during import!")
                 continue
             ag = subprocess.run(['su', '-', 'postgres', '-c', 'pg_restore -d ' + db + ' /export/' + db + '/database.dump'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
-                s.status.pusherrmessage("Error during import of database: " + db)
+                self.status.pusherrmessage("Error during import of database: " + db)
 
-    def clearprogenycaches(s, id):
-        r = s.nrepo
-        for nid in getprogeny(r, id): s.deletecache(nid)
+    def clearprogenycaches(self, id):
+        r = self.nrepo
+        for nid in getprogeny(r, id): self.deletecache(nid)
 
-    def buildprogenycaches(s, id):
-        r = s.nrepo
-        for nid in getprogeny(r, id): s.buildcollectioncache(nid , {'*'})
+    def buildprogenycaches(self, id):
+        r = self.nrepo
+        for nid in getprogeny(r, id): self.buildcollectioncache(nid , {'*'})
 
-    def buildcollectioncache(s, id, collections):
-        node = s.getnode(id)
+    def getBchildren(self, id):
+        pass
+
+    def buildcollectioncache(self, id, collections):
+        node = self.getnode(id)
         ntype = node['datasource']['type']
         if ntype in ['N', 'L', 'C']: return
-        s.getsource(node)
+        self.getsource(node)
 
         if '*' in collections: collections = {k for k in node['datasource']['collections']}
-        operations = s.schedulecacheoperations(id, 'buildcollectioncache', collections)
-        if s.status.errors > 0: return
-        s.executecacheoperations(operations)
+        operations = self.schedulecacheoperations(id, 'buildcollectioncache', collections)
+        if self.status.errors > 0: return
+        self.executecacheoperations(operations)
 
-    def dropcollectioncache(s, id, collections):
-        node = s.getnode(id)
-        s.getcache(node)
-        operations = s.schedulecacheoperations(id, 'dropcollectioncache', collections)
-        if s.status.errors > 0: return
-        s.executecacheoperations(operations)
+    def dropcollectioncache(self, id, collections):
+        node = self.getnode(id)
+        self.getcache(node)
+        operations = self.schedulecacheoperations(id, 'dropcollectioncache', collections)
+        if self.status.errors > 0: return
+        self.executecacheoperations(operations)
 
-    def buildquerycache(s, nid, qid):
-        r = s.nrepo
-        node = s.getnode(nid)
-        query = s.getquery(qid)
+    def buildquerycache(self, nid, qid):
+        r = self.nrepo
+        node = self.getnode(nid)
+        query = self.getquery(qid)
         if query == None: return
-        s.getcache(node)
+        self.getcache(node)
         ntype = node['datasource']['type']
         logging.info("Node: " + str(nid) + ", Type: " + ntype + ", checking query cache: '" + qid + "' ...")
         if ntype in ['A', 'B', 'D']:
@@ -1234,52 +1233,52 @@ class Context:
                 for part in node['datasource']['cache']['collections'][collection]:
                     todo = True if qid in node['datasource']['cache']['queries'] and node['datasource']['cache']['queries'][qid] < node['datasource']['cache']['collections'][collection][part] else todo
             if todo:
-                s.setschema(node['datasource']['cache']['name'])
+                self.setschema(node['datasource']['cache']['name'])
                 table = qid
                 logging.info("Node: " + str(nid) + ", Type: " + ntype + ", removing old query cache: '" + qid + "' ...")
                 r.execute("drop table if exists " + table)
                 logging.info("Node: " + str(nid) + ", Type: " + ntype + ", building new query cache: '" + qid + "' ...")
                 if 'userfunctions' in query:
                     for ufn in query['userfunctions']:
-                        s.setschema()
-                        uf = s.getfunction(ufn)
-                        s.setschema(node['datasource']['cache']['name'])
+                        self.setschema()
+                        uf = self.getfunction(ufn)
+                        self.setschema(node['datasource']['cache']['name'])
                         r.execute(uf["function"])
                 try: r.execute("create table " + table + " as select * from (" + query['request'] + ") as foo")
                 except: 
-                    s.status.pusherrmessage('Check if data exists for collections: ' + str(query['collections']))
+                    self.status.pusherrmessage('Check if data exists for collections: ' + str(query['collections']))
                     return
                 node['datasource']['cache']['queries'][qid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
                 logging.info("Node: " + str(nid) + ", Type: " + ntype + ", updating cache with query info: '" + qid + "' ...")
-                s.setschema()
+                self.setschema()
                 r.execute("update caches set queries = '" + json.dumps(node['datasource']['cache']['queries']) + "' where id = " + str(nid))
             else: logging.info("Node: " + str(nid) + ", Type: " + ntype + ", nothing to do for query cache: '" + qid + "' ...")
     
-    def getallparts (s, id, v=None):
+    def getallparts (self, id, v=None):
         d = dict()
-        node = s.getnode(id)
-        s.getcache(node)
+        node = self.getnode(id)
+        self.getcache(node)
         d[id] = v
         if node['datasource']['type'] in ['A', 'C']:
             producers = node['datasource']['producers']
             for p in producers:
                 d[p['id']] = id
-                dp = s.getallparts(p['id'], id)
+                dp = self.getallparts(p['id'], id)
                 for x in dp: d[x] = dp[x]
         return d
     
-    def schedulecacheoperations(s, id, type, name, recursive=False):
+    def schedulecacheoperations(self, id, type, name, recursive=False):
         operations = []
-        r = s.nrepo
-        node = s.getnode(id)
+        r = self.nrepo
+        node = self.getnode(id)
         ntype = node['datasource']['type']
 
         if type == 'buildcollectioncache':
             collections = name
-            oldparts = s.getallparts(id)
+            oldparts = self.getallparts(id)
             ds = node['datasource']
-            if ntype in ['A']: node = s.applyaggregator(id, ds['aggregatorselector'], ds['aggregatortake'], ds['aggregatorskip'], ds['aggregatortimefilter'], ds['aggregatorsort'], ds['aggregatormethod'])
-            newparts = s.getallparts(id)
+            if ntype in ['A']: node = self.applyaggregator(id, ds['aggregatorselector'], ds['aggregatortake'], ds['aggregatorskip'], ds['aggregatortimefilter'], ds['aggregatorsort'], ds['aggregatormethod'])
+            newparts = self.getallparts(id)
             for p in set(oldparts) - set(newparts): 
                 operations.append(dict(operation='removepart', nid=oldparts[p], part=p, collections=collections))
             ranks = dict()
@@ -1289,7 +1288,7 @@ class Context:
                 else: ranks[dp].append(p)
             for r in sorted(set(ranks), reverse=True):
                 for p in ranks[r]:
-                    node = s.getnode(p)
+                    node = self.getnode(p)
                     if node['datasource']['type'] in ['A']:
                         for x in [e['id'] for e in node['datasource']['producers']]:
                             if p not in set(newparts) - set(oldparts):
@@ -1308,14 +1307,14 @@ class Context:
             operations.append(dict(operation='removetable', nid=id, part=id, collections=collections))
 
         if type == 'query':
-            query = s.getquery(name)
+            query = self.getquery(name)
             if query == None: return
             collections = set(query['collections'])
-            operations = s.schedulecacheoperations(id, 'buildcollectioncache', collections, recursive=True)
+            operations = self.schedulecacheoperations(id, 'buildcollectioncache', collections, recursive=True)
             operations.append(dict(operation='buildquerycache', nid=id, qid=name))
 
         if type == 'chart':
-            chart = s.getchart(name)
+            chart = self.getchart(name)
             if chart == None: return
             queries = set()
             queries.add(chart['reftime'])
@@ -1325,13 +1324,13 @@ class Context:
                         queries.add(d['query'])
             collections = set()
             for q in queries:
-                query = s.getquery(q)
+                query = self.getquery(q)
                 if query == None:
-                    s.status.pusherrmessage('Query "' + str(q) + '"' + " doesn't exist!")
+                    self.status.pusherrmessage('Query "' + str(q) + '"' + " doesn't exist!")
                     return
-                if 'nocache' in query and query['nocache']: s.nocache = True
+                if 'nocache' in query and query['nocache']: self.nocache = True
                 for e in query['collections']: collections.add(e)
-            operations = s.schedulecacheoperations(id, 'buildcollectioncache', collections, recursive=True)
+            operations = self.schedulecacheoperations(id, 'buildcollectioncache', collections, recursive=True)
             for q in queries:
                 if ntype in 'C':
                     for p in node['datasource']['producers']:
@@ -1345,31 +1344,31 @@ class Context:
                 if operation['operation'] in ['buildquerycache']: logging.info('Node: ' + str(operation['nid']) + ', Operation: ' + operation['operation'] + ', Query: ' + str(operation['qid']))
         return operations
     
-    def executecacheoperations(s, operations):
+    def executecacheoperations(self, operations):
         for operation in operations:
-            if operation['operation'] == 'checkpart': s.checkpart(operation['nid'], operation['part'], operation['collections'])
-            if operation['operation'] == 'removepart': s.removepart(operation['nid'], operation['part'], operation['collections'])
-            if operation['operation'] == 'removetable': s.removetable(operation['nid'], operation['part'], operation['collections'])
-            if operation['operation'] == 'createpartA': s.createpartA(operation['nid'], operation['part'], operation['collections'])
-            if operation['operation'] == 'createpartB': s.createpartB(operation['nid'], operation['part'], operation['collections'])
-            if operation['operation'] == 'createpartD': s.createpartD(operation['nid'], operation['part'], operation['collections'])
-            if operation['operation'] == 'buildquerycache': s.buildquerycache(operation['nid'], operation['qid'])
-            if s.status.errors > 0: 
+            if operation['operation'] == 'checkpart': self.checkpart(operation['nid'], operation['part'], operation['collections'])
+            if operation['operation'] == 'removepart': self.removepart(operation['nid'], operation['part'], operation['collections'])
+            if operation['operation'] == 'removetable': self.removetable(operation['nid'], operation['part'], operation['collections'])
+            if operation['operation'] == 'createpartA': self.createpartA(operation['nid'], operation['part'], operation['collections'])
+            if operation['operation'] == 'createpartB': self.createpartB(operation['nid'], operation['part'], operation['collections'])
+            if operation['operation'] == 'createpartD': self.createpartD(operation['nid'], operation['part'], operation['collections'])
+            if operation['operation'] == 'buildquerycache': self.buildquerycache(operation['nid'], operation['qid'])
+            if self.status.errors > 0: 
                 logging.error('Breaking scheduled operations!')
                 break
 
-    def checkpart(s, nid, part, collections):
-        node = s.getnode(nid)
-        s.getcache(node)
+    def checkpart(self, nid, part, collections):
+        node = self.getnode(nid)
+        self.getcache(node)
         nodecache = node['datasource']['cache']
-        if 'name' not in nodecache: s.createcache(nid)
-        s.getcache(node)
+        if 'name' not in nodecache: self.createcache(nid)
+        self.getcache(node)
         cachecol = node['datasource']['cache']['collections']
         ntype = node['datasource']['type']
-        s.removecollections = set()
-        s.createcollections = set()
-        pnode = s.getnode(part)
-        s.getcache(pnode)
+        self.removecollections = set()
+        self.createcollections = set()
+        pnode = self.getnode(part)
+        self.getcache(pnode)
         pcachecol = pnode['datasource']['cache']['collections']
 
         if ntype in ['A']:
@@ -1383,27 +1382,27 @@ class Context:
                 todo = True if datepart == None else todo
                 todo = True if datepart != None and datepart < datesource else todo
                 if todo: 
-                    s.removecollections.add(collection)
-                    s.createcollections.add(collection)
+                    self.removecollections.add(collection)
+                    self.createcollections.add(collection)
 
         if ntype in ['B']:
-            s.getsource(node)
+            self.getsource(node)
             for collection in collections:
                 logging.info("Node: " + str(nid) + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
                 if collection not in node['datasource']['collections']: continue
                 analyzername = node['datasource']['collections'][collection]['analyzer']
-                analyzer = s.getanalyzer(analyzername)
+                analyzer = self.getanalyzer(analyzername)
                 datepart = cachecol[collection][str(nid)] if collection in cachecol and str(nid) in cachecol[collection] else None
                 todo = False
                 todo = True if datepart == None else todo
                 todo = True if datepart != None and node['datasource']['uploaded'] > datepart else todo
                 todo = True if datepart != None and analyzer['created'] > datepart else todo
                 if todo: 
-                    s.removecollections.add(collection)
-                    s.createcollections.add(collection)
+                    self.removecollections.add(collection)
+                    self.createcollections.add(collection)
 
         if ntype in ['D']:
-            liveobject = s.getliveobject(node['datasource']['liveobject'])
+            liveobject = self.getliveobject(node['datasource']['liveobject'])
             try: timeout = liveobject['retention']
             except: timeout = 60
             for collection in collections:
@@ -1413,34 +1412,34 @@ class Context:
                 todo = True if datepart == None else todo
                 todo = True if datepart != None and (datetime.now() - datetime.strptime(datepart, '%Y-%m-%d %H:%M:%S.%f')).seconds > timeout else todo
                 if todo: 
-                    s.removecollections.add(collection)
-                    s.createcollections.add(collection)
+                    self.removecollections.add(collection)
+                    self.createcollections.add(collection)
 
-    def removetable(s, nid, part, collections):
-        r = s.nrepo
-        node = s.getnode(nid)
-        s.getcache(node)
+    def removetable(self, nid, part, collections):
+        r = self.nrepo
+        node = self.getnode(nid)
+        self.getcache(node)
         ntype = node['datasource']['type']
-        if collections == None: collections = s.removecollections
+        if collections == None: collections = self.removecollections
         if 'name' in node['datasource']['cache']:
-            s.setschema(node['datasource']['cache']['name'])
+            self.setschema(node['datasource']['cache']['name'])
             for collection in collections:
                 logging.info("Node: " + str(nid) + ", Type: " + ntype + ", removing table: " + str(nid) + " for collection: '" + collection + "' ...")
                 r.execute("drop table if exists " + collection)
         if 'collections' in node['datasource']['cache']:
             for collection in collections:
                 if collection in node['datasource']['cache']['collections']: del node['datasource']['cache']['collections'][collection]
-            s.setschema()
+            self.setschema()
             r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
 
-    def removepart(s, nid, part, collections):
-        r = s.nrepo
-        node = s.getnode(nid)
-        s.getcache(node)
+    def removepart(self, nid, part, collections):
+        r = self.nrepo
+        node = self.getnode(nid)
+        self.getcache(node)
         ntype = node['datasource']['type']
-        if collections == None: collections = s.removecollections
+        if collections == None: collections = self.removecollections
         if 'name' in node['datasource']['cache']:
-            s.setschema(node['datasource']['cache']['name'])
+            self.setschema(node['datasource']['cache']['name'])
             for collection in collections:
                 logging.info("Node: " + str(nid) + ", Type: " + ntype + ", removing partition: " + str(part) + " for collection: '" + collection + "' ...")
                 if ntype in ['A']:
@@ -1452,32 +1451,32 @@ class Context:
             for collection in collections:
                 if collection in node['datasource']['cache']['collections']:
                     if part in node['datasource']['cache']['collections'][collection]: del node['datasource']['cache']['collections'][collection][part]
-            s.setschema()
+            self.setschema()
             r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
 
-    def createpartA(s, nid, part, collections):
-        if collections == None: collections = s.createcollections
+    def createpartA(self, nid, part, collections):
+        if collections == None: collections = self.createcollections
         if len(collections) == 0: return
-        r = s.nrepo
-        nodesdb = s.nodesdb
-        node = s.getnode(nid)
-        s.getcache(node)
+        r = self.nrepo
+        nodesdb = self.nodesdb
+        node = self.getnode(nid)
+        self.getcache(node)
         ntype = node['datasource']['type']
         logging.info("Node: " + str(nid) + ", Type: " + ntype + ", building new partition cache: " + str(part) + " for collections '" + str(collections) + "' ...")
-        s.setschema()
-        function = s.getaggregator(node['datasource']['aggregatormethod'])
-        meet = s.getfunction('meet')
+        self.setschema()
+        function = self.getaggregator(node['datasource']['aggregatormethod'])
+        meet = self.getfunction('meet')
         x = r.execute("select distinct table_name from information_schema.columns where table_schema='" + node['datasource']['cache']['name'] + "'")
         schdesc = [row['table_name'] for row in x.fetchall()]
-        pnode = s.getnode(part)
-        s.getcache(pnode)
+        pnode = self.getnode(part)
+        self.getcache(pnode)
         inschname = pnode['datasource']['cache']['name']
         x = r.execute("select distinct table_name from information_schema.columns where table_schema='" + inschname + "'")
         inschdesc = [row['table_name'] for row in x.fetchall()]
         queues = dict()
         tabledesc = dict()
         queues['ERROR_QUEUE'] = multiprocessing.Queue()
-        s.setschema(node['datasource']['cache']['name'])
+        self.setschema(node['datasource']['cache']['name'])
         for collection in collections:
             if collection.lower() not in inschdesc: continue
             if collection.lower() not in schdesc:
@@ -1496,13 +1495,13 @@ class Context:
         def write_to_queue(collection):
             try:
                 logging.info("Node: " + str(nid) + ", Type: " + ntype + ", building partition: " + str(part) + " for collection: '" + collection + "' ...")
-                pnode = s.getnode(part)
-                s.getcache(pnode)
+                pnode = self.getnode(part)
+                self.getcache(pnode)
                 inschname = pnode['datasource']['cache']['name']
                 lgby = [k for k in tabledesc[collection] if tabledesc[collection][k] == 'text']
                 lavg = [k for k in tabledesc[collection] if tabledesc[collection][k] == 'real']
                 lsum = [k for k in tabledesc[collection] if tabledesc[collection][k] in ['integer', 'bigint']]
-                selector = ', '.join(tabledesc[collection].keys()) + ', ' + str(part) + ' as kairos_nodeid'
+                #selector = ', '.join(tabledesc[collection].keys()) + ', ' + str(part) + ' as kairos_nodeid'
                 where = " where meet(timestamp,'" + node['datasource']['aggregatortimefilter'] + "') or timestamp='00000000000000000'" if 'timestamp' in lgby else ' '
                 subrequest = "select * from " + inschname + "." + collection.lower() + where
                 request = "select "
@@ -1529,7 +1528,7 @@ class Context:
                         record = record[:-1] + '\n'
                         queues[collection].put(record)
                 context.free()
-            except: s.status.pusherrmessage(str(sys.exc_info()[1]))
+            except: self.status.pusherrmessage(str(sys.exc_info()[1]))
 
         def read_from_queue(collection):
             context = Context(nodesdb=nodesdb)
@@ -1558,7 +1557,7 @@ class Context:
                         counter = 0
                         bufferempty = True
                 except:
-                    s.status.pusherrmessage(str(sys.exc_info()[1]))
+                    self.status.pusherrmessage(str(sys.exc_info()[1]))
                     queues['ERROR_QUEUE'].put(collection)
                     buffer = io.StringIO()
                     counter = 0
@@ -1570,13 +1569,11 @@ class Context:
                     context.nrepo.copy(buffer, partname, tuple(tabledesc[collection].keys()))
                     globalcounter += counter
                 except:
-                    s.status.pusherrmessage(str(sys.exc_info()[1]))
+                    self.status.pusherrmessage(str(sys.exc_info()[1]))
                     queues['ERROR_QUEUE'].put(collection)
             logging.info("Partition: " + partname + ": " + str(globalcounter) + " records have been written! ")
             context.free()
         
-        limit = multiprocessing.cpu_count()
-
         try:
             for collection in queues:
                 if collection == 'ERROR_QUEUE': continue
@@ -1588,7 +1585,7 @@ class Context:
                 queues[collection].put('KAIROS_DONE')
                 pr.join()
                 if not queues['ERROR_QUEUE'].empty():
-                    s.status.pusherrmessage('At least one error found during collection cache building! See KAIROS.LOG for more information!')
+                    self.status.pusherrmessage('At least one error found during collection cache building! See KAIROS.LOG for more information!')
                 else:
                     if collection not in node['datasource']['cache']['collections']: node['datasource']['cache']['collections'][collection] = dict()
                     node['datasource']['cache']['collections'][collection][part] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
@@ -1597,19 +1594,19 @@ class Context:
             queues['ERROR_QUEUE'].close()
             queues['ERROR_QUEUE'].join_thread()
             logging.info("Node: " + str(nid) + ", Type: A, updating cache with collections info: '" + str(collections) + "' ...")
-            s.setschema()
+            self.setschema()
             r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
 
-        except: s.status.pusherrmessage(str(sys.exc_info()[1]))
+        except: self.status.pusherrmessage(str(sys.exc_info()[1]))
 
-    def createpartB(s, nid, part, collections):
-        if collections == None: collections = s.createcollections
+    def createpartB(self, nid, part, collections):
+        if collections == None: collections = self.createcollections
         if len(collections) == 0: return
 
-        r = s.nrepo
-        s.setschema()
-        node = s.getnode(nid)
-        s.getsource(node, getstream=True)
+        r = self.nrepo
+        self.setschema()
+        node = self.getnode(nid)
+        self.getsource(node, getstream=True)
         queues = dict()
         writeheader = dict()
         readheader = dict()
@@ -1620,7 +1617,7 @@ class Context:
             queues[collection] = multiprocessing.Queue()
             writeheader[collection] = True
             readheader[collection] = True
-            for member in node['datasource']['collections'][collection]['members']: members[member] = s.getanalyzer( node['datasource']['collections'][collection]['analyzer'])
+            for member in node['datasource']['collections'][collection]['members']: members[member] = self.getanalyzer( node['datasource']['collections'][collection]['analyzer'])
         
         logging.info("Node: " + str(nid) + ", Type: B, building collections caches for collections: '" + str(collections) + "' ...")
 
@@ -1644,7 +1641,7 @@ class Context:
             counter = 0
             limit = 10000
             globalcounter = 0
-            context = Context(nodesdb=s.nodesdb)
+            context = Context(nodesdb=self.nodesdb)
             context.setschema(node['datasource']['cache']['name'])
 
             while True:
@@ -1675,7 +1672,7 @@ class Context:
                             counter = 0
                             bufferempty = True
                 except:
-                    s.status.pusherrmessage(str(sys.exc_info()[1]))
+                    self.status.pusherrmessage(str(sys.exc_info()[1]))
                     queues['ERROR_QUEUE'].put(col)
                     buffer = io.StringIO()
                     counter = 0
@@ -1688,7 +1685,7 @@ class Context:
                     globalcounter += counter
                     logging.info("Collection: " + col + ": " + str(globalcounter) + " records have been written! ")
                 except:
-                    s.status.pusherrmessage(str(sys.exc_info()[1]))
+                    self.status.pusherrmessage(str(sys.exc_info()[1]))
                     queues['ERROR_QUEUE'].put(col)
             context.free()
                             
@@ -1715,7 +1712,7 @@ class Context:
             thezip.close()
             for collection in collections: queues[collection].put('KAIROS_DONE')
             pr.join()
-            if not queues['ERROR_QUEUE'].empty(): s.status.pusherrmessage('At least one error found during collection cache building! See KAIROS.LOG for more information!')
+            if not queues['ERROR_QUEUE'].empty(): self.status.pusherrmessage('At least one error found during collection cache building! See KAIROS.LOG for more information!')
             else:
                 for collection in collections:
                     if collection not in node['datasource']['cache']['collections']: node['datasource']['cache']['collections'][collection] = dict()
@@ -1726,80 +1723,80 @@ class Context:
             queues['ERROR_QUEUE'].close()
             queues['ERROR_QUEUE'].join_thread()
             logging.info("Node: " + str(nid) + ", Type: B, updating cache with collections info: '" + str(collections) + "' ...")
-            s.setschema()
+            self.setschema()
             r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
 
-        except: s.status.pusherrmessage(str(sys.exc_info()[1]))
+        except: self.status.pusherrmessage(str(sys.exc_info()[1]))
 
-    def createpartD(s, nid, part, collections):
-        if collections == None: collections = s.createcollections
-        r = s.nrepo
-        node = s.getnode(nid)
-        s.getcache(node)
+    def createpartD(self, nid, part, collections):
+        if collections == None: collections = self.createcollections
+        r = self.nrepo
+        node = self.getnode(nid)
+        self.getcache(node)
         ntype = node['datasource']['type']
-        s.setschema(node['datasource']['cache']['name'])
+        self.setschema(node['datasource']['cache']['name'])
         for collection in collections:
             logging.info("Node: " + str(nid) + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
             r.execute("create table " + collection + " as select '" + str(nid) + "'::text as kairos_nodeid, * from foreign_" + collection)
             if collection not in node['datasource']['cache']['collections']: node['datasource']['cache']['collections'][collection] = dict()
             node['datasource']['cache']['collections'][collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
         logging.info("Node: " + str(nid) + ", Type: D, updating cache with collections info: '" + str(collections) + "' ...")
-        s.setschema()
+        self.setschema()
         r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
 
-    def getchartcache(s, id, timeout):
-        repository = s.nrepo
+    def getchartcache(self, id, timeout):
+        repository = self.nrepo
 
         class ChartCache:
 
-            def __init__(s):
-                s.timeout = timeout
-                s.repository = repository
-                s.cachename = 'cache_' + str(id)
-                s.repository.setschema(s.cachename)
-                x = s.repository.execute("select distinct table_name from information_schema.columns where table_schema='" + s.cachename + "'")
+            def __init__(self):
+                self.timeout = timeout
+                self.repository = repository
+                self.cachename = 'cache_' + str(id)
+                self.repository.setschema(self.cachename)
+                x = self.repository.execute("select distinct table_name from information_schema.columns where table_schema='" + self.cachename + "'")
                 if len([row['table_name'] for row in x.fetchall() if row['table_name'] == 'chartcache']) == 0:
-                    s.repository.execute("create table chartcache(k text primary key, v text)")
+                    self.repository.execute("create table chartcache(k text primary key, v text)")
 
-            def get(s, key):
-                s.repository.setschema(s.cachename)
+            def get(self, key):
+                self.repository.setschema(self.cachename)
                 ckey = hashlib.md5(json.dumps(key).encode('utf-8')).hexdigest()
-                x = s.repository.execute("select v from chartcache where k = '" + ckey + "'")
+                x = self.repository.execute("select v from chartcache where k = '" + ckey + "'")
                 lvalues = [row['v'] for row in x.fetchall()]
                 if len(lvalues) == 0: return None
                 jsonvalueout = lvalues[0]
                 valueout = json.loads(jsonvalueout)
                 now = int(datetime.now().strftime('%s'))
                 timestamp = int(valueout['timestamp'])
-                if now - timestamp > s.timeout: return None
+                if now - timestamp > self.timeout: return None
                 else: return valueout['value']
 
-            def set(s, key, valuein):
-                s.repository.setschema(s.cachename)
+            def set(self, key, valuein):
+                self.repository.setschema(self.cachename)
                 ckey = hashlib.md5(json.dumps(key).encode('utf-8')).hexdigest()
-                x = s.repository.execute("select v from chartcache where k = '" + ckey + "'")
+                x = self.repository.execute("select v from chartcache where k = '" + ckey + "'")
                 lvalues = [row['v'] for row in x.fetchall()]
                 valueout = json.dumps(dict(timestamp=datetime.now().strftime('%s'), value=valuein))
                 if len(lvalues) == 0:
-                    s.repository.execute("insert into chartcache (k, v) values ('" + ckey + "', '" + valueout + "')")
+                    self.repository.execute("insert into chartcache (k, v) values ('" + ckey + "', '" + valueout + "')")
                 else:
-                    s.repository.execute("update chartcache set v = '" + valueout + "' where k ='" + ckey + "'")
+                    self.repository.execute("update chartcache set v = '" + valueout + "' where k ='" + ckey + "'")
         
         return ChartCache()
 
-    def runchart(s, id, chart, width, height, limit, colors, plotorientation, template):
-        r = s.nrepo
-        node = s.getnode(id)
-        s.getcache(node)
+    def runchart(self, id, chart, width, height, limit, colors, plotorientation, template):
+        r = self.nrepo
+        node = self.getnode(id)
+        self.getcache(node)
         nodecache = node['datasource']['cache']
-        if 'name' not in nodecache: s.createcache(id)
-        s.getcache(node)
+        if 'name' not in nodecache: self.createcache(id)
+        self.getcache(node)
         timeout = 3600
         if node['datasource']['type'] == 'D': 
-            liveobject = s.getliveobject(node['datasource']['liveobject'])
+            liveobject = self.getliveobject(node['datasource']['liveobject'])
             try: timeout = liveobject['retention']
             except: timeout = 60
-        chartcache = s.getchartcache(id, timeout)
+        chartcache = self.getchartcache(id, timeout)
         ckey = dict(chart=chart, limit=limit, colors=colors, plotorientation=plotorientation, template=template)
         jsonchart = chartcache.get(ckey)
         if jsonchart:
@@ -1807,17 +1804,17 @@ class Context:
             fig = chartobj['figure']
             rows = chartobj['rows']
         else:
-            s.setschema()
-            template = s.gettemplate(template)
-            colors = s.getcolors(colors)['colors']
-            operations = s.schedulecacheoperations(id, 'chart', chart)
-            if s.status.errors > 0: return
-            s.executecacheoperations(operations)
-            if s.status.errors > 0: return
+            self.setschema()
+            template = self.gettemplate(template)
+            colors = self.getcolors(colors)['colors']
+            operations = self.schedulecacheoperations(id, 'chart', chart)
+            if self.status.errors > 0: return
+            self.executecacheoperations(operations)
+            if self.status.errors > 0: return
             co=dict(rows=1, cols=1, isarray=False, shared_yaxes=False, shared_xaxes=False, layoutoptions=dict(), xaxis=dict(), yaxis=dict(), alreadyright=dict(), alreadyleft=dict(), traces=dict(), pies=dict())
-            chart = s.getchart(chart)
-            result = s.queryexecute(id, chart['reftime'], limit)
-            if s.status.errors > 0: return
+            chart = self.getchart(chart)
+            result = self.queryexecute(id, chart['reftime'], limit)
+            if self.status.errors > 0: return
             reftimedf = gettimestampdf(result, co, plotorientation)
             co['shared_yaxes'] = True if plotorientation == 'horizontal' else False
             co['shared_xaxes'] = True if plotorientation == 'vertical' else False
@@ -1829,7 +1826,7 @@ class Context:
                     i += 1
                 co['cols'] = i
             if co['shared_xaxes']: co['rows'] = len(reftimedf)
-            fig = plotly.subplots.make_subplots(rows=co['rows'], cols=co['cols'], shared_yaxes=co['shared_yaxes'], shared_xaxes=co['shared_xaxes'], subplot_titles=tuple(getchartproducers(node)))
+            fig = plotly.tools.make_subplots(rows=co['rows'], cols=co['cols'], shared_yaxes=co['shared_yaxes'], shared_xaxes=co['shared_xaxes'], subplot_titles=tuple(getchartproducers(node)))
             for e in template['layout']: co['layoutoptions'][e] = template['layout'][e].copy() if type(template['layout'][e]) == type(dict()) else template['layout'][e]
             co['layoutoptions']['title']['text'] = chart['title']
             co['layoutoptions']['width'] = width
@@ -1848,8 +1845,8 @@ class Context:
                     co['piecolors'] = dict()
                     for d in r['datasets']:
                         alreadyinlegend = dict()
-                        result = s.queryexecute(id, d['query'], limit)
-                        if s.status.errors > 0: return
+                        result = self.queryexecute(id, d['query'], limit)
+                        if self.status.errors > 0: return
                         datasetdf = gettimestampdf(result, co, plotorientation)
                         labeldf = [x.groupby('label')[['value']].sum() for x in datasetdf]
                         ascending = 0
@@ -1890,7 +1887,7 @@ class Context:
             rows = co['rows']
             chartobj = dict(figure=fig, events=events, rows=rows)
             cvalue = json.dumps(chartobj, cls=plotly.utils.PlotlyJSONEncoder)
-            if not s.nocache: chartcache.set(ckey, cvalue)
+            if not self.nocache: chartcache.set(ckey, cvalue)
             chartobj = json.loads(cvalue)
             fig = chartobj['figure']
         fig['layout']['width'] = width
