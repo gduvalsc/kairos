@@ -5,6 +5,10 @@ IMAGE=kairos
 MACHINE=kairos$(VERSION)
 NETWORK=mynetwork
 
+USERNAME=gduvalsc
+PASSWORD=*********
+TOKEN=$$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "$(USERNAME)", "password": "$(PASSWORD)"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
+
 ### Things to do before delivering a new image
 # e) make a new branch under git with version number
 # f) make deliver (suppose that make image has been done before)
@@ -83,3 +87,6 @@ clean:
 
 nonreg:
 	cd ../KAIROSTESTS && py.test --capture=fd -v test.py
+
+remove:
+	curl "https://hub.docker.com/v2/repositories/gdsc/kairos/tags/$(VERSION)/" -X DELETE -H "Authorization: JWT ${TOKEN}"

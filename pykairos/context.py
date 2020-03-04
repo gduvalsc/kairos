@@ -384,7 +384,6 @@ class Context:
         if len([row for row in x.fetchall()]) > 0:
             self.status.pusherrmessage(user + " user is already granted with " + role + " role!")
             return(dict())
-        for row in x.fetchall(): data.append(dict(_id=row['usename'] + ':' + row['groname'], user=row['usename'], role=row['groname']))
         r.execute("grant " + role + " to " + user)
         return dict(data=dict(msg=role + " role has been successfully granted to " + user + " user!"))
 
@@ -1198,14 +1197,15 @@ class Context:
         for nid in getprogeny(r, id): self.buildcollectioncache(nid , {'*'})
 
     def getBchildren(self, id):
-        pass
+        r = self.nrepo
+        data = [nid for nid in getprogeny(r, id) if self.getnode(nid)['datasource']['type'] == 'B']
+        return data
 
     def buildcollectioncache(self, id, collections):
         node = self.getnode(id)
         ntype = node['datasource']['type']
-        if ntype in ['N', 'L', 'C']: return
+        if ntype in ['N', 'L', 'C', 'T']: return
         self.getsource(node)
-
         if '*' in collections: collections = {k for k in node['datasource']['collections']}
         operations = self.schedulecacheoperations(id, 'buildcollectioncache', collections)
         if self.status.errors > 0: return
