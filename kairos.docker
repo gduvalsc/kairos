@@ -28,8 +28,8 @@ RUN cd /tmp/oracle_fdw-2.1.0 && \
     make install
 
 #### pgkairos
-ADD pgkairos-1.1-1.noarch.rpm /tmp
-RUN cd /tmp && rpm --ignoreos --prefix=$(pg_config --sharedir)/extension -i /tmp/pgkairos-1.1-1.noarch.rpm
+ADD pgkairos-1.2-1.noarch.rpm /tmp
+RUN cd /tmp && rpm --ignoreos --prefix=$(pg_config --sharedir)/extension -i /tmp/pgkairos-1.2-1.noarch.rpm
 
 #### python & python packages
 RUN pip3 install --upgrade pip

@@ -76,13 +76,34 @@ if args.bootstrap:
     os.system("python3 -m pykairos --launcher")
     
 if args.makeboot:
-    os.system('su - postgres -c "pg_ctl stop"')
-    os.system('rm -fr  /postgres/boot; mkdir /postgres/boot; mkdir /postgres/boot/data; chown -R postgres:postgres /postgres/boot')
-    os.system('su - postgres -c "initdb -D /postgres/boot/data -E UTF8 --no-locale"')
-    os.system('su - postgres -c "pg_ctl -D /postgres/boot/data start"')
-    os.system('su - postgres -c "echo ''local all postgres trust'' > /postgres/boot/data/pg_hba.conf"')
-    os.system('su - postgres -c "echo ''host all postgres all trust'' >> /postgres/boot/data/pg_hba.conf"')
-    os.system('su - postgres -c "echo ''host all all all md5'' >> /postgres/boot/data/pg_hba.conf"')
+    command = 'su - postgres -c "pg_ctl stop"'
+    os.system('echo ' + "===============================================")
+    os.system('echo ' + command)
+    os.system(command)
+    command = 'rm -fr  /postgres/boot; mkdir /postgres/boot; mkdir /postgres/boot/data; chown -R postgres:postgres /postgres/boot'
+    os.system('echo ' + "===============================================")
+    os.system('echo ' + command)
+    os.system(command)
+    command = 'su - postgres -c "initdb -D /postgres/boot/data -E UTF8 --no-locale"'
+    os.system('echo ' + "===============================================")
+    os.system('echo ' + command)
+    os.system(command)
+    command = 'su - postgres -c "pg_ctl -D /postgres/boot/data start"'
+    os.system('echo ' + "===============================================")
+    os.system('echo ' + command)
+    os.system(command)
+    command = 'su - postgres -c "echo ''local all postgres trust'' > /postgres/boot/data/pg_hba.conf"'
+    os.system('echo ' + "===============================================")
+    os.system('echo ' + command)
+    os.system(command)
+    command = 'su - postgres -c "echo ''host all postgres all trust'' >> /postgres/boot/data/pg_hba.conf"'
+    os.system('echo ' + "===============================================")
+    os.system('echo ' + command)
+    os.system(command)
+    command = 'su - postgres -c "echo ''host all all all md5'' >> /postgres/boot/data/pg_hba.conf"'
+    os.system('echo ' + "===============================================")
+    os.system('echo ' + command)
+    os.system(command)
     print('S', end='', flush=True)
     logging.info("Creating system database...")
     while True:
@@ -98,17 +119,17 @@ if args.makeboot:
     objects.extend(glob('/tmp/objects/*/*.py'))
     objects.extend(glob('/tmp/objects/*/*.jpg'))
     for o in objects:
-        print('l', end='', flush=True)
-        logging.info('Loading ' + o + " ...")
-        try: 
-            result = json.loads(subprocess.getoutput("kairos -s uploadobject --nodesdb kairos_system_system --file '" + o + "'"))
-            success = result['success']
-            if not success: logging.error('Error during loading of: ' + o)
-            else: logging.info(json.dumps(result))
-        except:
-            logging.error('Error during loading of: ' + o)
-            subprocess.run(['cat', '/var/log/kairos/kairos.log'])
-            raise
+       print('l', end='', flush=True)
+       logging.info('Loading ' + o + " ...")
+       try: 
+           result = json.loads(subprocess.getoutput("kairos -s uploadobject --nodesdb kairos_system_system --file '" + o + "'"))
+           success = result['success']
+           if not success: logging.error('Error during loading of: ' + o)
+           else: logging.info(json.dumps(result))
+       except:
+           logging.error('Error during loading of: ' + o)
+           subprocess.run(['cat', '/var/log/kairos/kairos.log'])
+           raise
     print('', flush=True)
     logging.info(str(len(objects)) + ' found objects in /tmp/objects!')
     data = json.loads(subprocess.getoutput('kairos -s listobjects --nodesdb kairos_system_system --systemdb kairos_system_system'))['data']
@@ -120,6 +141,15 @@ if args.makeboot:
         subprocess.run(['cat', '/var/log/kairos/webserver.log'])
         raise
     subprocess.run(['rm', '-fr', '/tmp/objects'])
-    os.system('su - postgres -c "/usr/pgsql-10/bin/pg_ctl -D /postgres/boot/data stop"')
-    os.system('cd /postgres/boot; rm -fr /postgres/backups/*; tar cvf /postgres/backups/pgboot.tar data')
-    os.system('rm -fr /postgres/boot')
+    command = 'su - postgres -c "pg_ctl -D /postgres/boot/data stop"'
+    os.system('echo ' + "===============================================")
+    os.system('echo ' + command)
+    os.system(command)
+    command = 'cd /postgres/boot; rm -fr /postgres/backups/*; tar cvf /postgres/backups/pgboot.tar data'
+    os.system('echo ' + "===============================================")
+    os.system('echo ' + command)
+    os.system(command)
+    command = 'rm -fr /postgres/boot'
+    os.system('echo ' + "===============================================")
+    os.system('echo ' + command)
+    os.system(command)

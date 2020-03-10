@@ -1164,7 +1164,8 @@ class Context:
             with suppress(Exception): shutil.rmtree('/export/' + db)
             os.mkdir('/export/' + db)
             os.chmod('/export/' + db, 0o777)
-            ag = subprocess.run(['su', '-', 'postgres', '-c', 'pg_dump -F c -f /export/' + db + '/database.dump ' + db], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            command = 'pg_dump -Fd -j ' + str(multiprocessing.cpu_count()) + ' -f /export/' + db + '/database.dump ' + db
+            ag = subprocess.run(['su', '-', 'postgres', '-c', command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode: self.status.pusherrmessage("Unable to export database: " + db + " for an uknown reason!")
     
     def importdatabases(self, nodesdb):
@@ -1184,7 +1185,8 @@ class Context:
             if  ag.returncode:
                 self.status.pusherrmessage("Unable to create database: " + db + " during import!")
                 continue
-            ag = subprocess.run(['su', '-', 'postgres', '-c', 'pg_restore -d ' + db + ' /export/' + db + '/database.dump'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            command = 'pg_restore -j ' + str(multiprocessing.cpu_count()) + ' -d ' + db + ' /export/' + db + '/database.dump'
+            ag = subprocess.run(['su', '-', 'postgres', '-c', command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
                 self.status.pusherrmessage("Error during import of database: " + db)
 
@@ -1252,6 +1254,10 @@ class Context:
                 logging.info("Node: " + str(nid) + ", Type: " + ntype + ", updating cache with query info: '" + qid + "' ...")
                 self.setschema()
                 r.execute("update caches set queries = '" + json.dumps(node['datasource']['cache']['queries']) + "' where id = " + str(nid))
+                del self.cache['nodes'][nid]
+                node = self.getnode(nid)
+                self.getcache(node)
+
             else: logging.info("Node: " + str(nid) + ", Type: " + ntype + ", nothing to do for query cache: '" + qid + "' ...")
     
     def getallparts (self, id, v=None):
@@ -1375,13 +1381,14 @@ class Context:
             for collection in collections:
                 logging.info("Node: " + str(nid) + ", Type: " + ntype + ", checking partition cache: " + str(part) + " for collection: '" + collection + "' ...")
                 todo = False
-                if collection not in pnode['datasource']['collections']: continue
+                #if collection not in pnode['datasource']['collections']: continue
                 datepart = cachecol[collection][str(part)] if collection in cachecol and str(part) in cachecol[collection] else None
                 if collection not in pcachecol: continue
                 datesource = max([pcachecol[collection][x]  for x in  pcachecol[collection]])
                 todo = True if datepart == None else todo
                 todo = True if datepart != None and datepart < datesource else todo
                 if todo: 
+                    logging.warning("Node: " + str(nid) + " (" + getpath(self, self.nrepo, nid) + ") must be built or built again for partition " + str(part) + " (" + getpath(self, self.nrepo, part) + ") and collection " + str(collection) + "!")
                     self.removecollections.add(collection)
                     self.createcollections.add(collection)
 
@@ -1397,7 +1404,8 @@ class Context:
                 todo = True if datepart == None else todo
                 todo = True if datepart != None and node['datasource']['uploaded'] > datepart else todo
                 todo = True if datepart != None and analyzer['created'] > datepart else todo
-                if todo: 
+                if todo:
+                    logging.warning("Node: " + str(nid) + " (" + getpath(self, self.nrepo, nid) + ") must be built or built again for collection " + str(collection) + "!")
                     self.removecollections.add(collection)
                     self.createcollections.add(collection)
 
@@ -1412,6 +1420,7 @@ class Context:
                 todo = True if datepart == None else todo
                 todo = True if datepart != None and (datetime.now() - datetime.strptime(datepart, '%Y-%m-%d %H:%M:%S.%f')).seconds > timeout else todo
                 if todo: 
+                    logging.warning("Node: " + str(nid) + " (" + getpath(self, self.nrepo, nid) + ") must be built or built again for collection " + str(collection) + "!")
                     self.removecollections.add(collection)
                     self.createcollections.add(collection)
 
@@ -1431,6 +1440,10 @@ class Context:
                 if collection in node['datasource']['cache']['collections']: del node['datasource']['cache']['collections'][collection]
             self.setschema()
             r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
+            del self.cache['nodes'][nid]
+            node = self.getnode(nid)
+            self.getcache(node)
+
 
     def removepart(self, nid, part, collections):
         r = self.nrepo
@@ -1596,6 +1609,9 @@ class Context:
             logging.info("Node: " + str(nid) + ", Type: A, updating cache with collections info: '" + str(collections) + "' ...")
             self.setschema()
             r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
+            del self.cache['nodes'][nid]
+            node = self.getnode(nid)
+            self.getcache(node)
 
         except: self.status.pusherrmessage(str(sys.exc_info()[1]))
 
@@ -1725,6 +1741,9 @@ class Context:
             logging.info("Node: " + str(nid) + ", Type: B, updating cache with collections info: '" + str(collections) + "' ...")
             self.setschema()
             r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
+            del self.cache['nodes'][nid]
+            node = self.getnode(nid)
+            self.getcache(node)
 
         except: self.status.pusherrmessage(str(sys.exc_info()[1]))
 
@@ -1743,6 +1762,9 @@ class Context:
         logging.info("Node: " + str(nid) + ", Type: D, updating cache with collections info: '" + str(collections) + "' ...")
         self.setschema()
         r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
+        del self.cache['nodes'][nid]
+        node = self.getnode(nid)
+        self.getcache(node)
 
     def getchartcache(self, id, timeout):
         repository = self.nrepo

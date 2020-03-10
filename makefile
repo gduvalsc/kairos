@@ -1,12 +1,12 @@
-VERSION=7.0
-PORT=44370
+VERSION=7.1
+PORT=44371
 IMAGE=kairos
 #IMAGE=gdsc/kairos:$(VERSION)
 MACHINE=kairos$(VERSION)
 NETWORK=mynetwork
 
 USERNAME=gduvalsc
-PASSWORD=*********
+PASSWORD=**********
 TOKEN=$$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "$(USERNAME)", "password": "$(PASSWORD)"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
 
 ### Things to do before delivering a new image
@@ -46,6 +46,10 @@ sh:
 	docker exec -it $(MACHINE) bash
 
 stop:
+	docker exec $(MACHINE) su - postgres -c 'pg_ctl stop'
+	docker stop $(MACHINE)
+
+abort:
 	docker stop $(MACHINE)
 
 rm:
@@ -72,7 +76,7 @@ ressources:
 	rm -fr kairosx; mkdir kairosx
 	cp -r resources  pykairos kairos.key kairos.crt index.html worker.py kairosx
 	cp instantclient-basic-linux.zip instantclient-sdk-linux.zip oracle_fdw-2.1.0.tar.gz buildimage
-	cp pgkairos-1.1-1.noarch.rpm buildimage
+	cp pgkairos-1.2-1.noarch.rpm buildimage
 	cp pgboot.tar buildimage
 	sed -e 's/@@VERSION@@/$(VERSION)/' client.js > kairosx/client.js
 	sed -e 's/@@VERSION@@/$(VERSION)/' kairos > kairosx/kairos
