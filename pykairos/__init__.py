@@ -32,18 +32,18 @@ getresponse = lambda context, d: web.json_response(dict(success=False, message=c
         
 def trace_call(func):
     def wrapper(*args, **kwargs):
-        logging.debug('>>> Entering %s ...' % func.__name__)
+        logging.debug(f'>>> Entering {func.__name__}')
         loglevel = logging.getLogger().getEffectiveLevel()
         if loglevel == logging.TRACE:
-            tracef = open('/var/log/kairos/postgres_' + str(os.getpid()) + '.sql', 'a')
-            print('-- >>> ' + func.__name__ + ' ' + str(datetime.now()), file=tracef)
+            tracef = open(f'/var/log/kairos/postgres_{os.getpid()}.sql', 'a')
+            print(f'-- >>> {func.__name__} {datetime.now()}', file=tracef)
             tracef.close()
         response = func(*args, **kwargs)
         if loglevel == logging.TRACE:
-            tracef = open('/var/log/kairos/postgres_' + str(os.getpid()) + '.sql', 'a')
-            print('-- <<< ' + func.__name__ + ' ' + str(datetime.now()), file=tracef)
+            tracef = open(f'/var/log/kairos/postgres_{os.getpid()}.sql', 'a')
+            print(f'-- <<< {func.__name__} {datetime.now()}', file=tracef)
             tracef.close()
-        logging.debug('<<< Leaving %s ...' % func.__name__)
+        logging.debug(f'<<< Leaving {func.__name__}')
         return response
     return wrapper
 
@@ -179,8 +179,8 @@ class KairosWorker:
         logging.basicConfig(format='%(asctime)s %(process)5s %(levelname)8s %(message)s', level=logging.INFO, filename="/var/log/kairos/kairos.log")
         import setproctitle
         setproctitle.setproctitle('KairosWorker')
-        logging.info('Process name: ' + setproctitle.getproctitle())
-        logging.info('Process id: ' + str(os.getpid()))
+        logging.info(f'Process name: {setproctitle.getproctitle()}')
+        logging.info(f'Process id: {os.getpid()}')
 
     @trace_call
     async def websocket_handler(self, request):
@@ -190,7 +190,7 @@ class KairosWorker:
         try:
             async for msg in ws:
                 if msg.type == WSMsgType.TEXT:
-                    logging.debug('Got request : ' + msg.data)
+                    logging.debug(f'Got request : {msg.data}')
                     alpha = subprocess.Popen(msg.data,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
                     line = alpha.stdout.readline()
                     while line:
@@ -199,7 +199,7 @@ class KairosWorker:
                     ws.send_str('__END_OF_PIPE__')
                     await ws.close()
                 elif msg.type == WSMsgType.ERROR:
-                    logging.error('Unexpected error, ws connection closed with exception %s' % ws.exception())
+                    logging.error(f'Unexpected error, ws connection closed with exception {ws.exception()}')
         finally:
             request.app['websockets'].remove(ws)
         return ws
@@ -249,7 +249,7 @@ class KairosWorker:
         user = multipart['user'] if 'user' in multipart else params['user'][0]
         password = multipart['password'] if 'password' in multipart else params['password'][0]
         adminrights = True if user == 'admin' else False
-        postgresstr = "host='localhost' dbname='kairos_user_" + user + "' user='" + user + "' password='" + password + "'"
+        postgresstr = f"host='localhost' dbname='kairos_user_{user}' user='{user}' password='{password}'"
         try: 
             postgres = psycopg2.connect(postgresstr)
             postgres.close()
@@ -269,7 +269,7 @@ class KairosWorker:
         context = Context(nodesdb=database)
         try:
             (id, typeobj) = context.writeobject(source)
-            msg = dict(data=dict(msg='Object: ' + id + ' of type: ' + typeobj + ' has been successfully saved!'))
+            msg = dict(data=dict(msg=f'Object: {id} of type: {typeobj} has been successfully saved!'))
         except:
             tb = sys.exc_info()
             context.status.pusherrmessage(str(tb[1]))
@@ -282,7 +282,7 @@ class KairosWorker:
     def getsettings(self, request):
         params = parse_qs(request.query_string)
         user = params['user'][0]
-        context = Context(nodesdb='kairos_user_' + user)
+        context = Context(nodesdb=f'kairos_user_{user}')
         settings = context.getsettings()
         context.free()
         return getresponse(context, dict(data=dict(settings=settings)))
@@ -411,7 +411,7 @@ class KairosWorker:
         plotorientation = params['plotorientation'][0]
         logging = params['logging'][0]
         newsettings = dict(nodesdb=nodesdb, systemdb=systemdb, colors=colors, template=template, wallpaper=wallpaper, plotorientation=plotorientation, logging=logging, top=top)
-        context = Context(nodesdb='kairos_user_' + user)
+        context = Context(nodesdb=f'kairos_user_{user}')
         context.updatesettings(newsettings)
         context.free()
         return getresponse(context, dict())
@@ -552,7 +552,7 @@ class KairosWorker:
         user = multipart['user'] if 'user' in multipart else params['user'][0]
         password = multipart['password'] if 'password' in multipart else params['password'][0]
         new = multipart['new'] if 'new' in multipart else params['new'][0]
-        postgresstr = "host='localhost' dbname='kairos_user_" + user + "' user='" + user + "' password='" + password + "'"
+        postgresstr = f"host='localhost' dbname='kairos_user_{user}' user='{user}' password='{password}'"
         try: 
             postgres = psycopg2.connect(postgresstr)
             postgres.close()
@@ -578,7 +578,7 @@ class KairosWorker:
         context = Context(nodesdb=database)
         context.deleteobject(id, typeobj)
         context.free()
-        return getresponse(context, dict(data=dict(msg=id + ' ' + typeobj + ' object has been successfully removed!')))
+        return getresponse(context, dict(data=dict(msg=f'{id} {typeobj} object has been successfully removed!')))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -656,7 +656,7 @@ class KairosWorker:
         type = magic.from_buffer(stream)
         stream = stream.decode().replace('#=', '# =').replace('#+', '# +')
         if 'html' in type.lower(): html = stream
-        elif 'text' in type.lower(): html = '<pre>' + cgi.escape(stream) + '</pre>'
+        elif 'text' in type.lower(): html = f'<pre>{cgi.escape(stream)}</pre>'
         else: html = 'Not yet taken into account'
         return getresponse(context, dict(data=html))
 
@@ -761,7 +761,7 @@ class KairosWorker:
         chart = params['chart'][0]
         variables = json.loads(params['variables'][0])
         context = Context(nodesdb=nodesdb, systemdb=systemdb)
-        for v in variables: context.variables[v] = variables[v]
+        context.variables = variables.copy()
         chart = context.getchart(chart)
         context.free()
         return getresponse(context, dict(data=chart))
@@ -774,7 +774,7 @@ class KairosWorker:
         id = params['id'][0]
         type = params['type'][0]
         context = Context(nodesdb=database, systemdb=database)
-        obj = context.readobjects("where id = '" + str(id) + "' and type = '" + type + "'", evalobject=False)[0]
+        obj = context.readobjects(f"where id = '{id}' and type = '{type}'", evalobject=False)[0]
         context.free()
         return getresponse(context, dict(data=obj))
     
@@ -787,7 +787,7 @@ class KairosWorker:
         layout = params['layout'][0]
         variables = json.loads(params['variables'][0])
         context = Context(nodesdb=nodesdb, systemdb=systemdb)
-        for v in variables: context.variables[v] = variables[v]
+        context.variables = variables.copy()
         layout = context.getlayout(layout)
         context.free()
         return getresponse(context, dict(data=layout))
@@ -801,7 +801,7 @@ class KairosWorker:
         choice = params['choice'][0]
         variables = json.loads(params['variables'][0])
         context = Context(nodesdb=nodesdb, systemdb=systemdb)
-        for v in variables: context.variables[v] = variables[v]
+        context.variables = variables.copy()
         choice = context.getchoice(choice)
         context.free()
         return getresponse(context, dict(data=choice))
@@ -874,7 +874,7 @@ class KairosWorker:
         limit = int(params['top'][0])
         variables = json.loads(params['variables'][0])
         context = Context(nodesdb=nodesdb, systemdb=systemdb)
-        for v in variables: context.variables[v] = variables[v]
+        context.variables = variables.copy()
         result = context.executequery(id, query, limit)
         context.free()
         return getresponse(context, dict(data=result))
@@ -1027,7 +1027,7 @@ class KairosWorker:
         context = Context(postgres=True)
         context.exportdatabases(nodesdb)
         context.free()
-        return getresponse(context, dict(data=dict(msg="Database(s): " + str(nodesdb) + " has(ve) been exported sucessfully!")))
+        return getresponse(context, dict(data=dict(msg=f"Database(s): {nodesdb} has(ve) been exported sucessfully!")))
 
     @intercept_logging_and_internal_error
     @trace_call
@@ -1037,7 +1037,7 @@ class KairosWorker:
         context = Context(postgres=True)
         context.importdatabases(nodesdb)
         context.free()
-        return getresponse(context, dict(data=dict(msg="Database(s): " + str(nodesdb) + " has(ve) been imported sucessfully!")))
+        return getresponse(context, dict(data=dict(msg=f"Database(s): {nodesdb} has(ve) been imported sucessfully!")))
 
     @trace_call
     def clearprogenycaches(self, request):
@@ -1077,7 +1077,7 @@ class KairosWorker:
         template = params['template'][0]
         variables = json.loads(params['variables'][0])
         context = Context(nodesdb=nodesdb, systemdb=systemdb)
-        for v in variables: context.variables[v] = variables[v]
+        context.variables = variables.copy()
         chartobj = context.runchart(id, chart, width, height, limit, colors, plotorientation, template)
         context.free()
         return getresponse(context, dict(data=dict(chart=chartobj)))

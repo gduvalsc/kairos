@@ -1,12 +1,12 @@
-VERSION=7.1
-PORT=44371
+VERSION=7.2
+PORT=44372
 IMAGE=kairos
 #IMAGE=gdsc/kairos:$(VERSION)
 MACHINE=kairos$(VERSION)
 NETWORK=mynetwork
 
 USERNAME=gduvalsc
-PASSWORD=**********
+PASSWORD=************
 TOKEN=$$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "$(USERNAME)", "password": "$(PASSWORD)"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
 
 ### Things to do before delivering a new image

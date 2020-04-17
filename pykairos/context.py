@@ -27,14 +27,14 @@ from contextlib import suppress
 getdatabases = lambda repository: [row['datname'] for row in repository.execute("select datname from pg_database")]
 getnextid = lambda repository: [row['objid'] for row in repository.execute("select nextval('objid') as objid")][0]
 getdbsizes = lambda repository: {row['datname']:row['size'] for row in repository.execute("select datname, pg_database_size(datname) as size from pg_database where datname like 'kairos_%'")}
-getgroupdatabases = lambda repository, user: ['kairos_group_' + row['groname'] for row in repository.execute("select groname from pg_group,pg_user where usesysid = any(grolist) and usename='" + user + "'")]
+getgroupdatabases = lambda repository, user: [f'kairos_group_{row["groname"]}' for row in repository.execute(f"select groname from pg_group,pg_user where usesysid = any(grolist) and usename='{user}'")]
 getdefaultnodename = lambda repository: [row['name'] for row in repository.execute("select to_char(now(), 'YYYY-MM-DD HH24:MI:SS.MS') as name")][0]
-getnodeparentid = lambda repository, id: [row['pid'] for row in repository.execute("select parent as pid from nodes where id = " + str(id))][0]
+getnodeparentid = lambda repository, id: [row['pid'] for row in repository.execute(f"select parent as pid from nodes where id = {id}")][0]
 getrootid = lambda repository: [row['rid'] for row in repository.execute("select id as rid from nodes where parent is null")][0]
-getprogeny = lambda repository, id:  [row['rid'] for row in repository.execute("with recursive tree as (select id, parent from nodes where id = " + str(id) + " union all select p.id, p.parent from nodes p join tree c on p.parent = c.id) select id as rid from tree where id != " + str(id))]
-getancestors = lambda repository, id:  [x for x in reversed([row['rid'] for row in repository.execute("with recursive tree as (select id, parent from nodes where id = " + str(id) + " union all select p.id, p.parent from nodes p join tree c on p.id = c.parent) select id as rid from tree where id != " + str(id))])]
-fff1 = lambda repository, id, name: [row['rid'] for row in repository.execute("select id as rid from nodes where parent = " + str(id) + " and name = '" + name + "'")]
-getnodesidfromp = lambda repository, id: [row['rid'] for row in repository.execute("select id as rid from nodes where parent = " + str(id))]
+getprogeny = lambda repository, id:  [row['rid'] for row in repository.execute(f"with recursive tree as (select id, parent from nodes where id={id} union all select p.id, p.parent from nodes p join tree c on p.parent = c.id) select id as rid from tree where id != {id}")]
+getancestors = lambda repository, id:  [x for x in reversed([row['rid'] for row in repository.execute(f"with recursive tree as (select id, parent from nodes where id={id} union all select p.id, p.parent from nodes p join tree c on p.id = c.parent) select id as rid from tree where id != {id}")])]
+fff1 = lambda repository, id, name: [row['rid'] for row in repository.execute(f"select id as rid from nodes where parent = {id} and name = '{name}'")]
+getnodesidfromp = lambda repository, id: [row['rid'] for row in repository.execute(f"select id as rid from nodes where parent = {id}")]
 getnodeidfrompn = lambda repository, id, name: fff1(repository, id, name)[0] if len(fff1(repository, id, name)) > 0 else None
 getpath = lambda context, repository, id: ('/'.join([x['name'] for x in [context.getnode(i) for i in getancestors(repository, id)]]) + '/' + context.getnode(id)['name'])[1:]
 ftype = lambda x: x['icon']
@@ -187,7 +187,7 @@ def getnewaxis(co, reftimedf, template, axistype=None, options=None, index=0):
         positiondomain = 0.1 + index * (lengthdomain + lengthseparator)
         d[l]['options']['domain'] = [positiondomain, positiondomain + lengthdomain]
         d[l]['options']['range'] = [reftimedf[index].index.min(),reftimedf[index].index.max()]
-    logging.debug('Axis index: ' + str(index) + ', options: ' + str(d[l]))
+    logging.debug(f'Axis index: {index}, options: {d[l]}')
     return l
 
 def paddeddf(t, d):
@@ -237,7 +237,7 @@ def settrace(co, r, dataframe=None, label=None, yaxisindex=0, index=0, alreadyin
     yaxis = yaxisindex
     row = 1 if plotorientation=='horizontal' else index+1
     col = index+1 if plotorientation=='horizontal' else 1
-    logging.debug('settrace, xaxis: ' + str(xaxis) + ', yaxis: ' + str(yaxis) + ', row: ' + str(row) + ', col:' + str(col) + ', label: ' + str(label))
+    logging.debug(f'settrace, xaxis: {xaxis}, yaxis: {yaxis}, row: {row}, col: {col}, label: {label}')
     co['traces'][l] = dict(trace=trace, yaxis=yaxis, xaxis=xaxis, row=row, col=col)
 
 class Object: pass
@@ -293,14 +293,14 @@ class Context:
         r.execute("create unique index iobjects on objects(type, id)")        
 
     def createuser(self, user, skiperror=False):
-        curdatabase = "kairos_user_" + user
+        curdatabase = f"kairos_user_{user}"
         r = self.grepo
         databases = getdatabases(r)
         if curdatabase in databases:
-            if not skiperror: self.status.pusherrmessage(user + ' user already exists!')
+            if not skiperror: self.status.pusherrmessage(f'{user} user already exists!')
             return dict()
-        r.execute("create database kairos_user_" + user + " with encoding 'utf8'")
-        r.execute("create user " + user + " password '" + user + "'")
+        r.execute(f"create database kairos_user_{user} with encoding 'utf8'")
+        r.execute(f"create user {user} password '{user}'")
         self.nodesdb = curdatabase
         self.nrepo = Repository(self.nodesdb)
         r = self.nrepo
@@ -314,24 +314,24 @@ class Context:
         r.execute("create table settings(colors text, logging text, nodesdb text, plotorientation text, systemdb text, template text, top integer, wallpaper text)")
         r.execute("create table sources(id integer primary key, created timestamp, collections text, stream bytea)")
         r.execute("create table caches(id integer primary key, name text, created timestamp, queries text, collections text)")
-        r.execute("insert into settings(colors, logging, nodesdb, plotorientation, systemdb, template, top, wallpaper) values ('COLORS', 'info', 'kairos_user_" + user + "', 'horizontal', 'kairos_system_system', 'DEFAULT', 15, 'DEFAULT')")
+        r.execute(f"insert into settings(colors, logging, nodesdb, plotorientation, systemdb, template, top, wallpaper) values ('COLORS', 'info', 'kairos_user_{user}', 'horizontal', 'kairos_system_system', 'DEFAULT', 15, 'DEFAULT')")
         rootid = getnextid(r)
-        r.execute("insert into nodes(id, parent, name, type, created, status) values (" + str(rootid) + ", null, '/', 'N', now(), 'ACTIVE')")
+        r.execute(f"insert into nodes(id, parent, name, type, created, status) values ({rootid}, null, '/', 'N', now(), 'ACTIVE')")
         trashid = getnextid(r)
-        r.execute("insert into nodes(id, parent, name, type, created, status) values (" + str(trashid) + ", " + str(rootid) + ", 'Trash', 'T', now(), 'DELETED')")
-        with suppress(Exception): shutil.rmtree('/autoupload/' + curdatabase)
-        os.mkdir('/autoupload/' + curdatabase)
-        return dict(data=dict(msg=user + " user has been successfully created!"))
+        r.execute(f"insert into nodes(id, parent, name, type, created, status) values ({trashid}, {rootid}, 'Trash', 'T', now(), 'DELETED')")
+        with suppress(Exception): shutil.rmtree(f'/autoupload/{curdatabase}')
+        os.mkdir(f'/autoupload/{curdatabase}')
+        return dict(data=dict(msg=f"{user} user has been successfully created!"))
         
     def createrole(self, role):
-        curdatabase = "kairos_group_" + role
+        curdatabase = f"kairos_group_{role}"
         r = self.grepo
         databases = getdatabases(r)
         if curdatabase in databases:
-            self.status.pusherrmessage(role + ' role already exists!')
+            self.status.pusherrmessage(f'{role} role already exists!')
             return dict()
-        r.execute("create database kairos_group_" + role + " with encoding 'utf8'")
-        r.execute("create role " + role)
+        r.execute(f"create database kairos_group_{role} with encoding 'utf8'")
+        r.execute(f"create role {role}")
         self.nodesdb = curdatabase
         self.nrepo = Repository(self.nodesdb)
         r = self.nrepo
@@ -345,64 +345,64 @@ class Context:
         r.execute("create table sources(id integer primary key, created timestamp, collections text, stream bytea)")
         r.execute("create table caches(id integer primary key, name text, created timestamp, queries text, collections text)")
         rootid = getnextid(r)
-        r.execute("insert into nodes(id, parent, name, type, created, status) values (" + str(rootid) + ", null, '/', 'N', now(), 'ACTIVE')")
+        r.execute(f"insert into nodes(id, parent, name, type, created, status) values ({rootid}, null, '/', 'N', now(), 'ACTIVE')")
         trashid = getnextid(r)
-        r.execute("insert into nodes(id, parent, name, type, created, status) values (" + str(trashid) + ", " + str(rootid) + ", 'Trash', 'T', now(), 'DELETED')")
-        with suppress(Exception): shutil.rmtree('/autoupload/' + curdatabase)
-        os.mkdir('/autoupload/' + curdatabase)
-        return dict(data=dict(msg=role + " role has been successfully created!"))
+        r.execute(f"insert into nodes(id, parent, name, type, created, status) values ({trashid}, {rootid}, 'Trash', 'T', now(), 'DELETED')")
+        with suppress(Exception): shutil.rmtree(f'/autoupload/{curdatabase}')
+        os.mkdir(f'/autoupload/{curdatabase}')
+        return dict(data=dict(msg=f"{role} role has been successfully created!"))
 
     def deleteuser(self, user):
         if user=='admin': 
             self.status.pusherrmessage('admin user cannot be removed!')
             return dict()
-        dbuser = "kairos_user_" + user
+        dbuser = f"kairos_user_{user}"
         r = self.grepo
-        r.execute("drop database " + dbuser)
-        r.execute("drop user " + user)
-        return dict(data=dict(msg=user + " user has been successfully removed!"))
+        r.execute(f"drop database {dbuser}")
+        r.execute(f"drop user {user}")
+        return dict(data=dict(msg=f"{user} user has been successfully removed!"))
 
     def deleterole(self, role):
-        dbgroup = "kairos_group_" + role
+        dbgroup = f"kairos_group_{role}"
         r = self.grepo
-        r.execute("drop database " + dbgroup)
-        r.execute("drop role " + role)
-        return dict(data=dict(msg=role + " role has been successfully removed!"))
+        r.execute(f"drop database {dbgroup}")
+        r.execute(f"drop role {role}")
+        return dict(data=dict(msg=f"{role} role has been successfully removed!"))
 
     def creategrant(self, user, role):
         r = self.grepo
         databases = getdatabases(r)
-        dbgroup = "kairos_group_" + role
-        dbuser = "kairos_user_" + user
+        dbgroup = f"kairos_group_{role}"
+        dbuser = f"kairos_user_{user}"
         if dbgroup not in databases:
-            self.status.pusherrmessage(role + " role doesn't exist!")
+            self.status.pusherrmessage(f"{role} role doesn't exist!")
             return dict()
         if dbuser not in databases:
-            self.status.pusherrmessage(user + " user doesn't exist!")
+            self.status.pusherrmessage(f"{user} user doesn't exist!")
             return dict()
-        x = r.execute("select groname,usename from pg_group,pg_user where usesysid = any(grolist) and groname='" + role + "' and usename='" + user + "'")
+        x = r.execute(f"select groname,usename from pg_group,pg_user where usesysid = any(grolist) and groname='{role}' and usename='{user}'")
         if len([row for row in x.fetchall()]) > 0:
-            self.status.pusherrmessage(user + " user is already granted with " + role + " role!")
+            self.status.pusherrmessage(f"{user} user is already granted with {role} role!")
             return(dict())
-        r.execute("grant " + role + " to " + user)
-        return dict(data=dict(msg=role + " role has been successfully granted to " + user + " user!"))
+        r.execute(f"grant {role} to {user}")
+        return dict(data=dict(msg=f"{role} role has been successfully granted to {user} user!"))
 
     def deletegrant(self, user, role):
         r = self.grepo
-        r.execute("revoke " + role + " from " + user)
-        return dict(data=dict(msg=user + " user has been successfully revoked from " + role + " role!"))
+        r.execute(f"revoke {role} from {user}")
+        return dict(data=dict(msg=f"{user} user has been successfully revoked from {role} role!"))
 
     def resetpassword(self, user):
         if user=='admin':
             self.status.pusherrmessage('admin password cannot be reset!')
             return dict()
         r = self.grepo
-        r.execute("alter user " + user + " password '" + user + "'")
-        return dict(data=dict(msg=user + " password has been successfully reset!"))
+        r.execute(f"alter user {user} password '{user}'")
+        return dict(data=dict(msg=f"{user} password has been successfully reset!"))
 
     def changepassword(self, user, password):
         r = self.grepo
-        r.execute("alter user " + user + " password '" + password + "'")
+        r.execute(f"alter user {user} password '{password}'")
 
     def getsettings(self):
         r = self.nrepo
@@ -415,7 +415,7 @@ class Context:
     def updatesettings(self, newsettings):
         r = self.nrepo
         r.execute("delete from settings")
-        r.execute("insert into settings(colors, logging, nodesdb, plotorientation, systemdb, template, top, wallpaper) values ('" + newsettings['colors'] +"', '" + newsettings['logging'] +"', '" + newsettings['nodesdb'] +"', '" + newsettings['plotorientation'] + "', '" + newsettings['systemdb'] + "', '" + newsettings['template'] + "', " + str(newsettings['top']) + ", '" + newsettings['wallpaper'] + "')")
+        r.execute(f"insert into settings(colors, logging, nodesdb, plotorientation, systemdb, template, top, wallpaper) values ('{newsettings['colors']}', '{newsettings['logging']}', '{newsettings['nodesdb']}', '{newsettings['plotorientation']}', '{newsettings['systemdb']}', '{newsettings['template']}', {newsettings['top']}, '{newsettings['wallpaper']}')")
 
     def listdatabases(self, user, adminrights):
         r = self.grepo
@@ -426,7 +426,7 @@ class Context:
             if adminrights:
                 data.append(dict(name=k, size=databases[k] * 1.0 / 1024 / 1024))
             else:
-                if k == 'kairos_user_' + user:
+                if k == f'kairos_user_{user}':
                     data.append(dict(name=k, size=databases[k] * 1.0 / 1024 / 1024))
                 if 'kairos_group_' in k:
                     if k in groups:
@@ -470,7 +470,7 @@ class Context:
         if self.systemdb: listdb.append(self.systemdb)
         for db in listdb:
             r = self.nrepo if db == self.nodesdb else self.srepo
-            for row in r.execute("select rid, id, type, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created from objects " + where):
+            for row in r.execute(f"select rid, id, type, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created from objects {where}"):
                 item = dict()
                 for x in row.keys(): item[x] = row[x]
                 item['origin'] = db
@@ -483,7 +483,7 @@ class Context:
         for db in [self.nodesdb, self.systemdb]:
             if interrupt and not allbases: break
             r = self.nrepo if db == self.nodesdb else self.srepo
-            for row in r.execute("select filename, stream as content, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created from objects " + where):
+            for row in r.execute(f"select filename, stream as content, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created from objects {where}"):
                 source = binascii.a2b_base64(row['content'])
                 filename = row['filename']
                 created = row['created']
@@ -502,54 +502,54 @@ class Context:
 
     def getobject(self, id, typeobj):
         if id not in self.cache['objects'][typeobj]:
-            objs = self.readobjects("where id='" + id + "' and type='" + typeobj + "'")
+            objs = self.readobjects(f"where id='{id}' and type='{typeobj}'")
             if len(objs) == 0: return None
             self.cache['objects'][typeobj][id]= objs[0]
         return self.cache['objects'][typeobj][id]
 
     def getanalyzer(self, id): 
         analyzer = self.getobject(id, 'analyzer')
-        if analyzer == None: self.status.pusherrmessage("Analyzer '" + id +"' doesn't exist!")
+        if analyzer == None: self.status.pusherrmessage(f"Analyzer '{id}' doesn't exist!")
         return analyzer
 
     def getliveobject(self, id): 
         liveobject = self.getobject(id, 'liveobject')
-        if liveobject == None: self.status.pusherrmessage("Liveobject '" + id +"' doesn't exist!")
+        if liveobject == None: self.status.pusherrmessage(f"Liveobject '{id}' doesn't exist!")
         return liveobject
 
     def gettemplate(self, id): 
         template = self.getobject(id, 'template')
-        if template == None: self.status.pusherrmessage("Template '" + id +"' doesn't exist!")
+        if template == None: self.status.pusherrmessage(f"Template '{id}' doesn't exist!")
         return template
 
     def getcolors(self, id): 
         colors = self.getobject(id, 'color')
-        if colors == None: self.status.pusherrmessage("Colors '" + id +"' doesn't exist!")
+        if colors == None: self.status.pusherrmessage(f"Colors '{id}' doesn't exist!")
         return colors
 
     def getchart(self, id): 
         chart = self.getobject(id, 'chart')
-        if chart == None: self.status.pusherrmessage("Chart '" + id +"' doesn't exist!")
+        if chart == None: self.status.pusherrmessage(f"Chart '{id}' doesn't exist!")
         return chart
 
     def getaggregator(self, id): 
         aggregator = self.getobject(id, 'aggregator')
-        if aggregator == None: self.status.pusherrmessage("Aggregator '" + id +"' doesn't exist!")
+        if aggregator == None: self.status.pusherrmessage(f"Aggregator '{id}' doesn't exist!")
         return aggregator
 
     def getfunction(self, id): 
         function = self.getobject(id, 'function')
-        if function == None: self.status.pusherrmessage("Function '" + id +"' doesn't exist!")
+        if function == None: self.status.pusherrmessage(f"Function '{id}' doesn't exist!")
         return function
 
     def getlayout(self, id): 
         layout = self.getobject(id, 'layout')
-        if layout == None: self.status.pusherrmessage("Layout '" + id +"' doesn't exist!")
+        if layout == None: self.status.pusherrmessage(f"Layout '{id}' doesn't exist!")
         return layout
 
     def getchoice(self, id): 
         choice = self.getobject(id, 'choice')
-        if choice == None: self.status.pusherrmessage("Choice '" + id +"' doesn't exist!")
+        if choice == None: self.status.pusherrmessage(f"Choice '{id}' doesn't exist!")
         return choice
 
     def getquery(self, id): 
@@ -570,9 +570,9 @@ class Context:
         obj = locals()['UserObject']()
         typeobj = obj['type']
         id = obj['id']
-        filename = id.lower() + '.py'
+        filename = f'{id.lower()}.py'
         content = binascii.b2a_base64(source.encode())
-        r.execute("delete from objects where id='" + str(id) + "' and type='" + typeobj +"'")
+        r.execute(f"delete from objects where id='{id}' and type='{typeobj}'")
         objid = getnextid(r)
         r.executep("insert into objects(rid, id, type, created, filename, stream) values (%s, %s, %s, now(), %s, %s)", (objid, id, typeobj, filename, content))
         return (id, typeobj)
@@ -580,7 +580,7 @@ class Context:
     def getobjectstream(self, id, otype):
         r = self.nrepo
         result = dict()
-        for row in r.execute("select filename, stream from objects where id='" + str(id) +"' and type = '" + otype + "'"):
+        for row in r.execute(f"select filename, stream from objects where id='{id}' and type = '{otype}'"):
             for x in row.keys(): result[x] = row[x]
         return (result['filename'], binascii.a2b_base64(result['stream']))
 
@@ -604,18 +604,18 @@ class Context:
             id = obj['id']
         content = binascii.b2a_base64(content)
         r = self.nrepo
-        r.execute("delete from objects where id='" + str(id) + "' and type='" + typeobj +"'")
+        r.execute(f"delete from objects where id='{id}' and type='{typeobj}'")
         objid = getnextid(r)
         r.executep("insert into objects(rid, id, type, created, filename, stream) values (%s, %s, %s, now(), %s, %s)", (objid, id, typeobj, filename, content))
         return (id, filename, typeobj)
     
     def deleteobject(self, id, typeobj):
         r = self.nrepo
-        r.execute("delete from objects where id='" + str(id) + "' and type='" + typeobj + "'")
+        r.execute(f"delete from objects where id='{id}' and type='{typeobj}'")
 
     def deletesource(self, id):
         r = self.nrepo
-        r.execute("delete from sources where id=" + str(id))
+        r.execute(f"delete from sources where id={id}")
 
     def createsource(self, nid, stream, filename):
         filepath = '/tmp/' + self.nodesdb + '_' + str(nid) + '.zip'
@@ -642,12 +642,12 @@ class Context:
         f.close()
         os.unlink(filepath)
         r.executep("insert into sources (id, created, collections, stream) values(%s, now(), %s, %s)", (nid, json.dumps(collections), content))
-        r.execute("update nodes set type = 'B' where id = " + str(nid))
+        r.execute(f"update nodes set type = 'B' where id = {nid}")
 
     def readnode(self, id):
         r = self.nrepo
         projection = "id as rid, type, name, status, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created, liveobject, aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip, aggregatormethod, aggregatortimefilter, to_char(aggregated, 'YYYY-MM-DD HH24:MI:SS.MS') as aggregated, producers"
-        selectednodes = [row for row in r.execute("select " + projection + " from nodes where id = " + str(id))]
+        selectednodes = [row for row in r.execute(f"select {projection} from nodes where id = {id}")]
         nodes=[]
         for row in selectednodes:
             node = dict(datasource=dict(cache=dict()))
@@ -678,7 +678,7 @@ class Context:
     
     def countchildren(self, node):
         r = self.nrepo
-        for row in r.execute("select count(*) as count from nodes where parent = " + str(node['id'])): node['kids'] = row['count']
+        for row in r.execute(f"select count(*) as count from nodes where parent = {node['id']}"): node['kids'] = row['count']
 
     def getnode(self, id):
         if id not in self.cache['nodes']:
@@ -691,7 +691,7 @@ class Context:
         r = self.nrepo
         node = self.getnode(id)
         if node == None:
-            self.status.pusherrmessage('Node with id: ' + str(id) + " doesn't exist!")
+            self.status.pusherrmessage(f"Node with id: {id} doesn't exist!")
             return
         self.getcache(node)
         self.getsource(node)
@@ -709,10 +709,10 @@ class Context:
             for rid in listnodes:
                 self.deletesource(rid)
                 self.deletecache(rid)
-                r.execute("delete from nodes where id = " + str(rid))
+                r.execute(f"delete from nodes where id = {rid}")
         else:
-            r.execute("update nodes set parent = " + str(trashid) + " where id = " + str(id))
-            for rid in listnodes: r.execute("update nodes set status = 'DELETED' where id = " + str(rid))
+            r.execute(f"update nodes set parent = {trashid} where id = {id}")
+            for rid in listnodes: r.execute(f"update nodes set status = 'DELETED' where id = {rid}")
     
     def uploadnode(self, id, multipart):
         r = self.nrepo
@@ -739,7 +739,7 @@ class Context:
         r = self.nrepo
         name = getdefaultnodename(r) if not name else name
         objid = getnextid(r)
-        r.execute("insert into nodes(id, parent, name, type, created, status) values (" + str(objid) + ", " + str(pid) + ", '" + name + "', 'N', now(), 'ACTIVE')")
+        r.execute(f"insert into nodes(id, parent, name, type, created, status) values ({objid}, {pid}, '{name}', 'N', now(), 'ACTIVE')")
         return objid
 
     def renamenode(self, id, new):
@@ -756,9 +756,9 @@ class Context:
         parent = self.getnode(pid)
         x = getnodeidfrompn(r, pid, new)
         if x!= None:
-            self.status.pusherrmessage(new + " is already a child for node: " + parent['name'])
+            self.status.pusherrmessage(f"{new} is already a child for node: {parent['name']}")
             return node
-        r.execute("update nodes set name = '" + new + "' where id = " + str(id))
+        r.execute(f"update nodes set name = '{new}' where id = {id}")
         del self.cache['nodes'][id]
         node = self.getnode(id)
         return node
@@ -769,10 +769,10 @@ class Context:
         if fromnode['datasource']['type'] == 'T':
             self.status.pusherrmessage('A trash cannot be moved!')
             return fromnode
-        r.execute("update nodes set parent = " + str(pto) + " where id = "  + str(pfrom))
-        status = [row['status'] for row in r.execute("select status from nodes where id = " + str(pto))][0]
+        r.execute(f"update nodes set parent = {pto} where id = {pfrom}")
+        status = [row['status'] for row in r.execute(f"select status from nodes where id = {pto}")][0]
         listnodes = getprogeny(r, pfrom)
-        for rid in listnodes: r.execute("update nodes set status = '" + status + "' where id = " + str(rid))
+        for rid in listnodes: r.execute(f"update nodes set status = '{status}' where id = {rid}")
         del self.cache['nodes'][pfrom]
         node = self.getnode(pfrom)
         return node
@@ -786,12 +786,12 @@ class Context:
             return tnode
         for e in tnode['datasource']['producers']:
             if fid == e['id']:
-                self.status.pusherrmessage(str(fid) + ": this node is already included in the list of producers!")
+                self.status.pusherrmessage(f"{fid}: this node is already included in the list of producers!")
                 return tnode
         producers = tnode['datasource']['producers']
         producers.append(dict(path=getpath(self, r, fid), id=fid))
         self.getsource(tnode)
-        r.execute("update nodes set type='C', producers='" + json.dumps(producers) + "' where id =" + str(tid))
+        r.execute(f"update nodes set type='C', producers='{json.dumps(producers)}' where id ={tid}")
         del self.cache['nodes'][tid]
         tnode = self.getnode(tid)
         self.getsource(tnode)
@@ -806,15 +806,15 @@ class Context:
             return tnode
         for e in tnode['datasource']['producers']:
             if fid == e['id']:
-                self.status.pusherrmessage(str(fid) + ": this node is already included in the list of producers!")
+                self.status.pusherrmessage(f"{fid}: this node is already included in the list of producers!")
                 return tnode
         producers = tnode['datasource']['producers']
         producers.append(dict(path=getpath(self, r, fid), id=fid))
         self.getsource(tnode)
         if 'aggregatorselector' not in tnode['datasource']:
-            r.execute("update nodes set type='A', producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + getpath(self, r, fid) + '$' + "', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none' where id =" + str(tid))
+            r.execute(f"update nodes set type='A', producers='{json.dumps(producers)}', aggregated=now(), aggregatorselector='{getpath(self, r, fid)}$', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none' where id ={tid}")
         else:
-            r.execute("update nodes set producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + tnode['datasource']['aggregatorselector'] + '|' + getpath(self, r, fid) + '$' +"', aggregatortake=" + str(int(tnode['datasource']['aggregatortake']) +  1) + " where id =" + str(tid))
+            r.execute(f"update nodes set producers='{json.dumps(producers)}', aggregated=now(), aggregatorselector='{tnode['datasource']['aggregatorselector']}|{getpath(self, r, fid)}$', aggregatortake={int(tnode['datasource']['aggregatortake'])+1} where id ={tid}")
         del self.cache['nodes'][tid]
         tnode = self.getnode(tid)
         self.getsource(tnode)
@@ -825,7 +825,7 @@ class Context:
         node = self.getnode(id)
         if node['datasource']['type'] in ['A']:
             if node['datasource']['aggregatormethod'] != aggregatormethod or node['datasource']['aggregatortimefilter'] != aggregatortimefilter:
-                logging.info("Node: " + str(id) + ", Type: " + node['datasource']['type'] + ", deleting cache ...")
+                logging.info(f"Node: {id}, Type: {node['datasource']['type']}, deleting cache ...")
                 self.deletecache(id)
         if node['datasource']['type'] in ['A', 'N']:  
             producers = self.expand(aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip)
@@ -834,11 +834,11 @@ class Context:
                 ds = pnode['datasource']
                 if pnode['datasource']['type'] in ['A']: self.applyaggregator(pid, ds['aggregatorselector'], ds['aggregatortake'], ds['aggregatorskip'], ds['aggregatortimefilter'], ds['aggregatorsort'], ds['aggregatormethod'])
             self.getsource(node)
-            r.execute("update nodes set type='A', producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + aggregatorselector + "', aggregatortake=" + str(aggregatortake) + ", aggregatortimefilter='" + aggregatortimefilter + "', aggregatorskip=" + str(aggregatorskip) + ", aggregatorsort='" + aggregatorsort + "', aggregatormethod='" + aggregatormethod + "' where id =" + str(id))
+            r.execute(f"update nodes set type='A', producers='{json.dumps(producers)}', aggregated=now(), aggregatorselector='{aggregatorselector}', aggregatortake={aggregatortake}, aggregatortimefilter='{aggregatortimefilter}', aggregatorskip={aggregatorskip}, aggregatorsort='{aggregatorsort}', aggregatormethod='{aggregatormethod}' where id ={id}")
         if node['datasource']['type'] in ['L']:
             cproducers = dict()
             producers = self.expand(aggregatorselector, aggregatorsort, aggregatortake, aggregatorskip)
-            r.execute("update nodes set type='L', producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + aggregatorselector + "', aggregatortake=" + str(aggregatortake) + ", aggregatortimefilter='" + aggregatortimefilter + "', aggregatorskip=" + str(aggregatorskip) + ", aggregatorsort='" + aggregatorsort + "', aggregatormethod='" + aggregatormethod + "' where id =" + str(id))
+            r.execute(f"update nodes set type='L', producers='{json.dumps(producers)}', aggregated=now(), aggregatorselector='{aggregatorselector}', aggregatortake={aggregatortake}, aggregatortimefilter='{aggregatortimefilter}', aggregatorskip={aggregatorskip}, aggregatorsort='{aggregatorsort}', aggregatormethod='{aggregatormethod}' where id ={id}")
             for p in producers:
                 pchilds = getnodesidfromp(r, p['id'])
                 for c in pchilds:
@@ -853,20 +853,20 @@ class Context:
             nnames = {x['name'] for x in nchilds}
             dids = {x['id'] for x in nchilds if x['name'] not in pnames}
             for e in dids:
-                logging.info("Node: " + str(id) + ", Type: " + node['datasource']['type'] + ", deleting obsolete child: '" + str(e) + "' ...")
+                logging.info(f"Node: {id}, Type: {node['datasource']['type']}, deleting obsolete child: '{e}' ...")
                 self.deletenode(e)
             for n in pnames - nnames:
-                logging.info("Node: " + str(id) + ", Type: " + node['datasource']['type'] + ", creating new child: '" + n + "' ...")
+                logging.info(f"Node: {id}, Type: {node['datasource']['type']}, creating new child: '{n}' ...")
                 self.createnode(node['id'], n)
             nchilds = [self.getnode(x) for x in getnodesidfromp(r, id)]
             for c in nchilds:
                 if 'aggregatormethod' in c['datasource'] and 'aggregatortimefilter' in c['datasource']:
                     if c['datasource']['aggregatormethod'] != aggregatormethod or c['datasource']['aggregatortimefilter'] != aggregatortimefilter:
-                        logging.info("Node: " + str(c['id'])+ ", Type: " + c['datasource']['type'] + ", deleting cache if exists ...")
+                        logging.info(f"Node: {c['id']}, Type: {c['datasource']['type']}, deleting cache if exists ...")
                         self.deletecache(c['id'])
                 tpath = [x['path'] for x in cproducers[c['name']]]
                 aggregatorselector = '|'.join(tpath)
-                r.execute("update nodes set type='A', producers='" + json.dumps(cproducers[c['name']]) + "', aggregated=now(), aggregatorselector='" + aggregatorselector + "', aggregatortake=" + str(aggregatortake) + ", aggregatortimefilter='" + aggregatortimefilter + "', aggregatorskip=" + str(aggregatorskip) + ", aggregatorsort='" + aggregatorsort + "', aggregatormethod='" + aggregatormethod + "' where id =" + str(c['id']))
+                r.execute(f"update nodes set type='A', producers='{json.dumps(cproducers[c['name']])}', aggregated=now(), aggregatorselector='{aggregatorselector}', aggregatortake={aggregatortake}, aggregatortimefilter='{aggregatortimefilter}', aggregatorskip={aggregatorskip}, aggregatorsort='{aggregatorsort}', aggregatormethod='{aggregatormethod}' where id ={c['id']}")
         del self.cache['nodes'][id]
         node = self.getnode(id)
         self.getsource(node)
@@ -882,11 +882,11 @@ class Context:
             return tnode
         producers = tnode['datasource']['producers']
         if fid in [producer['id'] for producer in producers]:
-            self.status.pusherrmessage(fpath + ': this node is already included in the list of producers!')
+            self.status.pusherrmessage(f'{fpath}: this node is already included in the list of producers!')
             return tnode
         producers.append(dict(path=getpath(self, r, fid), id=fid))
-        if 'aggregatorselector' not in tnode['datasource']: r.execute("update nodes set type='L', producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + getpath(self, r, fid) + '$' + "', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none' where id =" + str(tid))
-        else: r.execute("update nodes set producers='" + json.dumps(producers) + "', aggregated=now(), aggregatorselector='" + tnode['datasource']['aggregatorselector'] + '|' + getpath(self, r, fid) + '$' +"', aggregatortake=" + str(int(tnode['datasource']['aggregatortake']) +  1) + " where id =" + str(tid))
+        if 'aggregatorselector' not in tnode['datasource']: r.execute(f"update nodes set type='L', producers='{json.dumps(producers)}', aggregated=now(), aggregatorselector='{getpath(self, r, fid)}$', aggregatortake=1, aggregatortimefilter='.', aggregatorskip=0, aggregatorsort='desc', aggregatormethod='$none' where id ={tid}")
+        else: r.execute(f"update nodes set producers='{json.dumps(producers)}', aggregated=now(), aggregatorselector='{tnode['datasource']['aggregatorselector']}|{getpath(self, r, fid)}$', aggregatortake={int(tnode['datasource']['aggregatortake'])+1} where id ={tid}")
         del self.cache['nodes'][tid]
         tnode = self.getnode(tid)
         return tnode
@@ -902,12 +902,12 @@ class Context:
         extension = liveobject['extension']
         server = liveobject['id']
         options = liveobject['options']
-        r.execute('drop server if exists ' + server + ' cascade')
-        r.execute('create server ' + server + ' foreign data wrapper ' + extension + " options (" + options + ")")
-        r.execute('grant usage on foreign server ' + server + ' to postgres')
+        r.execute(f'drop server if exists {server} cascade')
+        r.execute(f'create server {server} foreign data wrapper {extension} options ({options})')
+        r.execute(f'grant usage on foreign server {server} to postgres')
         user = liveobject['user']
         password = liveobject['password']
-        r.execute('create user mapping for postgres server ' + server + " options (user '" + user + "', password '" + password + "')")
+        r.execute(f"create user mapping for postgres server {server} options (user '{user}', password '{password}')")
         collections = []
         for t in liveobject['tables']:
             description = liveobject['tables'][t]['description']
@@ -918,7 +918,7 @@ class Context:
             if extension == 'postgres_fdw': r.execute('create foreign table foreign_' + t + '(' + desc + ') server ' + server + " options (schema_name '" + schema + "', table_name '" + t + "')")
             collections.append(t)
         self.setschema()
-        r.execute("update nodes set type='D', aggregated=now(), liveobject='" + loname + "' where id = " + str(id))
+        r.execute(f"update nodes set type='D', aggregated=now(), liveobject='{loname}' where id = {id}")
         del self.cache['nodes'][id]
         node = self.getnode(id)
         return node
@@ -931,7 +931,7 @@ class Context:
             if rid != trashid:
                 self.deletesource(rid)
                 self.deletecache(rid)
-                r.execute("delete from nodes where id = " + str(rid))
+                r.execute(f"delete from nodes where id = {rid}")
     
     def expand(self, pattern, sort, take, skip):
         r = self.nrepo
@@ -981,8 +981,8 @@ class Context:
     
     def readsource(self, id, stream=False):
         r = self.nrepo
-        if stream: x = r.execute("select id as rid, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections, stream from sources where id = " + str(id))
-        else: x = r.execute("select id as rid, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from sources where id = " + str(id))
+        if stream: x = r.execute(f"select id as rid, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections, stream from sources where id = {id}")
+        else: x = r.execute(f"select id as rid, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from sources where id = {id}")
         o = Object()
         for rx in x:
             o.rid = rx['rid']
@@ -1000,7 +1000,7 @@ class Context:
 
     def unload(self, id):
         r = self.nrepo
-        logging.info("Unloading node: " + str(id) + " ...")
+        logging.info(f"Unloading node: {id} ...")
         path = getpath(self, r, id)
         archive = path.replace('/', '_')[1:] + '-unload.zip'
         fname = '/tmp/' + archive
@@ -1013,10 +1013,10 @@ class Context:
         schema = node['datasource']['cache']['name']
         self.setschema(schema)
         for collection in node['datasource']['collections']:
-            logging.info("Unloading collection: " + collection + " ...")
+            logging.info(f"Unloading collection: {collection} ...")
             d = dict(collection=collection, desc=dict(), data=[])
             desc = OrderedDict()
-            x = r.execute("select column_name, data_type from information_schema.columns where table_name = '" + collection.lower() + "' and table_schema = '" + schema + "'")
+            x = r.execute(f"select column_name, data_type from information_schema.columns where table_name = '{collection.lower()}' and table_schema = '{schema}'")
             for row in x.fetchall(): desc[row['column_name']] = row['data_type']
             request = 'select '
             for k in desc:
@@ -1034,29 +1034,29 @@ class Context:
                         if k != 'kairos_nodeid': res[k] = x[k]
                     d['data'].append(res)
                     if nbrec == cut:
-                        logging.info("Writing file: " + collection + str(recordset) + " ...")
+                        logging.info(f"Writing file: {collection}{recordset} ...")
                         zip.write(collection + str(recordset), json.dumps(d, sort_keys=True, indent=4))
                         recordset += 1
                         d['data']=[]
                         nbrec = 0
             if nbrec > 0: 
-                logging.info("Writing file: " + collection + str(recordset) + " ...")
+                logging.info(f"Writing file: {collection}{recordset} ...")
                 zip.write(collection + str(recordset), json.dumps(d, sort_keys=True, indent=4))
         zip.close()
-        logging.info("Unloading node: " + id + ", file is ready to download !")
+        logging.info(f"Unloading node: {id}, file is ready to download !")
         return (archive, open(fname, 'rb').read())
 
     def createcache(self, nid):
         r = self.nrepo
-        schname = 'cache_' + str(nid)
-        r.execute("create schema " + schname)
+        schname = f'cache_{nid}'
+        r.execute(f"create schema {schname}")
         r.execute("insert into caches (id, name, created, queries, collections) values(%s, %s, now(), %s, %s)", (nid, schname, json.dumps(dict()), json.dumps(dict())))
     
     def deletecache(self, nid):
         r = self.nrepo
-        logging.info("Node: " + str(nid) + ", deleting cache: cache_" + str(nid) + "...")
-        r.execute("delete from caches where id = " + str(nid))
-        with suppress(Exception): r.execute("drop schema cache_" + str(nid) + " cascade")
+        logging.info(f"Node: {nid}, deleting cache: cache_{nid} ...")
+        r.execute(f"delete from caches where id = {nid}")
+        with suppress(Exception): r.execute(f"drop schema cache_{nid} cascade")
 
     def getcache(self, node):
         if node['icon'] in ['A', 'B', 'C', 'D']:
@@ -1070,7 +1070,7 @@ class Context:
     def readcache(self, id):
         r = self.nrepo
         o = Object()
-        for rx in r.execute("select id as rid, name, queries, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from caches where id = " + str(id)):
+        for rx in r.execute(f"select id as rid, name, queries, to_char(created, 'YYYY-MM-DD HH24:MI:SS.MS') as created, collections from caches where id = {id}"):
             o.rid = rx['rid']
             o.name = rx['name']
             o.queries = json.loads(rx['queries'])
@@ -1121,7 +1121,7 @@ class Context:
         r = self.nrepo
         node = self.getnode(nid)
         ntype = node['datasource']['type']
-        logging.info("Node: " + str(nid) + ", Type: " + ntype + ", executing query: '" + qid + "' ...")
+        logging.info(f"Node: {nid}, Type: {ntype}, executing query: '{qid}' ...")
         self.getcache(node)
         result = []
         if ntype in ['C', 'L']:
@@ -1134,19 +1134,19 @@ class Context:
             query = self.getquery(qid)
             query = dict(id=qid) if query==None else query
             if 'name' not in node['datasource']['cache']: 
-                self.status.pusherrmessage('Cache for node id: ' + str(nid) + " doesn't exist!")
+                self.status.pusherrmessage(f"Cache for node id: {nid} doesn't exist!")
                 return
             self.setschema(node['datasource']['cache']['name'])
             table = qid.lower()
-            for b in r.execute("select exists(select * from information_schema.tables where table_schema = current_schema() and table_name = '" + table + "') foo"): existstable = b['foo']
+            for b in r.execute(f"select exists(select * from information_schema.tables where table_schema = current_schema() and table_name = '{table}') foo"): existstable = b['foo']
             if existstable: 
                 if 'filterable' in query and query['filterable']:
-                    for x in r.execute("select * from " + table + " where label in (select label from (select label, sum(value) weight from " + table + " group by label order by weight desc limit " + str(limit) + ") as foo)"):
+                    for x in r.execute(f"select * from {table} where label in (select label from (select label, sum(value) weight from {table} group by label order by weight desc limit {limit}) as foo)"):
                         result.append(x)
                 else:
-                    for x in r.execute("select * from " + table):
+                    for x in r.execute(f"select * from {table}"):
                         result.append(x)
-            else: self.status.pusherrmessage('Table ' + table.upper() + " doesn't exist within schema " + node['datasource']['cache']['name'])
+            else: self.status.pusherrmessage(f"Table {table.upper()} doesn't exist within schema {node['datasource']['cache']['name']}")
         return result
     
     def displaycollection(self, id, collection):
@@ -1161,34 +1161,34 @@ class Context:
             databases = getdatabases(r)
             nodesdb = [databases[x] for x in databases if 'kairos_user_' in x or 'kairos_group_' in x]
         for db in nodesdb:
-            with suppress(Exception): shutil.rmtree('/export/' + db)
-            os.mkdir('/export/' + db)
-            os.chmod('/export/' + db, 0o777)
-            command = 'pg_dump -Fd -j ' + str(multiprocessing.cpu_count()) + ' -f /export/' + db + '/database.dump ' + db
+            with suppress(Exception): shutil.rmtree(f'/export/{db}')
+            os.mkdir(f'/export/{db}')
+            os.chmod(f'/export/{db}', 0o777)
+            command = f'pg_dump -Fd -j {multiprocessing.cpu_count()} -f /export/{db}/database.dump {db}'
             ag = subprocess.run(['su', '-', 'postgres', '-c', command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if  ag.returncode: self.status.pusherrmessage("Unable to export database: " + db + " for an uknown reason!")
+            if  ag.returncode: self.status.pusherrmessage(f"Unable to export database {db} for an uknown reason!")
     
     def importdatabases(self, nodesdb):
         r = self.grepo
         if len(nodesdb) == 0:
             for d in os.listdir('/export'):
-                wdir = '/export/' + d
+                wdir = f'/export/{d}'
                 if 'kairos_' in d and os.path.isdir(wdir): nodesdb.append(d)
         for db in nodesdb:
-            r.execute("UPDATE pg_database SET datallowconn = 'false' WHERE datname = '" + db +"'")
-            r.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '" + db + "'")
+            r.execute(f"update pg_database set datallowconn = 'false' where datname = '{db}'")
+            r.execute(f"select pg_terminate_backend(pid) from pg_stat_activity where datname = '{db}'")
             ag = subprocess.run(['su', '-', 'postgres', '-c', 'psql -c "drop database ' + db + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
-                self.status.pusherrmessage("Unable to drop database: " + db + " during import!")
+                self.status.pusherrmessage(f"Unable to drop database {db} during import!")
                 continue
             ag = subprocess.run(['su', '-', 'postgres', '-c', 'psql -c "create database ' + db + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
-                self.status.pusherrmessage("Unable to create database: " + db + " during import!")
+                self.status.pusherrmessage(f"Unable to create database {db} during import!")
                 continue
-            command = 'pg_restore -j ' + str(multiprocessing.cpu_count()) + ' -d ' + db + ' /export/' + db + '/database.dump'
+            command = f'pg_restore -j {multiprocessing.cpu_count()} -d {db} /export/{db}/database.dump'
             ag = subprocess.run(['su', '-', 'postgres', '-c', command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
-                self.status.pusherrmessage("Error during import of database: " + db)
+                self.status.pusherrmessage(f"Error during import of database: {db}")
 
     def clearprogenycaches(self, id):
         r = self.nrepo
@@ -1227,7 +1227,7 @@ class Context:
         if query == None: return
         self.getcache(node)
         ntype = node['datasource']['type']
-        logging.info("Node: " + str(nid) + ", Type: " + ntype + ", checking query cache: '" + qid + "' ...")
+        logging.info(f"Node: {nid}, Type: {ntype}, checking query cache: '{qid}' ...")
         if ntype in ['A', 'B', 'D']:
             todo = True if qid not in node['datasource']['cache']['queries'] else False
             todo = True if "nocache" in query and query["nocache"] else todo            
@@ -1237,28 +1237,27 @@ class Context:
             if todo:
                 self.setschema(node['datasource']['cache']['name'])
                 table = qid
-                logging.info("Node: " + str(nid) + ", Type: " + ntype + ", removing old query cache: '" + qid + "' ...")
-                r.execute("drop table if exists " + table)
-                logging.info("Node: " + str(nid) + ", Type: " + ntype + ", building new query cache: '" + qid + "' ...")
+                logging.info(f"Node: {nid}, Type: {ntype}, removing old query cache: '{qid}' ...")
+                r.execute(f"drop table if exists {table}")
+                logging.info(f"Node: {nid}, Type: {ntype}, building new query cache: '{qid}' ...")
                 if 'userfunctions' in query:
                     for ufn in query['userfunctions']:
                         self.setschema()
                         uf = self.getfunction(ufn)
                         self.setschema(node['datasource']['cache']['name'])
                         r.execute(uf["function"])
-                try: r.execute("create table " + table + " as select * from (" + query['request'] + ") as foo")
+                try: r.execute(f"create table {table} as select * from ({query['request']}) as foo")
                 except: 
-                    self.status.pusherrmessage('Check if data exists for collections: ' + str(query['collections']))
+                    self.status.pusherrmessage(f"Check if data exists for collections: {query['collections']}")
                     return
                 node['datasource']['cache']['queries'][qid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
-                logging.info("Node: " + str(nid) + ", Type: " + ntype + ", updating cache with query info: '" + qid + "' ...")
+                logging.info(f"Node: {nid}, Type: {ntype}, updating cache with query info: '{qid}' ...")
                 self.setschema()
-                r.execute("update caches set queries = '" + json.dumps(node['datasource']['cache']['queries']) + "' where id = " + str(nid))
+                r.execute(f"update caches set queries = '{json.dumps(node['datasource']['cache']['queries'])}' where id = {nid}")
                 del self.cache['nodes'][nid]
                 node = self.getnode(nid)
                 self.getcache(node)
-
-            else: logging.info("Node: " + str(nid) + ", Type: " + ntype + ", nothing to do for query cache: '" + qid + "' ...")
+            else: logging.info(f"Node: {nid}, Type: {ntype}, nothing to do for query cache: '{qid}' ...")
     
     def getallparts (self, id, v=None):
         d = dict()
@@ -1332,7 +1331,7 @@ class Context:
             for q in queries:
                 query = self.getquery(q)
                 if query == None:
-                    self.status.pusherrmessage('Query "' + str(q) + '"' + " doesn't exist!")
+                    self.status.pusherrmessage(f"Query '{q}' doesn't exist!")
                     return
                 if 'nocache' in query and query['nocache']: self.nocache = True
                 for e in query['collections']: collections.add(e)
@@ -1346,8 +1345,8 @@ class Context:
         if not recursive:
             logging.info('Sheduled operations:')
             for operation in operations:
-                if operation['operation'] in ['checkpart', 'removepart', 'removetable', 'createpartA', 'createpartB', 'createpartD']: logging.info('Node: ' + str(operation['nid']) + ', Operation: ' + operation['operation'] + ', Partition: ' + str(operation['part']) + ', Collections: ' + str(operation['collections']))
-                if operation['operation'] in ['buildquerycache']: logging.info('Node: ' + str(operation['nid']) + ', Operation: ' + operation['operation'] + ', Query: ' + str(operation['qid']))
+                if operation['operation'] in ['checkpart', 'removepart', 'removetable', 'createpartA', 'createpartB', 'createpartD']: logging.info(f"Node: {operation['nid']}, Operation: {operation['operation']}, Partition: {operation['part']}, Collections: {operation['collections']}")
+                if operation['operation'] in ['buildquerycache']: logging.info(f"Node: {operation['nid']}, Operation: {operation['operation']}, Query: {operation['qid']}")
         return operations
     
     def executecacheoperations(self, operations):
@@ -1379,23 +1378,22 @@ class Context:
 
         if ntype in ['A']:
             for collection in collections:
-                logging.info("Node: " + str(nid) + ", Type: " + ntype + ", checking partition cache: " + str(part) + " for collection: '" + collection + "' ...")
+                logging.info(f"Node: {nid}, Type: {ntype}, checking partition cache: {part} for collection: '{collection}' ...")
                 todo = False
-                #if collection not in pnode['datasource']['collections']: continue
                 datepart = cachecol[collection][str(part)] if collection in cachecol and str(part) in cachecol[collection] else None
                 if collection not in pcachecol: continue
                 datesource = max([pcachecol[collection][x]  for x in  pcachecol[collection]])
                 todo = True if datepart == None else todo
                 todo = True if datepart != None and datepart < datesource else todo
                 if todo: 
-                    logging.warning("Node: " + str(nid) + " (" + getpath(self, self.nrepo, nid) + ") must be built or built again for partition " + str(part) + " (" + getpath(self, self.nrepo, part) + ") and collection " + str(collection) + "!")
+                    logging.warning(f"Node: {nid} ({getpath(self, self.nrepo, nid)}) must be built or built again for partition {part} ({getpath(self, self.nrepo, part)}) and collection {collection}!")
                     self.removecollections.add(collection)
                     self.createcollections.add(collection)
 
         if ntype in ['B']:
             self.getsource(node)
             for collection in collections:
-                logging.info("Node: " + str(nid) + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
+                logging.info(f"Node: {nid}, Type: {ntype}, checking collection cache: '{collection}' ...")
                 if collection not in node['datasource']['collections']: continue
                 analyzername = node['datasource']['collections'][collection]['analyzer']
                 analyzer = self.getanalyzer(analyzername)
@@ -1405,7 +1403,7 @@ class Context:
                 todo = True if datepart != None and node['datasource']['uploaded'] > datepart else todo
                 todo = True if datepart != None and analyzer['created'] > datepart else todo
                 if todo:
-                    logging.warning("Node: " + str(nid) + " (" + getpath(self, self.nrepo, nid) + ") must be built or built again for collection " + str(collection) + "!")
+                    logging.warning(f"Node: {nid} ({getpath(self, self.nrepo, nid)}) must be built or built again for collection {collection}!")
                     self.removecollections.add(collection)
                     self.createcollections.add(collection)
 
@@ -1414,13 +1412,13 @@ class Context:
             try: timeout = liveobject['retention']
             except: timeout = 60
             for collection in collections:
-                logging.info("Node: " + str(nid) + ", Type: " + ntype + ", checking collection cache: '" + collection + "' ...")
+                logging.info(f"Node: {nid}, Type: {ntype}, checking collection cache: '{collection}' ...")
                 todo = False
                 datepart = cachecol[collection][str(nid)] if collection in cachecol and str(nid) in cachecol[collection] else None
                 todo = True if datepart == None else todo
                 todo = True if datepart != None and (datetime.now() - datetime.strptime(datepart, '%Y-%m-%d %H:%M:%S.%f')).seconds > timeout else todo
                 if todo: 
-                    logging.warning("Node: " + str(nid) + " (" + getpath(self, self.nrepo, nid) + ") must be built or built again for collection " + str(collection) + "!")
+                    logging.warning(f"Node: {nid} ({getpath(self, self.nrepo, nid)}) must be built or built again for collection {collection}!")
                     self.removecollections.add(collection)
                     self.createcollections.add(collection)
 
@@ -1433,13 +1431,13 @@ class Context:
         if 'name' in node['datasource']['cache']:
             self.setschema(node['datasource']['cache']['name'])
             for collection in collections:
-                logging.info("Node: " + str(nid) + ", Type: " + ntype + ", removing table: " + str(nid) + " for collection: '" + collection + "' ...")
+                logging.info(f"Node: {nid}, Type: {ntype}, removing table: {nid} for collection: '{collection}' ...")
                 r.execute("drop table if exists " + collection)
         if 'collections' in node['datasource']['cache']:
             for collection in collections:
                 if collection in node['datasource']['cache']['collections']: del node['datasource']['cache']['collections'][collection]
             self.setschema()
-            r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
+            r.execute(f"update caches set collections = '{json.dumps(node['datasource']['cache']['collections'])}' where id = {nid}")
             del self.cache['nodes'][nid]
             node = self.getnode(nid)
             self.getcache(node)
@@ -1454,18 +1452,18 @@ class Context:
         if 'name' in node['datasource']['cache']:
             self.setschema(node['datasource']['cache']['name'])
             for collection in collections:
-                logging.info("Node: " + str(nid) + ", Type: " + ntype + ", removing partition: " + str(part) + " for collection: '" + collection + "' ...")
+                logging.info(f"Node: {nid}, Type: {ntype}, removing partition: {part} for collection: '{collection}' ...")
                 if ntype in ['A']:
-                    partition = collection + '_' + str(part)
-                    r.execute("drop table if exists " + partition)
+                    partition = f'{collection}_{part}'
+                    r.execute(f"drop table if exists {partition}")
                 else:
-                    r.execute("drop table if exists " + collection)
+                    r.execute(f"drop table if exists {collection}")
         if 'collections' in node['datasource']['cache']:
             for collection in collections:
                 if collection in node['datasource']['cache']['collections']:
                     if part in node['datasource']['cache']['collections'][collection]: del node['datasource']['cache']['collections'][collection][part]
             self.setschema()
-            r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
+            r.execute(f"update caches set collections = '{json.dumps(node['datasource']['cache']['collections'])}' where id = {nid}")
 
     def createpartA(self, nid, part, collections):
         if collections == None: collections = self.createcollections
@@ -1475,16 +1473,16 @@ class Context:
         node = self.getnode(nid)
         self.getcache(node)
         ntype = node['datasource']['type']
-        logging.info("Node: " + str(nid) + ", Type: " + ntype + ", building new partition cache: " + str(part) + " for collections '" + str(collections) + "' ...")
+        logging.info(f"Node: {nid}, Type: {ntype}, building new partition cache: {part} for collections '{collections}' ...")
         self.setschema()
         function = self.getaggregator(node['datasource']['aggregatormethod'])
         meet = self.getfunction('meet')
-        x = r.execute("select distinct table_name from information_schema.columns where table_schema='" + node['datasource']['cache']['name'] + "'")
+        x = r.execute(f"select distinct table_name from information_schema.columns where table_schema='{node['datasource']['cache']['name']}'")
         schdesc = [row['table_name'] for row in x.fetchall()]
         pnode = self.getnode(part)
         self.getcache(pnode)
         inschname = pnode['datasource']['cache']['name']
-        x = r.execute("select distinct table_name from information_schema.columns where table_schema='" + inschname + "'")
+        x = r.execute(f"select distinct table_name from information_schema.columns where table_schema='{inschname}'")
         inschdesc = [row['table_name'] for row in x.fetchall()]
         queues = dict()
         tabledesc = dict()
@@ -1493,30 +1491,29 @@ class Context:
         for collection in collections:
             if collection.lower() not in inschdesc: continue
             if collection.lower() not in schdesc:
-                request = "select column_name, data_type from information_schema.columns where table_name = '" + collection.lower() + "' and table_schema = '" +  pnode['datasource']['cache']['name'] + "'"
+                request = f"select column_name, data_type from information_schema.columns where table_name = '{collection.lower()}' and table_schema = '{pnode['datasource']['cache']['name']}'"
                 coldesc = ', '.join([row['column_name'] + ' ' + row['data_type'] for row in r.execute(request)])
-                request = "create table " + collection.lower() + " ("  + coldesc + ") partition by list(kairos_nodeid)"
+                request = f"create table {collection.lower()} ({coldesc}) partition by list(kairos_nodeid)"
                 r.execute(request)
-            pname = collection + '_' + str(part)
-            request = "create table " + pname.lower() + " partition of " + collection.lower() + " for values in ('" + str(part) + "')"
+            pname = f'{collection}_{part}'
+            request = f"create table {pname.lower()} partition of {collection.lower()} for values in ('{part}')"
             r.execute(request)
             tabledesc[collection] = OrderedDict()
-            x = r.execute("select column_name, data_type from information_schema.columns where table_name = '" + collection.lower() + "' and table_schema = '" +  node['datasource']['cache']['name'] + "'")
+            x = r.execute(f"select column_name, data_type from information_schema.columns where table_name = '{collection.lower()}' and table_schema = '{node['datasource']['cache']['name']}'")
             for row in x.fetchall(): tabledesc[collection][row['column_name']] = row['data_type']
             queues[collection] = multiprocessing.Queue()
 
         def write_to_queue(collection):
             try:
-                logging.info("Node: " + str(nid) + ", Type: " + ntype + ", building partition: " + str(part) + " for collection: '" + collection + "' ...")
+                logging.info(f"Node: {nid}, Type: {ntype}, building partition: {part} for collection: '{collection}' ...")
                 pnode = self.getnode(part)
                 self.getcache(pnode)
                 inschname = pnode['datasource']['cache']['name']
                 lgby = [k for k in tabledesc[collection] if tabledesc[collection][k] == 'text']
                 lavg = [k for k in tabledesc[collection] if tabledesc[collection][k] == 'real']
                 lsum = [k for k in tabledesc[collection] if tabledesc[collection][k] in ['integer', 'bigint']]
-                #selector = ', '.join(tabledesc[collection].keys()) + ', ' + str(part) + ' as kairos_nodeid'
-                where = " where meet(timestamp,'" + node['datasource']['aggregatortimefilter'] + "') or timestamp='00000000000000000'" if 'timestamp' in lgby else ' '
-                subrequest = "select * from " + inschname + "." + collection.lower() + where
+                where = f" where meet(timestamp,'{node['datasource']['aggregatortimefilter']}') or timestamp='00000000000000000'" if 'timestamp' in lgby else ' '
+                subrequest = f"select * from {inschname}.{collection.lower()}{where}"
                 request = "select "
                 for x in lgby: request = request + function["name"] + '(timestamp) as timestamp, ' if x == "timestamp" else request + x + ', '
                 for x in lavg: request += 'sum(coalesce(' + x + ', 0)) as ' + x + ', '
@@ -1524,7 +1521,7 @@ class Context:
                 request = request[:-2] + ' from (' + subrequest + ') as foo group by '
                 for x in lgby: request = request + function["name"] + '(timestamp), ' if x == 'timestamp' else request + x + ', '
                 request = request[:-2]
-                workrequest = 'select ' + function["name"] + '(timestamp) as timestamp, kairos_nodeid, count(*) num from (select distinct timestamp, kairos_nodeid from ' + inschname  + '.' + collection + where +') as foo group by ' + function["name"] + '(timestamp), kairos_nodeid'
+                workrequest = f'select {function["name"]}(timestamp) as timestamp, kairos_nodeid, count(*) num from (select distinct timestamp, kairos_nodeid from {inschname}.{collection}{where}) as foo group by {function["name"]}(timestamp), kairos_nodeid'
                 divisor = dict()
                 context = Context(nodesdb=nodesdb)
                 context.setschema(node['datasource']['cache']['name'])
@@ -1549,7 +1546,7 @@ class Context:
             buffer = io.StringIO()
             bufferempty = True
             counter = 0
-            partname = collection + '_' + str(part)
+            partname = f'{collection}_{part}'
             try: limit = int(os.environ['BUFFER'])
             except: limit = 10000
             globalcounter = 0
@@ -1559,11 +1556,11 @@ class Context:
                     if record == 'KAIROS_DONE': break
                     bufferempty = False
                     counter += 1
-                    logging.debug('Buffer content at line: ' + str(counter) + ', record: ' + str(record))
+                    logging.debug(f'Buffer content at line: {counter}, record: {record}')
                     buffer.write(record)
                     if counter == limit:
                         buffer.seek(0)
-                        logging.info("Writing " + str(counter) + " records to partition: " + partname + "...")
+                        logging.info(f"Writing {counter} records to partition: {partname}...")
                         context.nrepo.copy(buffer, partname, tuple(tabledesc[collection].keys()))
                         buffer = io.StringIO()
                         globalcounter += counter
@@ -1578,13 +1575,13 @@ class Context:
             if not bufferempty:
                 try:
                     buffer.seek(0)
-                    logging.info("Writing " + str(counter) + " records to partition: " + partname + "...")
+                    logging.info(f"Writing {counter} records to partition: {partname}...")
                     context.nrepo.copy(buffer, partname, tuple(tabledesc[collection].keys()))
                     globalcounter += counter
                 except:
                     self.status.pusherrmessage(str(sys.exc_info()[1]))
                     queues['ERROR_QUEUE'].put(collection)
-            logging.info("Partition: " + partname + ": " + str(globalcounter) + " records have been written! ")
+            logging.info(f"Partition: {partname}: {globalcounter} records have been written! ")
             context.free()
         
         try:
@@ -1606,9 +1603,9 @@ class Context:
                     queues[collection].join_thread()
             queues['ERROR_QUEUE'].close()
             queues['ERROR_QUEUE'].join_thread()
-            logging.info("Node: " + str(nid) + ", Type: A, updating cache with collections info: '" + str(collections) + "' ...")
+            logging.info(f"Node: {nid}, Type: A, updating cache with collections info: '{collections}' ...")
             self.setschema()
-            r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
+            r.execute(f"update caches set collections = '{json.dumps(node['datasource']['cache']['collections'])}' where id = {nid}")
             del self.cache['nodes'][nid]
             node = self.getnode(nid)
             self.getcache(node)
@@ -1635,10 +1632,10 @@ class Context:
             readheader[collection] = True
             for member in node['datasource']['collections'][collection]['members']: members[member] = self.getanalyzer( node['datasource']['collections'][collection]['analyzer'])
         
-        logging.info("Node: " + str(nid) + ", Type: B, building collections caches for collections: '" + str(collections) + "' ...")
+        logging.info(f"Node: {nid}, Type: B, building collections caches for collections: '{collections}' ...")
 
         def write_to_queue(col, d, v, n):
-            logging.debug('Writing to queue the following collection:' + col)
+            logging.debug(f'Writing to queue the following collection: {col}')
             if writeheader[col]:
                 record = json.dumps(dict(header='KAIROS_START', desc=d)) 
                 queues[col].put(record)
@@ -1668,20 +1665,20 @@ class Context:
                     if type(record) == type(dict()) and 'header' in record and record['header'] == 'KAIROS_START':
                         if readheader[col]:
                             record['desc']['kairos_nodeid'] = 'text'
-                            request = 'create table ' + col + '('
+                            request = f'create table {col}('
                             description= sorted(record['desc'].keys())
-                            for k in description: request += k + ' ' + record['desc'][k] +  ', '
-                            request = request[:-2] + ')'
+                            for k in description: request += f'{k} {record["desc"][k]}, '
+                            request = f'{request[:-2]})'
                             context.nrepo.execute(request)
                             readheader[col] = False
                     else:
                         bufferempty = False
                         counter += 1
-                        logging.debug('Buffer content at line: ' + str(counter) + ', record: ' + str(record))
+                        logging.debug(f'Buffer content at line: {counter}, record: {record}')
                         buffer.write(record)
                         if counter == limit:
                             buffer.seek(0)
-                            logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
+                            logging.info(f"Writing {counter} records to collection: {col}...")
                             context.nrepo.copy(buffer, col, tuple(description))
                             buffer = io.StringIO()
                             globalcounter += counter
@@ -1696,23 +1693,23 @@ class Context:
             if not bufferempty:
                 try:
                     buffer.seek(0)
-                    logging.info("Writing " + str(counter) + " records to collection: " + col + "...")
+                    logging.info(f"Writing {counter} records to collection: {col}...")
                     context.nrepo.copy(buffer, col, tuple(description))
                     globalcounter += counter
-                    logging.info("Collection: " + col + ": " + str(globalcounter) + " records have been written! ")
+                    logging.info(f"Collection: {col}: {globalcounter} records have been written! ")
                 except:
                     self.status.pusherrmessage(str(sys.exc_info()[1]))
                     queues['ERROR_QUEUE'].put(col)
             context.free()
                             
         thezip = zipfile.ZipFile(io.BytesIO(node['datasource']['stream']))
-        logging.info('Analyzing archive attached to node ' + str(nid) + '...')
+        logging.info(f'Analyzing archive attached to node {nid}...')
         listen = write_to_queue
 
         def do(member):
             if member in members:
                 analyzer = Analyzer(members[member], set(collections), listen, nid)
-                logging.info('Analyzing member: ' + member + '...')
+                logging.info(f'Analyzing member: {member}...')
                 status = analyzer.analyze(thezip.read(member), member)
                 if status.error: queues['ERROR_QUEUE'].put(member)
                 return None
@@ -1738,9 +1735,9 @@ class Context:
                 queues[collection].join_thread()
             queues['ERROR_QUEUE'].close()
             queues['ERROR_QUEUE'].join_thread()
-            logging.info("Node: " + str(nid) + ", Type: B, updating cache with collections info: '" + str(collections) + "' ...")
+            logging.info(f"Node: {nid}, Type: B, updating cache with collections info: '{collections}' ...")
             self.setschema()
-            r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
+            r.execute(f"update caches set collections = '{json.dumps(node['datasource']['cache']['collections'])}' where id = {nid}")
             del self.cache['nodes'][nid]
             node = self.getnode(nid)
             self.getcache(node)
@@ -1755,13 +1752,13 @@ class Context:
         ntype = node['datasource']['type']
         self.setschema(node['datasource']['cache']['name'])
         for collection in collections:
-            logging.info("Node: " + str(nid) + ", Type: " + ntype + ", building new collection cache: '" + collection + "' ...")
-            r.execute("create table " + collection + " as select '" + str(nid) + "'::text as kairos_nodeid, * from foreign_" + collection)
+            logging.info(f"Node: {nid}, Type: {ntype}, building new collection cache: '{collection}' ...")
+            r.execute(f"create table {collection} as select '{nid}'::text as kairos_nodeid, * from foreign_{collection}")
             if collection not in node['datasource']['cache']['collections']: node['datasource']['cache']['collections'][collection] = dict()
             node['datasource']['cache']['collections'][collection][nid] = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
-        logging.info("Node: " + str(nid) + ", Type: D, updating cache with collections info: '" + str(collections) + "' ...")
+        logging.info(f"Node: {nid}, Type: D, updating cache with collections info: '{collections}' ...")
         self.setschema()
-        r.execute("update caches set collections = '" + json.dumps(node['datasource']['cache']['collections']) + "' where id = " + str(nid))
+        r.execute(f"update caches set collections = '{json.dumps(node['datasource']['cache']['collections'])}' where id = {nid}")
         del self.cache['nodes'][nid]
         node = self.getnode(nid)
         self.getcache(node)
@@ -1774,16 +1771,15 @@ class Context:
             def __init__(self):
                 self.timeout = timeout
                 self.repository = repository
-                self.cachename = 'cache_' + str(id)
+                self.cachename = f'cache_{id}'
                 self.repository.setschema(self.cachename)
-                x = self.repository.execute("select distinct table_name from information_schema.columns where table_schema='" + self.cachename + "'")
-                if len([row['table_name'] for row in x.fetchall() if row['table_name'] == 'chartcache']) == 0:
-                    self.repository.execute("create table chartcache(k text primary key, v text)")
+                x = self.repository.execute(f"select distinct table_name from information_schema.columns where table_schema='{self.cachename}'")
+                if len([row['table_name'] for row in x.fetchall() if row['table_name'] == 'chartcache']) == 0: self.repository.execute("create table chartcache(k text primary key, v text)")
 
             def get(self, key):
                 self.repository.setschema(self.cachename)
                 ckey = hashlib.md5(json.dumps(key).encode('utf-8')).hexdigest()
-                x = self.repository.execute("select v from chartcache where k = '" + ckey + "'")
+                x = self.repository.execute(f"select v from chartcache where k = '{ckey}'")
                 lvalues = [row['v'] for row in x.fetchall()]
                 if len(lvalues) == 0: return None
                 jsonvalueout = lvalues[0]
@@ -1796,13 +1792,11 @@ class Context:
             def set(self, key, valuein):
                 self.repository.setschema(self.cachename)
                 ckey = hashlib.md5(json.dumps(key).encode('utf-8')).hexdigest()
-                x = self.repository.execute("select v from chartcache where k = '" + ckey + "'")
+                x = self.repository.execute(f"select v from chartcache where k = '{ckey}'")
                 lvalues = [row['v'] for row in x.fetchall()]
                 valueout = json.dumps(dict(timestamp=datetime.now().strftime('%s'), value=valuein))
-                if len(lvalues) == 0:
-                    self.repository.execute("insert into chartcache (k, v) values ('" + ckey + "', '" + valueout + "')")
-                else:
-                    self.repository.execute("update chartcache set v = '" + valueout + "' where k ='" + ckey + "'")
+                if len(lvalues) == 0: self.repository.execute(f"insert into chartcache (k, v) values ('{ckey}', '{valueout}')")
+                else:self.repository.execute(f"update chartcache set v = '{valueout}' where k ='{ckey}'")
         
         return ChartCache()
 
@@ -1966,5 +1960,5 @@ class Context:
                     if plotorientation == 'horizontal': a['x'] = getaposition(width, index=index, numleftyaxis=numleftyaxis, numrightyaxis=numrightyaxis, numxaxis=numxaxis)
                     else: a['y'] = getaposition(width, index=index, numleftyaxis=numleftyaxis, numrightyaxis=numrightyaxis, numxaxis=numxaxis, rows=rows)
                     index += 1
-        logging.debug('Generated figure: ' + json.dumps(chartobj))
+        logging.debug(f'Generated figure: {json.dumps(chartobj)}')
         return chartobj

@@ -24,7 +24,7 @@ class KairosNotifier:
         for d in os.listdir('/autoupload'):
             wdir = '/autoupload/' + d
             if 'kairos_' in d and os.path.isdir(wdir):
-                logging.info('Watching directory: ' + wdir + ' ...')
+                logging.info(f'Watching directory: {wdir} ...')
                 self.wm.add_watch(wdir, pyinotify.ALL_EVENTS)
                 for f in os.listdir(wdir): os.system('touch ' + wdir + '/' +f)
         self.eh = NotifyEventHandler()
@@ -34,25 +34,25 @@ class KairosNotifier:
         multiprocessing.current_process().name = 'NotifyProcess'
         logging.info('Starting notification process...')
         setproctitle.setproctitle('KairosNotifier')
-        logging.info('Process name: ' + setproctitle.getproctitle())
-        logging.info('Process id: ' + str(os.getpid()))
+        logging.info(f'Process name: {setproctitle.getproctitle()}')
+        logging.info(f'Process id: {os.getpid()}')
         self.notifier.loop()
 
 
 class NotifyEventHandler(pyinotify.ProcessEvent):
     def process_default(self, event):
-        logging.debug('from process_default: ' + str(event))
+        logging.debug(f'from process_default: {event}')
     def process_IN_CREATE(self, event):
         if event.path == '/autoupload' and event.maskname == 'IN_CREATE|IN_ISDIR' and event.dir:
-            logging.info('Watching a new directory: ' + event.pathname + ' ...')
+            logging.info(f'Watching a new directory: {event.pathname} ...')
             self.wm.add_watch(event.pathname, pyinotify.ALL_EVENTS)
     def process_IN_MODIFY(self, event):
         if 'kairos_' in event.path and not event.dir and os.path.isfile(event.pathname):
             if os.path.basename(event.pathname)[0] != '.':
-                logging.info("Uploading file '" + event.pathname + "' into database " + os.path.basename(event.path) + " ...")
-                status = os.system('kairos -s uploadnode --systemdb kairos_system_system --nodesdb ' + os.path.basename(event.path) + ' --id 1 --file ' + event.pathname)
+                logging.info(f"Uploading file '{event.pathname}' into database {os.path.basename(event.path)} ...")
+                status = os.system(f'kairos -s uploadnode --systemdb kairos_system_system --nodesdb {os.path.basename(event.path)} --id 1 --file {event.pathname}')
                 if status == 0: os.remove(event.pathname)
-                logging.info("File '" + event.pathname + "' has been uploaded to " + os.path.basename(event.path) + "!")
+                logging.info(f"File '{event.pathname}' has been uploaded to {os.path.basename(event.path)}!")
     def process_IN_ATTRIB(self, event):
         self.process_IN_MODIFY(event)
 

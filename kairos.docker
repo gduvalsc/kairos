@@ -48,7 +48,6 @@ RUN pip3 install setproctitle
 RUN pip3 install gunicorn
 RUN pip3 install psutil
 
-
 ### init postgresql db
 RUN ln -s /var/lib/pgsql /postgres
 COPY pgboot.tar /postgres/backups

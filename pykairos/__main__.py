@@ -46,11 +46,11 @@ logging.basicConfig(format='%(asctime)s %(process)5s %(levelname)8s %(message)s'
 if args.notifier:
     n = KairosNotifier()
 if args.launcher:
-    logging.info('This system is configured with ' + str(multiprocessing.cpu_count()) + ' cpus.')
+    logging.info(f'This system is configured with {multiprocessing.cpu_count()} cpus.')
     import setproctitle
     setproctitle.setproctitle('KairosMain')
-    logging.info('Process name: ' + setproctitle.getproctitle())
-    logging.info('Process id: ' + str(os.getpid()))
+    logging.info(f'Process name: {setproctitle.getproctitle()}')
+    logging.info(f'Process id: {os.getpid()}')
     workers = 1 if args.monoprocess else multiprocessing.cpu_count() + 1
     gunicorn = ['gunicorn']
     gunicorn.extend(['-b', '0.0.0.0:443'])
@@ -122,18 +122,18 @@ if args.makeboot:
        print('l', end='', flush=True)
        logging.info('Loading ' + o + " ...")
        try: 
-           result = json.loads(subprocess.getoutput("kairos -s uploadobject --nodesdb kairos_system_system --file '" + o + "'"))
+           result = json.loads(subprocess.getoutput(f"kairos -s uploadobject --nodesdb kairos_system_system --file '{o}'"))
            success = result['success']
-           if not success: logging.error('Error during loading of: ' + o)
+           if not success: logging.error(f'Error during loading of: {o}')
            else: logging.info(json.dumps(result))
        except:
-           logging.error('Error during loading of: ' + o)
+           logging.error(f'Error during loading of: {o}')
            subprocess.run(['cat', '/var/log/kairos/kairos.log'])
            raise
     print('', flush=True)
-    logging.info(str(len(objects)) + ' found objects in /tmp/objects!')
+    logging.info(f'{len(objects)} found objects in /tmp/objects!')
     data = json.loads(subprocess.getoutput('kairos -s listobjects --nodesdb kairos_system_system --systemdb kairos_system_system'))['data']
-    logging.info("System database has " + str(int((len(data)) / 2)) + " objects.")
+    logging.info(f"System database has {int((len(data)) / 2)} objects.")
     try:
         assert len(objects) == int(len(data) / 2)
     except:
