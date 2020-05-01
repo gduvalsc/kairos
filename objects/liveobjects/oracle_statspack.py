@@ -68,7 +68,7 @@ class UserObject(dict):
         "orahqt": "orahqt as (select sql_id, rtrim(xmlagg(xmlelement(e,sql_text,'').extract('//text()') order by piece).GetClobVal(),',') as sql_text from " + SCHEMA + ".stats$sqltext group by sql_id)",
     }
 
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "liveobject",
             "id": UserObject.ID,
@@ -276,4 +276,4 @@ class UserObject(dict):
                 },
             },
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)

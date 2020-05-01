@@ -1,5 +1,9 @@
+null=None
+true=True
+false=False
+
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "query",
             "id": "PGDBSCHELP",
@@ -7,4 +11,4 @@ class UserObject(dict):
             "nocache": True,
             "request": "select distinct hash as key, query as value from vkpg_stat_activity where hash = '%(PGDBSCHELP)s' limit 1"
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)

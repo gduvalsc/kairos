@@ -1,5 +1,9 @@
+null=None
+true=True
+false=False
+
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "id": "DBORARACDBWAITS",
             "title": "RAC summary - DB waits per instance",
@@ -46,4 +50,4 @@ class UserObject(dict):
                 }
             ]
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)

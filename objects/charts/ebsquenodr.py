@@ -1,5 +1,9 @@
+null=None
+true=True
+false=False
+
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "id": "EBSQUENODR",
             "title": "E-Business Suite - Top running nodes for queue: %(EBSQUENODR)s",
@@ -76,4 +80,4 @@ class UserObject(dict):
                 }
             ]
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)

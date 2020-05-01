@@ -1,5 +1,9 @@
+null=None
+true=True
+false=False
+
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "id": "DBORARACFWEA",
             "title": "Display foreground event: %(DBORARACFWES)s - average per instance",
@@ -44,4 +48,4 @@ class UserObject(dict):
                 }
             ]
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)

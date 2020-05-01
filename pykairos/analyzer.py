@@ -15,21 +15,25 @@
 #
 
 import os, logging, re, sys, lxml.html, json
-from collections import Counter
+from collections import Counter, OrderedDict
 
 logging.TRACE = 5
 logging.addLevelName(5, "TRACE")
 logging.trace = lambda m: logging.log(logging.TRACE, m)
+
+def xxxx(e):
+    #return e.text_content().replace('\n','').replace('\r','').lstrip().rstrip()
+    return e.text_content().strip(' \n\r')
 
 class Object: pass
 
 class Analyzer:
     def __init__(self, c, scope, emitlistener, listenercontext):
         self.configurator = c
-        self.rules = []
-        self.contextrules = {}
+        self.rules = OrderedDict()
+        self.contextrules = OrderedDict()
         self.common = {}
-        self.outcontextrules = []
+        self.outcontextrules = OrderedDict()
         self.context = ''
         self.actions = {}
         self.gcpt = 0
@@ -52,17 +56,21 @@ class Analyzer:
     def trace(self, m):
         logging.trace(f'{self.name} - {m}')
     def addRule(self, r):
-        logging.trace(f'{self.name} - Adding rule, regular expression: /{r["regexp"]}/, action: {r["action"].__name__}')
-        if 'tag' in r: self.rules.append({"action": r["action"], "regexp": re.compile(r["regexp"]), "tag": re.compile(r["tag"])})
-        else: self.rules.append({"action": r["action"], "regexp": re.compile(r["regexp"])})
+        if 'tag' not in r: r["tag"] = 'missing'
+        logging.trace(f'{self.name} - Adding rule, tag: {r["tag"]}, regular expression: /{r["regexp"]}/, action: {r["action"].__name__}')
+        d = dict(action=r["action"], regexp=re.compile(r["regexp"]), tag=re.compile(r["tag"]))
+        if d['tag'] not in self.rules: self.rules[d['tag']] = []
+        self.rules[d['tag']].append(d)
     def addOutContextRule(self, r):
-        logging.trace(f'{self.name} - Adding out context rule, regular expression: /{r["regexp"]}/, action: {r["action"].__name__}')
-        if 'tag' in r: self.outcontextrules.append({"action": r["action"], "regexp": re.compile(r["regexp"]), "tag": re.compile(r["tag"])})
-        else: self.outcontextrules.append({"action": r["action"], "regexp": re.compile(r["regexp"])})
+        if 'tag' not in r: r["tag"] = 'missing'
+        logging.trace(f'{self.name} - Adding outcontext rule, tag: {r["tag"]}, regular expression: /{r["regexp"]}/, action: {r["action"].__name__}')
+        d = dict(action=r["action"], regexp=re.compile(r["regexp"]), tag=re.compile(r["tag"]))
+        if d['tag'] not in self.outcontextrules: self.outcontextrules[d['tag']] = []
+        self.outcontextrules[d['tag']].append(d)
     def addContextRule(self, r):
-        logging.trace(f'{self.name} - Adding context rule, context: {r["context"]}, regular expression: /{r["regexp"]}/, action: {r["action"].__name__}')
-        if 'tag' in r: self.contextrules[r["context"]] = {"action": r["action"], "regexp": re.compile(r["regexp"]), "tag": re.compile(r["tag"])}
-        else: self.contextrules[r["context"]] = {"action": r["action"], "regexp": re.compile(r["regexp"])}
+        if 'tag' not in r: r["tag"] = 'missing'
+        logging.trace(f'{self.name} - Adding context rule, tag: {r["tag"]}, context: {r["context"]}, regular expression: /{r["regexp"]}/, action: {r["action"].__name__}')
+        self.contextrules[r["context"]] = dict(action=r["action"], regexp=re.compile(r["regexp"]), tag=re.compile(r["tag"]))
     def setContext(self, c):
         logging.trace(f'{self.name} - Setting context: {c}')
         self.context = c
@@ -90,22 +98,25 @@ class Analyzer:
                 ln=ln.rstrip('\r')
                 if self.context == 'BREAK': break
                 self.stats['lines'] += 1
-                for r in self.rules:
-                    self.stats['ger'] += 1
-                    p = r["regexp"].search(ln)
-                    if not p: continue
-                    self.stats['sger'] += 1
-                    logging.trace(f'{self.name} - Calling {r["action"].__name__} at line {self.stats["lines"]} containing: |{ln}|')
-                    r["action"](self, ln, p.group, name)
-                if self.context == '':
-                    for r in self.outcontextrules:
-                        self.stats['oer'] += 1
+                for t in self.rules:
+                    for r in self.rules[t]:
+                        self.stats['ger'] += 1
                         p = r["regexp"].search(ln)
                         if not p: continue
-                        self.stats['soer'] += 1
+                        self.stats['sger'] += 1
                         logging.trace(f'{self.name} - Calling {r["action"].__name__} at line {self.stats["lines"]} containing: |{ln}|')
                         r["action"](self, ln, p.group, name)
-                        break
+                        if self.context == 'BREAK': break
+                if self.context == '':
+                    for t in self.outcontextrules:
+                        for r in self.outcontextrules[t]:           
+                            self.stats['oer'] += 1
+                            p = r["regexp"].search(ln)
+                            if not p: continue
+                            self.stats['soer'] += 1
+                            logging.trace(f'{self.name} - Calling {r["action"].__name__} at line {self.stats["lines"]} containing: |{ln}|')
+                            r["action"](self, ln, p.group, name)
+                            break
                 if self.context in self.contextrules:
                     r = self.contextrules[self.context]
                     self.stats['cer'] += 1
@@ -143,55 +154,60 @@ class Analyzer:
         logging.info(f'{self.name} - Summary for member {name}')
         logging.info(f'{self.name} -    Emitted records             : {self.stats["rec"]}')
         return status
-    def lxmltext1(self, e):
-        r = e.text.replace('\n','').replace('\r','').lstrip().rstrip() if type(e.text) == type('') else ''
-        if not r and e.tag in  ['td', 'h3']:
-            for x in e.itertext():
-                if x != '':
-                    r = x
-                    break
-        return r
-    def lxmltext2(self, e):
-        return e.text_content().replace('\n','').replace('\r','').lstrip().rstrip()
+    # def lxmltext1(self, e):
+    #     r = e.text.replace('\n','').replace('\r','').lstrip().rstrip() if type(e.text) == type('') else ''
+    #     if not r and e.tag in  ['td', 'h3']:
+    #         for x in e.itertext():
+    #             if x != '':
+    #                 r = x
+    #                 break
+    #     return r
+    # def lxmltext2(self, e):
+    #     return e.text_content().replace('\n','').replace('\r','').lstrip().rstrip()
+    def lxmltext(self, e):
+        return xxxx(e)
     def analyzexml(self, stream, name):
         status = Object()
         status.error = None        
         logging.trace(f'{self.name} - Analyzing xml stream {name}')
         self.context = ''
         self.stats = Counter()
-        try:
-            page=fromstring(stream)
-            self.lxmltext = self.lxmltext1
-        except:
-            logging.fatal('la')
-            page=lxml.html.fromstring(stream)
+        # try:
+        #     page=fromstring(stream)
+        #     self.lxmltext = self.lxmltext1
+        # except:
+        #     page=lxml.html.fromstring(stream)
+        #     self.lxmltext = self.lxmltext2
+        page=lxml.html.fromstring(stream)
         if "BEGIN" in self.contextrules:
             logging.trace(f'{self.name} - Calling BEGIN at pattern {self.stats["patterns"]}')
             self.contextrules["BEGIN"]["action"](self)
         for ln in page.getiterator():
             if self.context == 'BREAK': break
             self.stats['patterns'] += 1
-            for r in self.rules:
-                self.stats['ger'] += 1
-                p = r["tag"].search(ln.tag)
+            for t in self.rules:
+                p = t.search(ln.tag)
                 if not p: continue
-                p = r["regexp"].search(self.lxmltext(ln))
-                if not p: continue
-                self.stats['sger'] += 1
-                logging.trace(f'{self.name} - Calling {r["action"].__name__} at text {self.lxmltext(ln)} for tag: {ln.tag}')
-                r["action"](self, ln, p.group, name)
-                if self.context == 'BREAK': break
-            if self.context == '':
-                for r in self.outcontextrules:           
-                    self.stats['oer'] += 1
-                    p = r["tag"].search(ln.tag)
-                    if not p: continue
+                for r in self.rules[t]:
+                    self.stats['ger'] += 1
                     p = r["regexp"].search(self.lxmltext(ln))
                     if not p: continue
-                    self.stats['soer'] += 1
+                    self.stats['sger'] += 1
                     logging.trace(f'{self.name} - Calling {r["action"].__name__} at text {self.lxmltext(ln)} for tag: {ln.tag}')
                     r["action"](self, ln, p.group, name)
-                    break
+                    if self.context == 'BREAK': break
+            if self.context == '':
+                for t in self.outcontextrules:
+                    p = t.search(ln.tag)
+                    if not p: continue
+                    for r in self.outcontextrules[t]:           
+                        self.stats['oer'] += 1
+                        p = r["regexp"].search(self.lxmltext(ln))
+                        if not p: continue
+                        self.stats['soer'] += 1
+                        logging.trace(f'{self.name} - Calling {r["action"].__name__} at text {self.lxmltext(ln)} for tag: {ln.tag}')
+                        r["action"](self, ln, p.group, name)
+                        break
             if self.context in self.contextrules:
                 r = self.contextrules[self.context]
                 self.stats['cer'] += 1

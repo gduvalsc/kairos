@@ -1,5 +1,9 @@
+null=None
+true=True
+false=False
+
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "id": "DBORARDOT",
             "title": "Log file sync vs Redo write time vs Log file parallel write per operation",
@@ -42,4 +46,4 @@ class UserObject(dict):
                 }
             ]
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)

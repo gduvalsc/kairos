@@ -1,5 +1,9 @@
+null=None
+true=True
+false=False
+
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "id": "DBORARACGCCUFX",
             "title": "Global exchanges between instances - Current blocks - From x",
@@ -47,4 +51,4 @@ class UserObject(dict):
                 }
             ]
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)

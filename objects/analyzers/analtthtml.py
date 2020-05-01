@@ -1,57 +1,57 @@
 import hashlib
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "analyzer",
             "id": "ANALTTHTML",
             "content": "xml",
-            "begin": s.begin,
-            "end": s.end,
+            "begin": self.begin,
+            "end": self.end,
             "rules": [
-                {"action": s.ah2, "regexp": '', "tag": 'h2'},
-                {"action": s.atable, "regexp": '', "tag": 'table'},
-                {"action": s.atr, "regexp": '', "tag": 'tr'},
-                {"action": s.athd, "regexp": '', "tag": '(th|td)'}
+                {"action": self.ah2, "regexp": r'', "tag": 'h2'},
+                {"action": self.atable, "regexp": r'', "tag": 'table'},
+                {"action": self.atr, "regexp": r'', "tag": 'tr'},
+                {"action": self.athd, "regexp": r'', "tag": '(th|td)'}
             ],
             "contextrules": [
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsum"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thmuc", "scope": "TTABSMETRICS"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thlp", "scope": "TTMETRICS"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thss", "scope": "TTSTATS"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqlp", "scope": "TTSQLTOPP"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqlx", "scope": "TTSQLTOPX"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqlt"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thprm", "scope": "TTPARAM"},
-                {"action": s.atdget, "regexp": '.', "tag": 'td', "context": "tdsum"},
-                {"action": s.atdget, "regexp": '.', "tag": 'td', "context": "tdmuc", "scope": "TTABSMETRICS"},
-                {"action": s.atdget, "regexp": '.', "tag": 'td', "context": "tdlp", "scope": "TTMETRICS"},
-                {"action": s.atdget, "regexp": '.', "tag": 'td', "context": "tdss", "scope": "TTSTATS"},
-                {"action": s.atdget, "regexp": '.', "tag": 'td', "context": "tdsqlp", "scope": "TTSQLTOPP"},
-                {"action": s.atdget, "regexp": '.', "tag": 'td', "context": "tdsqlx", "scope": "TTSQLTOPX"},
-                {"action": s.atdget, "regexp": '.', "tag": 'td', "context": "tdsqlt"},
-                {"action": s.atdget, "regexp": '.', "tag": 'td', "context": "tdprm", "scope": "TTPARAM"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsum"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thmuc", "scope": "TTABSMETRICS"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thlp", "scope": "TTMETRICS"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thss", "scope": "TTSTATS"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsqlp", "scope": "TTSQLTOPP"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsqlx", "scope": "TTSQLTOPX"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsqlt"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thprm", "scope": "TTPARAM"},
+                {"action": self.atdget, "regexp": r'.', "tag": 'td', "context": "tdsum"},
+                {"action": self.atdget, "regexp": r'.', "tag": 'td', "context": "tdmuc", "scope": "TTABSMETRICS"},
+                {"action": self.atdget, "regexp": r'.', "tag": 'td', "context": "tdlp", "scope": "TTMETRICS"},
+                {"action": self.atdget, "regexp": r'.', "tag": 'td', "context": "tdss", "scope": "TTSTATS"},
+                {"action": self.atdget, "regexp": r'.', "tag": 'td', "context": "tdsqlp", "scope": "TTSQLTOPP"},
+                {"action": self.atdget, "regexp": r'.', "tag": 'td', "context": "tdsqlx", "scope": "TTSQLTOPX"},
+                {"action": self.atdget, "regexp": r'.', "tag": 'td', "context": "tdsqlt"},
+                {"action": self.atdget, "regexp": r'.', "tag": 'td', "context": "tdprm", "scope": "TTPARAM"},
             ],
             "outcontextrules": [
-                {"action": s.genstate('thsum'), "regexp": 'Summary', "tag": 'h2'},
-                {"action": s.genstate('thss'), "regexp": 'Statement Statistics', "tag": 'h2', "scope": "TTSTATS"},
-                {"action": s.genstate('thss'), "regexp": 'Transaction Statistics', "tag": 'h2', "scope": "TTSTATS"},
-                {"action": s.genstate('thss'), "regexp": 'Log Statistics', "tag": 'h2', "scope": "TTSTATS"},
-                {"action": s.genstate('thss'), "regexp": 'Checkpoint Statistics', "tag": 'h2', "scope": "TTSTATS"},
-                {"action": s.genstate('thss'), "regexp": 'DB Activity Statistics', "tag": 'h2', "scope": "TTSTATS"},
-                {"action": s.genstate('thss'), "regexp": 'Lock Statistics', "tag": 'h2', "scope": "TTSTATS"},
-                {"action": s.genstate('thprm'), "regexp": 'Configuration Parameters', "tag": 'h2', "scope": "TTPARAM"},
-                {"action": s.genstate('thsqlx'), "regexp": 'Executions% TotalCmd IDCmd Text', "tag": 'table', "scope": "TTSQLTOPX"},
-                {"action": s.genstate('thsqlp'), "regexp": 'Preparations% TotalCmd IDCmd Text', "tag": 'table', "scope": "TTSQLTOPP"},
-                {"action": s.genstate('thsqlt'), "regexp": 'SQL IDSQL Text', "tag": 'table', "scope": "TTSQLTEXT"},
-                {"action": s.genstate('thsqlt'), "regexp": 'SQL IDSQL Text', "tag": 'table', "scope": "TTSQLTOPX"},
-                {"action": s.genstate('thsqlt'), "regexp": 'SQL IDSQL Text', "tag": 'table', "scope": "TTSQLTOPP"},
-                {"action": s.genstate('thmuc'), "regexp": 'MetricsBegin ValueEnd Value', "tag": 'table', "scope": "TTABSMETRICS"},
-                {"action": s.genstate('thlp'), "regexp": 'MetricsPer SecondPer Transaction', "tag": 'table', "scope": "TTMETRICS"},
+                {"action": self.genstate('thsum'), "regexp": r'Summary', "tag": 'h2'},
+                {"action": self.genstate('thss'), "regexp": r'Statement Statistics', "tag": 'h2', "scope": "TTSTATS"},
+                {"action": self.genstate('thss'), "regexp": r'Transaction Statistics', "tag": 'h2', "scope": "TTSTATS"},
+                {"action": self.genstate('thss'), "regexp": r'Log Statistics', "tag": 'h2', "scope": "TTSTATS"},
+                {"action": self.genstate('thss'), "regexp": r'Checkpoint Statistics', "tag": 'h2', "scope": "TTSTATS"},
+                {"action": self.genstate('thss'), "regexp": r'DB Activity Statistics', "tag": 'h2', "scope": "TTSTATS"},
+                {"action": self.genstate('thss'), "regexp": r'Lock Statistics', "tag": 'h2', "scope": "TTSTATS"},
+                {"action": self.genstate('thprm'), "regexp": r'Configuration Parameters', "tag": 'h2', "scope": "TTPARAM"},
+                {"action": self.genstate('thsqlx'), "regexp": r'Executions% TotalCmd IDCmd Text', "tag": 'table', "scope": "TTSQLTOPX"},
+                {"action": self.genstate('thsqlp'), "regexp": r'Preparations% TotalCmd IDCmd Text', "tag": 'table', "scope": "TTSQLTOPP"},
+                {"action": self.genstate('thsqlt'), "regexp": r'SQL IDSQL Text', "tag": 'table', "scope": "TTSQLTEXT"},
+                {"action": self.genstate('thsqlt'), "regexp": r'SQL IDSQL Text', "tag": 'table', "scope": "TTSQLTOPX"},
+                {"action": self.genstate('thsqlt'), "regexp": r'SQL IDSQL Text', "tag": 'table', "scope": "TTSQLTOPP"},
+                {"action": self.genstate('thmuc'), "regexp": r'MetricsBegin ValueEnd Value', "tag": 'table', "scope": "TTABSMETRICS"},
+                {"action": self.genstate('thlp'), "regexp": r'MetricsPer SecondPer Transaction', "tag": 'table', "scope": "TTMETRICS"},
             ]
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)
 
-    def begin(s, a):
+    def begin(self, a):
         a.collector = {}
         a.cpt = -1
         a.collected = {}
@@ -59,14 +59,12 @@ class UserObject(dict):
         a.reinit = True
         a.sqlid = {}
         a.month = dict(Jan='01',Feb='02',Fev='02',Mar='03',Apr='04',Avr='04',May='05',Mai='05', Jun='06',Jul='07',Aug='08',Sep='09',Oct='10',Nov='11',Dec='12')
-        a.setContext('');
+        a.setContext('')
 
-    def end(s, a):
+    def end(self, a):
         convertid=dict()
         tof=lambda x: float(x.replace(',','').replace(u'\xa0','0')) if x!=u'' else 0.0
-        toc=lambda x: x.replace('&quot;',"'").replace('&lt;',"<").replace('&gt;',">").replace(u'\xa0','')
         for x in sorted(a.collected.keys(),reverse=True):
-            line=-1
             if x =='zz9':
                 dttmisc = dict(timestamp='text', avgelapsed='real', elapsed='int')
                 for y in a.collected[x]:
@@ -134,7 +132,7 @@ class UserObject(dict):
                     endvalue = y['End Value']
                     a.emit('TTPARAM', d, dict(parameter=parameter, begvalue=begvalue, endvalue=endvalue))
 
-    def ah2(s, a, l, g, m):
+    def ah2(self, a, l, g, m):
         context = ''
         a.setContext(context)
         if len(a.row): a.tab.append(a.row)
@@ -142,7 +140,7 @@ class UserObject(dict):
         a.cpt = -1
         a.collector = {}
 
-    def atable(s, a, l, g, m):
+    def atable(self, a, l, g, m):
         context = ''
         if a.reinit: a.setContext(context)
         if len(a.scope) < 3:
@@ -157,24 +155,24 @@ class UserObject(dict):
         a.row = {}
         a.collector = {}
 
-    def athget(s, a, l, g, m):
+    def athget(self, a, l, g, m):
         if 0 not in a.collector: a.collector[0] = ''
         a.collector[a.cpt]=a.lxmltext(l)
 
-    def atdget(s, a, l, g, m):
+    def atdget(self, a, l, g, m):
         if a.cpt in a.collector: a.row[a.collector[a.cpt]]=a.lxmltext(l)
 
-    def atr(s, a, l, g, m):
+    def atr(self, a, l, g, m):
         a.reinit = True
         a.cpt = -1
         if hasattr(a,'collector') and len(a.collector): a.setContext('td'+a.context[2:])
         if len(a.row): a.tab.append(a.row)
         a.row = {}
 
-    def athd(s, a, l, g, m):
+    def athd(self, a, l, g, m):
         a.cpt+=1
 
-    def genstate(s, c):
+    def genstate(self, c):
         def f(a, l ,g, m):
             a.reinit = False
             a.setContext(c)

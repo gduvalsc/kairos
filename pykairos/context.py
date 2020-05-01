@@ -1641,11 +1641,14 @@ class Context:
                 queues[col].put(record)
                 writeheader[col] = False
             v = v if type(v) == type([]) else [v]
+            trf = lambda x: str(x).replace('\n','\\n').replace('\t','\\t').replace('\r', '').replace('\\', '\\\\')
             for e in v:
                 record = ''
                 e['kairos_nodeid'] = nid
-                for k in sorted(e.keys()): record += '\\N\t' if e[k] == '' else str(e[k]).replace('\n','\\n').replace('\t','\\t').replace('\r', '').replace('\\', '\\\\') + '\t'
-                record = record[:-1] + '\n'
+                for k in sorted(e.keys()):
+                    if e[k] == '': record = f'{record}\\N\t'
+                    else: record = f'{record}{trf(e[k])}\t'
+                record = f'{record[:-1]}\n'
                 queues[col].put(record)
 
         def read_from_queue(col):

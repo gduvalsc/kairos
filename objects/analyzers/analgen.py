@@ -21,30 +21,32 @@
 #   E/20070227183245,SCOTT,CLERK,1500
 #   D/20070227183246;;NEW YORK;;ACCOUNTING
 
+import datetime
+
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "analyzer",
             "id": "ANALGEN",
-            "begin": s.begin,
-            "end": s.end,
+            "begin": self.begin,
+            "end": self.end,
             "rules": [],
             "contextrules": [
-                {"action": s.ageneric, "regexp": '^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2}) (\w+) (.+)$', "context": "generic"},
-                {"action": s.acompact, "regexp": '^(\w{1})\/(\d+.+)$', "context": "compact"}
+                {"action": self.ageneric, "regexp": r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2}) (\w+) (.+)$', "context": "generic"},
+                {"action": self.acompact, "regexp": r'^(\w{1})\/(\d+.+)$', "context": "compact"}
             ],
             "outcontextrules": [
-                {"action": s.asep, "regexp": '^REPORT TYPE: GENERIC SEP1="(.+?)",SEP2="(.+?)".*$'},
-                {"action": s.aencoding, "regexp": '^REPORT TYPE: COMPACT ENCODING="(.+?)",INITIAL="(.+?)".*$'},
-                {"action": s.adescfield, "regexp": '^TYPE (.+) (.+) (.+) *$'},
-                {"action": s.astartdata, "regexp": '^(\d{14}) (\w+) (.+)$'},
-                {"action": s.adesctable, "regexp": '^(\w{1})\/(\w+) (.+) (.+) *$'},
-                {"action": s.astartdata, "regexp": '^(\w{1})\/(\d+.+)$'}
+                {"action": self.asep, "regexp": r'^REPORT TYPE: GENERIC SEP1="(.+?)",SEP2="(.+?)".*$'},
+                {"action": self.aencoding, "regexp": r'^REPORT TYPE: COMPACT ENCODING="(.+?)",INITIAL="(.+?)".*$'},
+                {"action": self.adescfield, "regexp": r'^TYPE (.+) (.+) (.+) *$'},
+                {"action": self.astartdata, "regexp": r'^(\d{14}) (\w+) (.+)$'},
+                {"action": self.adesctable, "regexp": r'^(\w{1})\/(\w+) (.+) (.+) *$'},
+                {"action": self.astartdata, "regexp": r'^(\w{1})\/(\d+.+)$'}
             ]
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)
 
-    def begin(s, a):
+    def begin(self, a):
         a.sep1 = ","
         a.sep2 = "="
         a.initial = "00000000000000"
@@ -57,19 +59,19 @@ class UserObject(dict):
         a.columns = {}
         a.ftype = {}
 
-    def end(s, a):
+    def end(self, a):
         pass
 
-    def asep(s, a, l ,g, m):
+    def asep(self, a, l ,g, m):
         a.sep1 = g(1)
         a.sep2 = g(2)
 
-    def aencoding(s, a, l ,g, m):
-        a.compact = TRUE
+    def aencoding(self, a, l ,g, m):
+        a.compact = True
         a.encoding = g(1)
         a.initial = g(2)
 
-    def adescfield(s, a, l ,g, m):
+    def adescfield(self, a, l ,g, m):
         tname = g(1)
         noop = lambda x: x
         def trint(x):
@@ -88,7 +90,7 @@ class UserObject(dict):
         a.transform[tname][g(2)] = f
         a.desctable[tname][g(2)] = g(3) if g(3) != 'int' else 'bigint'
 
-    def adesctable(s, a, l ,g, m):
+    def adesctable(self, a, l ,g, m):
         alias = g(1)
         tname = g(2)
         a.alias[alias] = tname
@@ -102,7 +104,7 @@ class UserObject(dict):
         a.columns[alias].append(['kairos_count','bigint'])
         a.desctable['kairos_count'] = 'bigint'
 
-    def astartdata(s, a, l ,g, m):
+    def astartdata(self, a, l ,g, m):
         if a.compact: a.setContext('compact')
         else:
             tname = g(2)
@@ -128,7 +130,7 @@ class UserObject(dict):
                     a.desctable[tname][k] = 'real' if d[k].isdigit() else 'text'
             a.setContext('generic')
 
-    def ageneric(s, a, l ,g, m):
+    def ageneric(self, a, l ,g, m):
         tname = g(7)
         d = dict(timestamp = g(1) + g(2) + g(3) + g(4) + g(5) + g(6) + "000", kairos_count = 1)
         for p in g(8).split(a.sep1):
@@ -138,7 +140,7 @@ class UserObject(dict):
             if k not in d: d[k] = ''
         a.emit(tname, a.desctable[tname], d)
 
-    def acompact(s, a, l ,g, m):
+    def acompact(self, a, l ,g, m):
         alias = g(1)
         tname = a.alias[alias]
         separator = a.separator[alias]
@@ -157,7 +159,7 @@ class UserObject(dict):
             else:
                 if coltype == 'text':
                     x = x.decode(a.encoding)
-                    if type(x) != type(u''): x = unicode(x,'utf-8','replace')
+                    #if type(x) != type(u''): x = unicode(x,'utf-8','replace')
                 if coltype == 'int':
                     try: x = int(x)
                     except: pass

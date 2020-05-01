@@ -1,54 +1,54 @@
 import logging
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "analyzer",
             "id": "ANALSNAPPER",
-            "begin": s.begin,
-            "end": s.end,
+            "begin": self.begin,
+            "end": self.end,
             "rules": [
-                {"action": s.asummary, "regexp": 'End of ASH snap.+end=(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2}).+AAS=([\d\.\,]+)$'},
+                {"action": self.asummary, "regexp": r'End of ASH snap.+end=(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2}).+AAS=([\d\.\,]+)$'},
             ],
             "contextrules": [
-                {"action": s.adata_old, "context": "old", "regexp": '\((\d+)\%\) +\| +(.*?) +\| +(.*?) +\| +(\d*) +\| +(\w*) +\| +(\d*) +\| +(.*) *$'},
-                {"action": s.adata, "context": "new", "regexp": '\((\d+)\%\) +\| +(.*?) +\| +(.*?) +\| +(\d*) +\| +(\w*) +\| +(\d*) +\| +(.*?) +\| (\d*) *$'},
+                {"action": self.adata_old, "context": "old", "regexp": r'\((\d+)\%\) +\| +(.*?) +\| +(.*?) +\| +(\d*) +\| +(\w*) +\| +(\d*) +\| +(.*) *$'},
+                {"action": self.adata, "context": "new", "regexp": r'\((\d+)\%\) +\| +(.*?) +\| +(.*?) +\| +(\d*) +\| +(\w*) +\| +(\d*) +\| +(.*?) +\| (\d*) *$'},
             ],
             "outcontextrules": [
-                {"action": s.aheader2, "regexp": 'ActSes +%Thread.+EVENT *$'},
-                {"action": s.aheader1, "regexp": 'ActSes +%Thread.+COMMAND *$'},
-                {"action": s.aheader0, "regexp": 'No active sessions captured during the sampling period'},
+                {"action": self.aheader2, "regexp": r'ActSes +%Thread.+EVENT *$'},
+                {"action": self.aheader1, "regexp": r'ActSes +%Thread.+COMMAND *$'},
+                {"action": self.aheader0, "regexp": r'No active sessions captured during the sampling period'},
             ]
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)
 
-    def begin(s, a):
+    def begin(self, a):
         a.desctable = dict(timestamp='text', pthread='real', aas='real', program='text', sid='text', username='text', sql_id='text', sql_child='text', event='text', command='text')
         a.data = []
         
-    def aheader2(s, a, l ,g, m):
+    def aheader2(self, a, l ,g, m):
         a.data = []
         a.setContext('old')
         
-    def aheader1(s, a, l ,g, m):
+    def aheader1(self, a, l ,g, m):
         a.data = []
         a.setContext('new')
         
-    def aheader0(s, a, l ,g, m):
+    def aheader0(self, a, l ,g, m):
         a.data = []
         a.setContext('')
 
-    def end(s, a):
+    def end(self, a):
         pass
     
-    def adata_old(s, a, l ,g, m):
+    def adata_old(self, a, l ,g, m):
         d = dict(pthread=g(1), program=g(2), username=g(3), sid=g(4), sql_id=g(5), sql_child=g(6), event=g(7), command='')
         a.data.append(d)
     
-    def adata(s, a, l ,g, m):
+    def adata(self, a, l ,g, m):
         d = dict(pthread=g(1), program=g(2), username=g(3), sid=g(4), sql_id=g(5), sql_child=g(6), event=g(7), command=g(8))
         a.data.append(d)
 
-    def asummary(s, a, l ,g, m):
+    def asummary(self, a, l ,g, m):
         timestamp = g(1) + g(2) + g(3) + g(4) + g(5) + g(6) + '000'
         aas = g(7).replace(',', '.')
         stack = []

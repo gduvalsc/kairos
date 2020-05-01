@@ -1,9 +1,12 @@
 FROM centos:centos8
 RUN dnf install -y python3 python3-lxml python36-devel
-RUN dnf install -y postgresql-server  postgresql-contrib postgresql-server-devel postgresql-plpython3
+RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+RUN dnf module disable -y postgresql
+RUN dnf install -y postgresql12-server postgresql12 postgresql12-devel postgresql12-contrib postgresql12-plpython3
+#RUN dnf install -y postgresql-server  postgresql-contrib postgresql-server-devel
 RUN dnf install -y wget make gcc vim zip unzip libaio libnsl crontabs psmisc telnet openssh-clients redhat-rpm-config
 
-#### cx_oracle
+#### cx_oracle and postgres environement variables
 ADD instantclient-basic-linux.zip /usr/local/lib
 ADD instantclient-sdk-linux.zip /usr/local/lib
 WORKDIR /usr/local/lib
@@ -18,18 +21,21 @@ ENV ORACLE_HOME=/usr/local/lib/instantclient
 ENV LD_LIBRARY_PATH=/usr/local/lib/instantclient
 RUN echo ORACLE_HOME=/usr/local/lib/instantclient >> /var/lib/pgsql/.bash_profile
 RUN echo LD_LIBRARY_PATH=/usr/local/lib/instantclient >> /var/lib/pgsql/.bash_profile
-RUN echo export ORACLE_HOME LD_LIBRARY_PATH>> /var/lib/pgsql/.bash_profile
+RUN echo PGDATA=/var/lib/pgsql/data >> /var/lib/pgsql/.bash_profile
+RUN echo PATH=/usr/pgsql-12/bin:${PATH} >> /var/lib/pgsql/.bash_profile
+RUN echo export ORACLE_HOME LD_LIBRARY_PATH PATH PGDATA>> /var/lib/pgsql/.bash_profile
 
 ### postgres oracle_fdw
-ADD oracle_fdw-2.1.0.tar.gz /tmp
-RUN cd /tmp/oracle_fdw-2.1.0 && \
-    ln -s /usr/bin/pg_server_config /usr/bin/pg_config && \
-    make && \
-    make install
+
+ADD oracle_fdw-2.2.1.tar.gz /tmp
+RUN cd /tmp/oracle_fdw-2.2.1 && \
+    ln -s /usr/pgsql-12/bin/pg_config /usr/bin/pg_config && \
+    with_llvm=no make -e && \
+    with_llvm=no make -e install
 
 #### pgkairos
-ADD pgkairos-1.2-1.noarch.rpm /tmp
-RUN cd /tmp && rpm --ignoreos --prefix=$(pg_config --sharedir)/extension -i /tmp/pgkairos-1.2-1.noarch.rpm
+ADD pgkairos-1.3-1.noarch.rpm /tmp
+RUN cd /tmp && rpm --ignoreos --prefix=$(pg_config --sharedir)/extension -i /tmp/pgkairos-1.3-1.noarch.rpm
 
 #### python & python packages
 RUN pip3 install --upgrade pip
@@ -50,6 +56,9 @@ RUN pip3 install psutil
 
 ### init postgresql db
 RUN ln -s /var/lib/pgsql /postgres
+RUN rm -fr /postgres/12
+RUN mkdir /postgres/backups
+RUN mkdir /postgres/data
 COPY pgboot.tar /postgres/backups
 
 ### KAIROS

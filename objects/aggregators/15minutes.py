@@ -1,5 +1,5 @@
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "aggregator",
             "id": "$15minutes",
@@ -11,4 +11,4 @@ class UserObject(dict):
                 $$ language plpython3u;
             """
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)

@@ -1,208 +1,210 @@
 import logging, re
+logging.trace = lambda m: logging.log(5, m)
+
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "analyzer",
             "id": "ANALAWRHTML",
             "content": "xml",
-            "begin": s.begin,
-            "end": s.end,
+            "begin": self.begin,
+            "end": self.end,
             "rules": [
-                {"action": s.aaction, "regexp": '', "tag": '(h3|h4|table|tr|th|td)'},
+                {"action": self.aaction, "regexp": r'', "tag": '(h3|h4|table|tr|th|td)'},
             ],
             "contextrules": [
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdbuf", "scope": "DBORABUF"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdbpa", "scope": "DBORABPA"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdenq", "scope": "DBORAENQ"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdfil", "scope": "DBORAFIL"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdlat", "scope": "DBORALAT"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdlaw", "scope": "DBORALAW"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdlib", "scope": "DBORALIB"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdmdc", "scope": "DBORAMDC"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdmtt", "scope": "DBORAMTT"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdoss", "scope": "DBORAOSS"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdpga", "scope": "DBORAPGA"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdpgb", "scope": "DBORAPGB"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdpgc", "scope": "DBORAPGC"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdreq", "scope": "DBORAREQ"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsga", "scope": "DBORASGA"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsglr", "scope": "DBORASGLR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgpr", "scope": "DBORASGPR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgprr", "scope": "DBORASGPRR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgur", "scope": "DBORASGUR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgor", "scope": "DBORASGOR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgdpr", "scope": "DBORASGDPR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgpw", "scope": "DBORASGPW"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgpwr", "scope": "DBORASGPWR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgdpw", "scope": "DBORASGDPW"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgts", "scope": "DBORASGTS"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgdbc", "scope": "DBORASGDBC"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgrlw", "scope": "DBORASGRLW"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgiw", "scope": "DBORASGIW"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgbbw", "scope": "DBORASGBBW"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsggcbb", "scope": "DBORASGGCBB"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgcrbr", "scope": "DBORASGCRBR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsgcbr", "scope": "DBORASGCBR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsqc", "scope": "DBORASQC"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsqe", "scope": "DBORASQE"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsqg", "scope": "DBORASQG"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsqm", "scope": "DBORASQM"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsqp", "scope": "DBORASQP"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsqr", "scope": "DBORASQR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsqv", "scope": "DBORASQV"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsqw", "scope": "DBORASQW"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsqx", "scope": "DBORASQX"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsrv", "scope": "DBORASRV"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsvw", "scope": "DBORASVW"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdsta", "scope": "DBORASTA"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdtab1"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdtab2"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdtab3"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdtab4"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdtbs", "scope": "DBORATBS"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdtms", "scope": "DBORATMS"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdweb", "scope": "DBORAWEB"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdwec", "scope": "DBORAWEC"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdwev", "scope": "DBORAWEV"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdexacpu", "scope": "EXACPU"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdexatopdbior", "scope": "EXATOPDBIOR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdexatopdbiov", "scope": "EXATOPDBIOV"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdexatopdskior", "scope": "EXATOPDSKIOR"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdexatopdskiov", "scope": "EXATOPDSKIOV"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdexatopcllosio", "scope": "EXATOPCLLOSIO"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdexatopdskosio", "scope": "EXATOPDSKOSIO"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdexatopcllosiol", "scope": "EXATOPCLLOSIOL"},
-                {"action": s.atdget, "regexp": '', "tag": 'td', "context": "tdexatopdskosiol", "scope": "EXATOPDSKOSIOL"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thbuf", "scope": "DBORABUF"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thbpa", "scope": "DBORABPA"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thenq", "scope": "DBORAENQ"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thfil", "scope": "DBORAFIL"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thlat", "scope": "DBORALAT"},
-                {"action": s.athget, "regexp": 'Latch|Time', "tag": 'th', "context": "thlaw", "scope": "DBORALAW"},
-                {"action": s.athget, "regexp": '(Namespace|Requests|Reloads|Invali)', "tag": 'th', "context": "thlib", "scope": "DBORALIB"},
-                {"action": s.athget, "regexp": '', "tag": 'th', "context": "thmtt", "scope": "DBORAMTT"},
-                {"action": s.athget, "regexp": '', "tag": 'th', "context": "thmdc", "scope": "DBORAMDC"},
-                {"action": s.athget, "regexp": '', "tag": 'th', "context": "thoss", "scope": "DBORAOSS"},
-                {"action": s.athget, "regexp": '', "tag": 'th', "context": "thpga", "scope": "DBORAPGA"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thpgb", "scope": "DBORAPGB"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thpgc", "scope": "DBORAPGC"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "threq", "scope": "DBORAREQ"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsga", "scope": "DBORASGA"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsglr", "scope": "DBORASGLR"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgpr", "scope": "DBORASGPR"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgprr", "scope": "DBORASGPRR"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgur", "scope": "DBORASGUR"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgor", "scope": "DBORASGOR"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgdpr", "scope": "DBORASGDPR"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgpw", "scope": "DBORASGPW"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgpwr", "scope": "DBORASGPWR"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgdpw", "scope": "DBORASGDPW"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgts", "scope": "DBORASGTS"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgdbc", "scope": "DBORASGDBC"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgrlw", "scope": "DBORASGRLW"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgiw", "scope": "DBORASGIW"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgbbw", "scope": "DBORASGBBW"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsggcbb", "scope": "DBORASGGCBB"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgcrbr", "scope": "DBORASGCRBR"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsgcbr", "scope": "DBORASGCBR"},
-                {"action": s.athget, "regexp": '(.+Time.+|Executions|.+Total|SQL.+|PDB)', "tag": 'th', "context": "thsqc", "scope": "DBORASQC"},
-                {"action": s.athget, "regexp": '(.+Time.+|Executions|.+Total|SQL.+|CPU|PDB)', "tag": 'th', "context": "thsqe", "scope": "DBORASQE"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqg", "scope": "DBORASQG"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqm", "scope": "DBORASQM"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqp", "scope": "DBORASQP"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqr", "scope": "DBORASQR"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqv", "scope": "DBORASQV"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqw", "scope": "DBORASQW"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsqx", "scope": "DBORASQX"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsrv", "scope": "DBORASRV"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thsvw", "scope": "DBORASVW"},
-                {"action": s.athget, "regexp": '(Statistic|Total)', "tag": 'th', "context": "thsta", "scope": "DBORASTA"},
-                {"action": s.athget, "regexp": '', "tag": 'th', "context": "thtab1"},
-                {"action": s.athget, "regexp": '', "tag": 'th', "context": "thtab2"},
-                {"action": s.athget, "regexp": '', "tag": 'th', "context": "thtab3"},
-                {"action": s.athget, "regexp": '', "tag": 'th', "context": "thtab4"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thtbs", "scope": "DBORATBS"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thtms", "scope": "DBORATMS"},
-                {"action": s.athget, "regexp": '.', "tag": 'th', "context": "thexacpu", "scope": "EXACPU"},
-                {"action": s.athget, "regexp": '(Name|DBID|Total|Flash|Disk|Captured)', "tag": 'th', "context": "thexatopdbior", "scope": "EXATOPDBIOR"},
-                {"action": s.athget, "regexp": '(Name|DBID|Total|Flash|Disk|Captured)', "tag": 'th', "context": "thexatopdbiov", "scope": "EXATOPDBIOV"},
-                {"action": s.athget, "regexp": '(Disk|Cell|Total|Average$|Small|Large)', "tag": 'th', "context": "thexatopdskior", "scope": "EXATOPDSKIOR"},
-                {"action": s.athget, "regexp": '(Disk|Cell|Total|Average$|Small|Large)', "tag": 'th', "context": "thexatopdskiov", "scope": "EXATOPDSKIOV"},
-                {"action": s.athget, "regexp": '(Type|Name|Total|Avg)', "tag": 'th', "context": "thexatopcllosio", "scope": "EXATOPCLLOSIO"},
-                {"action": s.athget, "regexp": '(Type|Name|Total|Avg)', "tag": 'th', "context": "thexatopdskosio", "scope": "EXATOPDSKOSIO"},
-                {"action": s.athget, "regexp": '(Type|Name|Service|Wait)', "tag": 'th', "context": "thexatopcllosiol", "scope": "EXATOPCLLOSIOL"},
-                {"action": s.athget, "regexp": '(Type|Name|Service|Wait)', "tag": 'th', "context": "thexatopdskosiol", "scope": "EXATOPDSKOSIOL"},
-                {"action": s.athget, "regexp": '(Event|Waits$|Total Wait Time.+|%Time -outs)', "tag": 'th', "context": "thweb", "scope": "DBORAWEB"},
-                {"action": s.athget, "regexp": '(Wait Class|Waits$|Total Wait Time.+|%Time -outs)', "tag": 'th', "context": "thwec", "scope": "DBORAWEC"},
-                {"action": s.athget, "regexp": '(Event|Waits$|Total Wait Time.+|%Time -outs)', "tag": 'th', "context": "thwev", "scope": "DBORAWEV"}
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdbuf", "scope": "DBORABUF"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdbpa", "scope": "DBORABPA"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdenq", "scope": "DBORAENQ"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdfil", "scope": "DBORAFIL"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdlat", "scope": "DBORALAT"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdlaw", "scope": "DBORALAW"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdlib", "scope": "DBORALIB"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdmdc", "scope": "DBORAMDC"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdmtt", "scope": "DBORAMTT"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdoss", "scope": "DBORAOSS"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdpga", "scope": "DBORAPGA"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdpgb", "scope": "DBORAPGB"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdpgc", "scope": "DBORAPGC"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdreq", "scope": "DBORAREQ"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsga", "scope": "DBORASGA"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsglr", "scope": "DBORASGLR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgpr", "scope": "DBORASGPR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgprr", "scope": "DBORASGPRR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgur", "scope": "DBORASGUR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgor", "scope": "DBORASGOR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgdpr", "scope": "DBORASGDPR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgpw", "scope": "DBORASGPW"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgpwr", "scope": "DBORASGPWR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgdpw", "scope": "DBORASGDPW"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgts", "scope": "DBORASGTS"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgdbc", "scope": "DBORASGDBC"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgrlw", "scope": "DBORASGRLW"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgiw", "scope": "DBORASGIW"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgbbw", "scope": "DBORASGBBW"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsggcbb", "scope": "DBORASGGCBB"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgcrbr", "scope": "DBORASGCRBR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsgcbr", "scope": "DBORASGCBR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsqc", "scope": "DBORASQC"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsqe", "scope": "DBORASQE"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsqg", "scope": "DBORASQG"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsqm", "scope": "DBORASQM"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsqp", "scope": "DBORASQP"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsqr", "scope": "DBORASQR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsqv", "scope": "DBORASQV"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsqw", "scope": "DBORASQW"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsqx", "scope": "DBORASQX"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsrv", "scope": "DBORASRV"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsvw", "scope": "DBORASVW"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdsta", "scope": "DBORASTA"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdtab1"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdtab2"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdtab3"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdtab4"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdtbs", "scope": "DBORATBS"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdtms", "scope": "DBORATMS"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdweb", "scope": "DBORAWEB"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdwec", "scope": "DBORAWEC"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdwev", "scope": "DBORAWEV"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdexacpu", "scope": "EXACPU"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdexatopdbior", "scope": "EXATOPDBIOR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdexatopdbiov", "scope": "EXATOPDBIOV"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdexatopdskior", "scope": "EXATOPDSKIOR"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdexatopdskiov", "scope": "EXATOPDSKIOV"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdexatopcllosio", "scope": "EXATOPCLLOSIO"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdexatopdskosio", "scope": "EXATOPDSKOSIO"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdexatopcllosiol", "scope": "EXATOPCLLOSIOL"},
+                {"action": self.atdget, "regexp": r'', "tag": 'td', "context": "tdexatopdskosiol", "scope": "EXATOPDSKOSIOL"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thbuf", "scope": "DBORABUF"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thbpa", "scope": "DBORABPA"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thenq", "scope": "DBORAENQ"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thfil", "scope": "DBORAFIL"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thlat", "scope": "DBORALAT"},
+                {"action": self.athget, "regexp": r'Latch|Time', "tag": 'th', "context": "thlaw", "scope": "DBORALAW"},
+                {"action": self.athget, "regexp": r'(Namespace|Requests|Reloads|Invali)', "tag": 'th', "context": "thlib", "scope": "DBORALIB"},
+                {"action": self.athget, "regexp": r'', "tag": 'th', "context": "thmtt", "scope": "DBORAMTT"},
+                {"action": self.athget, "regexp": r'', "tag": 'th', "context": "thmdc", "scope": "DBORAMDC"},
+                {"action": self.athget, "regexp": r'', "tag": 'th', "context": "thoss", "scope": "DBORAOSS"},
+                {"action": self.athget, "regexp": r'', "tag": 'th', "context": "thpga", "scope": "DBORAPGA"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thpgb", "scope": "DBORAPGB"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thpgc", "scope": "DBORAPGC"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "threq", "scope": "DBORAREQ"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsga", "scope": "DBORASGA"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsglr", "scope": "DBORASGLR"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgpr", "scope": "DBORASGPR"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgprr", "scope": "DBORASGPRR"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgur", "scope": "DBORASGUR"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgor", "scope": "DBORASGOR"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgdpr", "scope": "DBORASGDPR"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgpw", "scope": "DBORASGPW"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgpwr", "scope": "DBORASGPWR"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgdpw", "scope": "DBORASGDPW"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgts", "scope": "DBORASGTS"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgdbc", "scope": "DBORASGDBC"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgrlw", "scope": "DBORASGRLW"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgiw", "scope": "DBORASGIW"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgbbw", "scope": "DBORASGBBW"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsggcbb", "scope": "DBORASGGCBB"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgcrbr", "scope": "DBORASGCRBR"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsgcbr", "scope": "DBORASGCBR"},
+                {"action": self.athget, "regexp": r'(.+Time.+|Executions|.+Total|SQL.+|PDB)', "tag": 'th', "context": "thsqc", "scope": "DBORASQC"},
+                {"action": self.athget, "regexp": r'(.+Time.+|Executions|.+Total|SQL.+|CPU|PDB)', "tag": 'th', "context": "thsqe", "scope": "DBORASQE"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsqg", "scope": "DBORASQG"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsqm", "scope": "DBORASQM"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsqp", "scope": "DBORASQP"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsqr", "scope": "DBORASQR"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsqv", "scope": "DBORASQV"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsqw", "scope": "DBORASQW"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsqx", "scope": "DBORASQX"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsrv", "scope": "DBORASRV"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thsvw", "scope": "DBORASVW"},
+                {"action": self.athget, "regexp": r'(Statistic|Total)', "tag": 'th', "context": "thsta", "scope": "DBORASTA"},
+                {"action": self.athget, "regexp": r'', "tag": 'th', "context": "thtab1"},
+                {"action": self.athget, "regexp": r'', "tag": 'th', "context": "thtab2"},
+                {"action": self.athget, "regexp": r'', "tag": 'th', "context": "thtab3"},
+                {"action": self.athget, "regexp": r'', "tag": 'th', "context": "thtab4"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thtbs", "scope": "DBORATBS"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thtms", "scope": "DBORATMS"},
+                {"action": self.athget, "regexp": r'.', "tag": 'th', "context": "thexacpu", "scope": "EXACPU"},
+                {"action": self.athget, "regexp": r'(Name|DBID|Total|Flash|Disk|Captured)', "tag": 'th', "context": "thexatopdbior", "scope": "EXATOPDBIOR"},
+                {"action": self.athget, "regexp": r'(Name|DBID|Total|Flash|Disk|Captured)', "tag": 'th', "context": "thexatopdbiov", "scope": "EXATOPDBIOV"},
+                {"action": self.athget, "regexp": r'(Disk|Cell|Total|Average$|Small|Large)', "tag": 'th', "context": "thexatopdskior", "scope": "EXATOPDSKIOR"},
+                {"action": self.athget, "regexp": r'(Disk|Cell|Total|Average$|Small|Large)', "tag": 'th', "context": "thexatopdskiov", "scope": "EXATOPDSKIOV"},
+                {"action": self.athget, "regexp": r'(Type|Name|Total|Avg)', "tag": 'th', "context": "thexatopcllosio", "scope": "EXATOPCLLOSIO"},
+                {"action": self.athget, "regexp": r'(Type|Name|Total|Avg)', "tag": 'th', "context": "thexatopdskosio", "scope": "EXATOPDSKOSIO"},
+                {"action": self.athget, "regexp": r'(Type|Name|Service|Wait)', "tag": 'th', "context": "thexatopcllosiol", "scope": "EXATOPCLLOSIOL"},
+                {"action": self.athget, "regexp": r'(Type|Name|Service|Wait)', "tag": 'th', "context": "thexatopdskosiol", "scope": "EXATOPDSKOSIOL"},
+                {"action": self.athget, "regexp": r'(Event|Waits$|Total Wait Time.+|%Time -outs)', "tag": 'th', "context": "thweb", "scope": "DBORAWEB"},
+                {"action": self.athget, "regexp": r'(Wait Class|Waits$|Total Wait Time.+|%Time -outs)', "tag": 'th', "context": "thwec", "scope": "DBORAWEC"},
+                {"action": self.athget, "regexp": r'(Event|Waits$|Total Wait Time.+|%Time -outs)', "tag": 'th', "context": "thwev", "scope": "DBORAWEV"}
             ],
             "outcontextrules": [
-                {"action": s.genstate('thtab1'), "regexp": 'DB Name.*ReleaseRAC', "tag": 'tr'},
-                {"action": s.genstate('thtab2'), "regexp": 'InstanceInst.*Time', "tag": 'tr'},
-                {"action": s.genstate('thtab3'), "regexp": 'Container DB Id', "tag": 'tr'},
-                {"action": s.genstate('thtab4'), "regexp": 'Snap.*Cursors/Session', "tag": 'tr'},
-                {"action": s.genstate('thtms'), "regexp": 'Time Model Statistics', "tag": 'h3', "scope": "DBORATMS"},
-                {"action": s.genstate('thoss'), "regexp": 'Operating System Statistics', "tag": 'h3', "scope": "DBORAOSS"},
-                {"action": s.genstate('thwec'), "regexp": 'Foreground Wait Class', "tag": 'h3', "scope": "DBORAWEC"},
-                {"action": s.genstate('thwev'), "regexp": 'Foreground Wait Events', "tag": 'h3', "scope": "DBORAWEV"},
-                {"action": s.genstate('thweb'), "regexp": 'Background Wait Events', "tag": 'h3', "scope": "DBORAWEB"},
-                {"action": s.genstate('thsrv'), "regexp": 'Service Statistics', "tag": 'h3', "scope": "DBORASRV"},
-                {"action": s.genstate('thsvw'), "regexp": 'Service Wait Class Stats', "tag": 'h3', "scope": "DBORASVW"},
-                {"action": s.genstate('thsqe'), "regexp": 'SQL ordered by Elapsed Time', "tag": 'h3', "scope": "DBORASQE"},
-                {"action": s.genstate('thsqc'), "regexp": 'SQL ordered by CPU Time', "tag": 'h3', "scope": "DBORASQC"},
-                {"action": s.genstate('thsqg'), "regexp": 'SQL ordered by Gets', "tag": 'h3', "scope": "DBORASQG"},
-                {"action": s.genstate('thsqr'), "regexp": 'SQL ordered by Reads', "tag": 'h3', "scope": "DBORASQR"},
-                {"action": s.genstate('thsqx'), "regexp": 'SQL ordered by Executions', "tag": 'h3', "scope": "DBORASQX"},
-                {"action": s.genstate('thsqp'), "regexp": 'SQL ordered by Parse Calls', "tag": 'h3', "scope": "DBORASQP"},
-                {"action": s.genstate('thsqm'), "regexp": 'SQL ordered by Sharable Memory', "tag": 'h3', "scope": "DBORASQM"},
-                {"action": s.genstate('thsqv'), "regexp": 'SQL ordered by Version Count', "tag": 'h3', "scope": "DBORASQV"},
-                {"action": s.genstate('thsqw'), "regexp": 'SQL ordered by Cluster Wait Time', "tag": 'h3', "scope": "DBORASQW"},
-                {"action": s.genstate('threq'), "regexp": 'Complete List of SQL Text', "tag": 'h3', "scope": "DBORAREQ"},
-                {"action": s.genstate('thsta'), "regexp": 'Instance Activity Stats', "tag": 'h3', "scope": "DBORASTA"},
-                {"action": s.genstate('thtbs'), "regexp": 'Tablespace IO Stats', "tag": 'h3', "scope": "DBORATBS"},
-                {"action": s.genstate('thfil'), "regexp": 'File IO Stats', "tag": 'h3', "scope": "DBORAFIL"},
-                {"action": s.genstate('thbuf'), "regexp": 'Buffer Pool Statistics', "tag": 'h3', "scope": "DBORABUF"},
-                {"action": s.genstate('thmdc'), "regexp": 'Memory Dynamic Components', "tag": 'h3', "scope": "DBORAMDC"},
-                {"action": s.genstate('thmtt'), "regexp": 'Instance Recovery Stats', "tag": 'h3', "scope": "DBORAMTT"},
-                {"action": s.genstate('thbpa'), "regexp": 'Buffer Pool Advisory', "tag": 'h3', "scope": "DBORABPA"},
-                {"action": s.genstate('thpgb'), "regexp": 'PGA Aggr Summary', "tag": 'h3', "scope": "DBORAPGB"},
-                {"action": s.genstate('thpga'), "regexp": 'PGA Aggr Target Stats', "tag": 'h3', "scope": "DBORAPGA"},
-                {"action": s.genstate('thpgc'), "regexp": 'PGA Aggr Target Histogram', "tag": 'h3', "scope": "DBORAPGC"},
-                {"action": s.genstate('thenq'), "regexp": 'Enqueue Activity', "tag": 'h3', "scope": "DBORAENQ"},
-                {"action": s.genstate('thlaw'), "regexp": 'Latch Activity', "tag": 'h3', "scope": "DBORALAW"},
-                {"action": s.genstate('thlat'), "regexp": 'Latch Sleep Breakdown', "tag": 'h3', "scope": "DBORALAT"},
-                {"action": s.genstate('thsglr'), "regexp": 'Segments by Logical Reads', "tag": 'h3', "scope": "DBORASGLR"},
-                {"action": s.genstate('thsgpr'), "regexp": 'Segments by Physical Reads', "tag": 'h3', "scope": "DBORASGPR"},
-                {"action": s.genstate('thsgprr'), "regexp": 'Segments by Physical Read Requests', "tag": 'h3', "scope": "DBORASGPRR"},
-                {"action": s.genstate('thsgur'), "regexp": 'Segments by UnOptimized Reads', "tag": 'h3', "scope": "DBORASGUR"},
-                {"action": s.genstate('thsgor'), "regexp": 'Segments by Optimized Reads', "tag": 'h3', "scope": "DBORASGOR"},
-                {"action": s.genstate('thsgdpr'), "regexp": 'Segments by Direct Physical Reads', "tag": 'h3', "scope": "DBORASGDPR"},
-                {"action": s.genstate('thsgpw'), "regexp": 'Segments by Physical Writes', "tag": 'h3', "scope": "DBORASGPW"},
-                {"action": s.genstate('thsgpwr'), "regexp": 'Segments by Physical Write Requests', "tag": 'h3', "scope": "DBORASGPWR"},
-                {"action": s.genstate('thsgdpw'), "regexp": 'Segments by Direct Physical Writes', "tag": 'h3', "scope": "DBORASGDPW"},
-                {"action": s.genstate('thsgts'), "regexp": 'Segments by Table Scans', "tag": 'h3', "scope": "DBORASGTS"},
-                {"action": s.genstate('thsgdbc'), "regexp": 'Segments by DB Blocks Changes', "tag": 'h3', "scope": "DBORASGDBC"},
-                {"action": s.genstate('thsgrlw'), "regexp": 'Segments by Row Lock Waits', "tag": 'h3', "scope": "DBORASGRLW"},
-                {"action": s.genstate('thsgiw'), "regexp": 'Segments by ITL Waits', "tag": 'h3', "scope": "DBORASGIW"},
-                {"action": s.genstate('thsgbbw'), "regexp": 'Segments by Buffer Busy Waits', "tag": 'h3', "scope": "DBORASGBBW"},
-                {"action": s.genstate('thsggcbb'), "regexp": 'Segments by Global Cache Buffer Busy', "tag": 'h3', "scope": "DBORASGGCBB"},
-                {"action": s.genstate('thsgcrbr'), "regexp": 'Segments by CR Blocks Received', "tag": 'h3', "scope": "DBORASGCRBR"},
-                {"action": s.genstate('thsgcbr'), "regexp": 'Segments by Current Blocks Received', "tag": 'h3', "scope": "DBORASGCBR"},
-                {"action": s.genstate('thlib'), "regexp": 'Library Cache Activity', "tag": 'h3', "scope": "DBORALIB"},
-                {"action": s.genstate('thsga'), "regexp": 'SGA breakdown difference', "tag": 'h3', "scope": "DBORASGA"},
-                {"action": s.genstate('thexatopcllosio'), "regexp": 'Exadata OS IO Statistics - Top Cells$', "tag": 'h4', "scope": "EXATOPCLLOSIO"},
-                {"action": s.genstate('thexatopdskosio'), "regexp": 'Exadata OS IO Statistics - Top Disks$', "tag": 'h4', "scope": "EXATOPDSKOSIO"},
-                {"action": s.genstate('thexatopcllosiol'), "regexp": 'Exadata OS IO Latency - Top Cells$', "tag": 'h4', "scope": "EXATOPCLLOSIOL"},
-                {"action": s.genstate('thexatopdskosiol'), "regexp": 'Exadata OS IO Latency - Top Disks$', "tag": 'h4', "scope": "EXATOPDSKOSIOL"},
-                {"action": s.genstate('thexacpu'), "regexp": 'Exadata OS CPU Statistics - Top Cells', "tag": 'h4', "scope": "EXACPU"},
-                {"action": s.genstate('thexatopdskior'), "regexp": 'Exadata Cell Server IOPS - Top Disks$', "tag": 'h4', "scope": "EXATOPDSKIOR"},
-                {"action": s.genstate('thexatopdskiov'), "regexp": 'Exadata Cell Server IO MB/s - Top Disks$', "tag": 'h4', "scope": "EXATOPDSKIOV"},
-                {"action": s.genstate('thexatopdbior'), "regexp": 'Top Databases by IO Requests$', "tag": 'h4', "scope": "EXATOPDBIOR"},
-                {"action": s.genstate('thexatopdbiov'), "regexp": 'Top Databases by IO Throughput$', "tag": 'h4', "scope": "EXATOPDBIOV"},
+                {"action": self.genstate('thtab1'), "regexp": r'DB Name.*ReleaseRAC', "tag": 'tr'},
+                {"action": self.genstate('thtab2'), "regexp": r'InstanceInst.*Time', "tag": 'tr'},
+                {"action": self.genstate('thtab3'), "regexp": r'Container DB Id', "tag": 'tr'},
+                {"action": self.genstate('thtab4'), "regexp": r'Snap.*Cursors/Session', "tag": 'tr'},
+                {"action": self.genstate('thtms'), "regexp": r'Time Model Statistics', "tag": 'h3', "scope": "DBORATMS"},
+                {"action": self.genstate('thoss'), "regexp": r'Operating System Statistics', "tag": 'h3', "scope": "DBORAOSS"},
+                {"action": self.genstate('thwec'), "regexp": r'Foreground Wait Class', "tag": 'h3', "scope": "DBORAWEC"},
+                {"action": self.genstate('thwev'), "regexp": r'Foreground Wait Events', "tag": 'h3', "scope": "DBORAWEV"},
+                {"action": self.genstate('thweb'), "regexp": r'Background Wait Events', "tag": 'h3', "scope": "DBORAWEB"},
+                {"action": self.genstate('thsrv'), "regexp": r'Service Statistics', "tag": 'h3', "scope": "DBORASRV"},
+                {"action": self.genstate('thsvw'), "regexp": r'Service Wait Class Stats', "tag": 'h3', "scope": "DBORASVW"},
+                {"action": self.genstate('thsqe'), "regexp": r'SQL ordered by Elapsed Time', "tag": 'h3', "scope": "DBORASQE"},
+                {"action": self.genstate('thsqc'), "regexp": r'SQL ordered by CPU Time', "tag": 'h3', "scope": "DBORASQC"},
+                {"action": self.genstate('thsqg'), "regexp": r'SQL ordered by Gets', "tag": 'h3', "scope": "DBORASQG"},
+                {"action": self.genstate('thsqr'), "regexp": r'SQL ordered by Reads', "tag": 'h3', "scope": "DBORASQR"},
+                {"action": self.genstate('thsqx'), "regexp": r'SQL ordered by Executions', "tag": 'h3', "scope": "DBORASQX"},
+                {"action": self.genstate('thsqp'), "regexp": r'SQL ordered by Parse Calls', "tag": 'h3', "scope": "DBORASQP"},
+                {"action": self.genstate('thsqm'), "regexp": r'SQL ordered by Sharable Memory', "tag": 'h3', "scope": "DBORASQM"},
+                {"action": self.genstate('thsqv'), "regexp": r'SQL ordered by Version Count', "tag": 'h3', "scope": "DBORASQV"},
+                {"action": self.genstate('thsqw'), "regexp": r'SQL ordered by Cluster Wait Time', "tag": 'h3', "scope": "DBORASQW"},
+                {"action": self.genstate('threq'), "regexp": r'Complete List of SQL Text', "tag": 'h3', "scope": "DBORAREQ"},
+                {"action": self.genstate('thsta'), "regexp": r'Instance Activity Stats', "tag": 'h3', "scope": "DBORASTA"},
+                {"action": self.genstate('thtbs'), "regexp": r'Tablespace IO Stats', "tag": 'h3', "scope": "DBORATBS"},
+                {"action": self.genstate('thfil'), "regexp": r'File IO Stats', "tag": 'h3', "scope": "DBORAFIL"},
+                {"action": self.genstate('thbuf'), "regexp": r'Buffer Pool Statistics', "tag": 'h3', "scope": "DBORABUF"},
+                {"action": self.genstate('thmdc'), "regexp": r'Memory Dynamic Components', "tag": 'h3', "scope": "DBORAMDC"},
+                {"action": self.genstate('thmtt'), "regexp": r'Instance Recovery Stats', "tag": 'h3', "scope": "DBORAMTT"},
+                {"action": self.genstate('thbpa'), "regexp": r'Buffer Pool Advisory', "tag": 'h3', "scope": "DBORABPA"},
+                {"action": self.genstate('thpgb'), "regexp": r'PGA Aggr Summary', "tag": 'h3', "scope": "DBORAPGB"},
+                {"action": self.genstate('thpga'), "regexp": r'PGA Aggr Target Stats', "tag": 'h3', "scope": "DBORAPGA"},
+                {"action": self.genstate('thpgc'), "regexp": r'PGA Aggr Target Histogram', "tag": 'h3', "scope": "DBORAPGC"},
+                {"action": self.genstate('thenq'), "regexp": r'Enqueue Activity', "tag": 'h3', "scope": "DBORAENQ"},
+                {"action": self.genstate('thlaw'), "regexp": r'Latch Activity', "tag": 'h3', "scope": "DBORALAW"},
+                {"action": self.genstate('thlat'), "regexp": r'Latch Sleep Breakdown', "tag": 'h3', "scope": "DBORALAT"},
+                {"action": self.genstate('thsglr'), "regexp": r'Segments by Logical Reads', "tag": 'h3', "scope": "DBORASGLR"},
+                {"action": self.genstate('thsgpr'), "regexp": r'Segments by Physical Reads', "tag": 'h3', "scope": "DBORASGPR"},
+                {"action": self.genstate('thsgprr'), "regexp": r'Segments by Physical Read Requests', "tag": 'h3', "scope": "DBORASGPRR"},
+                {"action": self.genstate('thsgur'), "regexp": r'Segments by UnOptimized Reads', "tag": 'h3', "scope": "DBORASGUR"},
+                {"action": self.genstate('thsgor'), "regexp": r'Segments by Optimized Reads', "tag": 'h3', "scope": "DBORASGOR"},
+                {"action": self.genstate('thsgdpr'), "regexp": r'Segments by Direct Physical Reads', "tag": 'h3', "scope": "DBORASGDPR"},
+                {"action": self.genstate('thsgpw'), "regexp": r'Segments by Physical Writes', "tag": 'h3', "scope": "DBORASGPW"},
+                {"action": self.genstate('thsgpwr'), "regexp": r'Segments by Physical Write Requests', "tag": 'h3', "scope": "DBORASGPWR"},
+                {"action": self.genstate('thsgdpw'), "regexp": r'Segments by Direct Physical Writes', "tag": 'h3', "scope": "DBORASGDPW"},
+                {"action": self.genstate('thsgts'), "regexp": r'Segments by Table Scans', "tag": 'h3', "scope": "DBORASGTS"},
+                {"action": self.genstate('thsgdbc'), "regexp": r'Segments by DB Blocks Changes', "tag": 'h3', "scope": "DBORASGDBC"},
+                {"action": self.genstate('thsgrlw'), "regexp": r'Segments by Row Lock Waits', "tag": 'h3', "scope": "DBORASGRLW"},
+                {"action": self.genstate('thsgiw'), "regexp": r'Segments by ITL Waits', "tag": 'h3', "scope": "DBORASGIW"},
+                {"action": self.genstate('thsgbbw'), "regexp": r'Segments by Buffer Busy Waits', "tag": 'h3', "scope": "DBORASGBBW"},
+                {"action": self.genstate('thsggcbb'), "regexp": r'Segments by Global Cache Buffer Busy', "tag": 'h3', "scope": "DBORASGGCBB"},
+                {"action": self.genstate('thsgcrbr'), "regexp": r'Segments by CR Blocks Received', "tag": 'h3', "scope": "DBORASGCRBR"},
+                {"action": self.genstate('thsgcbr'), "regexp": r'Segments by Current Blocks Received', "tag": 'h3', "scope": "DBORASGCBR"},
+                {"action": self.genstate('thlib'), "regexp": r'Library Cache Activity', "tag": 'h3', "scope": "DBORALIB"},
+                {"action": self.genstate('thsga'), "regexp": r'SGA breakdown difference', "tag": 'h3', "scope": "DBORASGA"},
+                {"action": self.genstate('thexatopcllosio'), "regexp": r'Exadata OS IO Statistics - Top Cells$', "tag": 'h4', "scope": "EXATOPCLLOSIO"},
+                {"action": self.genstate('thexatopdskosio'), "regexp": r'Exadata OS IO Statistics - Top Disks$', "tag": 'h4', "scope": "EXATOPDSKOSIO"},
+                {"action": self.genstate('thexatopcllosiol'), "regexp": r'Exadata OS IO Latency - Top Cells$', "tag": 'h4', "scope": "EXATOPCLLOSIOL"},
+                {"action": self.genstate('thexatopdskosiol'), "regexp": r'Exadata OS IO Latency - Top Disks$', "tag": 'h4', "scope": "EXATOPDSKOSIOL"},
+                {"action": self.genstate('thexacpu'), "regexp": r'Exadata OS CPU Statistics - Top Cells', "tag": 'h4', "scope": "EXACPU"},
+                {"action": self.genstate('thexatopdskior'), "regexp": r'Exadata Cell Server IOPS - Top Disks$', "tag": 'h4', "scope": "EXATOPDSKIOR"},
+                {"action": self.genstate('thexatopdskiov'), "regexp": r'Exadata Cell Server IO MB/s - Top Disks$', "tag": 'h4', "scope": "EXATOPDSKIOV"},
+                {"action": self.genstate('thexatopdbior'), "regexp": r'Top Databases by IO Requests$', "tag": 'h4', "scope": "EXATOPDBIOR"},
+                {"action": self.genstate('thexatopdbiov'), "regexp": r'Top Databases by IO Throughput$', "tag": 'h4', "scope": "EXATOPDBIOV"},
             ]
         }
-        super(UserObject, s).__init__(**object)
-    def begin(s, a):
+        super(UserObject, self).__init__(**object)
+    def begin(self, a):
         a.collector = {}
         a.cpt = -1
         a.collected = {}
@@ -210,14 +212,13 @@ class UserObject(dict):
         a.reinit = True
         a.sqlid = {}
         a.month = dict(Jan='01',Feb='02',Fev='02',Mar='03',Apr='04',Avr='04',May='05',Mai='05', Jun='06',Jul='07',Aug='08',Sep='09',Oct='10',Nov='11',Dec='12')
-        a.setContext('');
-    def end(s, a):
+        a.setContext('')
+    def end(self, a):
         tof=lambda x: float(x.replace(',','').replace(u'\xa0','0')) if x!=u'' else 0.0
         toc=lambda x: x.replace('&quot;',"'").replace('&lt;',"<").replace('&gt;',">").replace(u'\xa0','')
         logging.trace('All keys found in collected data: ' + str(sorted(a.collected.keys(),reverse=True)))
         for x in sorted(a.collected.keys(),reverse=True):
             logging.trace('Found key in collected data: ' + x)
-            line=-1
             if x =='zz9':
                 dmisc = dict(timestamp='text', sessions='real', avgelapsed='real', elapsed='int')
                 for y in a.collected[x]:
@@ -994,19 +995,19 @@ class UserObject(dict):
                     stack.append(dict(timestamp=a.date, type=type, cell=cell, disk=disk, stime=stime, wtime=wtime))
                 a.emit('EXATOPDSKOSIOL', d, stack)
 
-    def aaction(s, a, l, g, m):
-        if l.tag in ['h3', 'h4']: s.ah3(a, l, g, m)
-        if l.tag in ['th', 'td']: s.athd(a, l, g, m)
-        if l.tag in ['table']: s.atable(a, l, g, m)
-        if l.tag in ['tr']: s.atr(a, l, g, m)
+    def aaction(self, a, l, g, m):
+        if l.tag in ['h3', 'h4']: self.ah3(a, l, g, m)
+        if l.tag in ['th', 'td']: self.athd(a, l, g, m)
+        if l.tag in ['table']: self.atable(a, l, g, m)
+        if l.tag in ['tr']: self.atr(a, l, g, m)
 
-    def ah3(s, a, l, g, m):
+    def ah3(self, a, l, g, m):
         context = ''
         a.setContext(context)
         if len(a.row): a.tab.append(a.row)
         a.row = {}
 
-    def atable(s, a, l, g, m):
+    def atable(self, a, l, g, m):
         context = ''
         if a.reinit: a.setContext(context)
         if len(a.scope) < 3:
@@ -1064,16 +1065,16 @@ class UserObject(dict):
         a.row = {}
         a.collector = {}
 
-    def athget(s, a, l, g, m):
+    def athget(self, a, l, g, m):
         if 0 not in a.collector: a.collector[0] = ''
         x = a.lxmltext(l).replace(' ', '')
         a.collector[a.cpt] = x if x not in a.collector.values() else x + '@' if x + '@' not in a.collector.values() else x + '@@'
         #a.collector[a.cpt]=a.lxmltext(l)
 
-    def atdget(s, a, l, g, m):
+    def atdget(self, a, l, g, m):
         if a.cpt in a.collector: a.row[a.collector[a.cpt]]=a.lxmltext(l) if a.lxmltext(l) != '' else a.memory[a.collector[a.cpt]] if a.collector[a.cpt] in a.memory and 'exatop' in a.context else ''
 
-    def atr(s, a, l, g, m):
+    def atr(self, a, l, g, m):
         a.reinit = True
         a.cpt = -1
         if hasattr(a,'collector') and len(a.collector): a.setContext('td'+a.context[2:])
@@ -1081,11 +1082,11 @@ class UserObject(dict):
         a.memory = a.row
         a.row = {}
 
-    def athd(s, a, l, g, m):
+    def athd(self, a, l, g, m):
         colspan = int(l.attrib['colspan']) if 'colspan' in l.attrib else 1
         a.cpt+=colspan
 
-    def genstate(s, c):
+    def genstate(self, c):
         def f(a, l ,g, m):
             a.reinit = False
             a.setContext(c)

@@ -1,25 +1,25 @@
 import numpy
 from datetime import datetime, timedelta
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "analyzer",
             "id": "ANALBO",
-            "begin": s.begin,
-            "end": s.end,
+            "begin": self.begin,
+            "end": self.end,
             "rules": [],
             "contextrules": [
-                {"action": s.ageneric, "regexp": '^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2}) (\w+) (.+)$', "context": "generic"},
+                {"action": self.ageneric, "regexp": r'^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2}) (\w+) (.+)$', "context": "generic"},
             ],
             "outcontextrules": [
-                {"action": s.asep, "regexp": '^REPORT TYPE: BO SEP1="(.+?)",SEP2="(.+?)".*$'},
-                {"action": s.adescfield, "regexp": '^TYPE (.+) (.+) (.+) *$'},
-                {"action": s.astartdata, "regexp": '^(\d{14}) (\w+) (.+)$'},
+                {"action": self.asep, "regexp": r'^REPORT TYPE: BO SEP1="(.+?)",SEP2="(.+?)".*$'},
+                {"action": self.adescfield, "regexp": r'^TYPE (.+) (.+) (.+) *$'},
+                {"action": self.astartdata, "regexp": r'^(\d{14}) (\w+) (.+)$'},
             ]
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)
 
-    def begin(s, a):
+    def begin(self, a):
         a.sep1 = ","
         a.sep2 = "="
         a.key = 0
@@ -34,7 +34,7 @@ class UserObject(dict):
         a.columns = {}
         a.ftype = {}
 
-    def end(s, a):
+    def end(self, a):
         a.desctable["BOBO2"]["executecount"] = 'bigint'
         for k in sorted(a.data):
             accumulator = 0.0
@@ -87,11 +87,11 @@ class UserObject(dict):
                     stack.append(newdata)
         a.emit("BO", a.desctable["BOBO2"], stack)
 
-    def asep(s, a, l ,g, m):
+    def asep(self, a, l ,g, m):
         a.sep1 = g(1)
         a.sep2 = g(2)
 
-    def adescfield(s, a, l ,g, m):
+    def adescfield(self, a, l ,g, m):
         tname = g(1)
         noop = lambda x: x
         def trint(x):
@@ -110,7 +110,7 @@ class UserObject(dict):
         a.transform[tname][g(2)] = f
         a.desctable[tname][g(2)] = g(3) if g(3) != 'int' else 'bigint'
 
-    def astartdata(s, a, l ,g, m):
+    def astartdata(self, a, l ,g, m):
         tname = g(2)
         noop = lambda x: x
         def trint(x):
@@ -134,7 +134,7 @@ class UserObject(dict):
                 a.desctable[tname][k] = 'real' if d[k].isdigit() else 'text'
         a.setContext('generic')
 
-    def ageneric(s, a, l ,g, m):
+    def ageneric(self, a, l ,g, m):
         tname = g(7)
         d = dict(timestamp = g(1) + g(2) + g(3) + g(4) + g(5) + g(6), kairos_count = 1)
         for p in g(8).split(a.sep1):

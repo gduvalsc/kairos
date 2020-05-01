@@ -1,5 +1,5 @@
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "choice",
             "id": "DBORAASHSQLSES",
@@ -7,4 +7,4 @@ class UserObject(dict):
             "chart": "DBORAASHSQLSES",
             "query": "DBORAASHSQLCHOICE",
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)

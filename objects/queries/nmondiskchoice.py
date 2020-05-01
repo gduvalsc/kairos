@@ -1,9 +1,13 @@
+null=None
+true=True
+false=False
+
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "query",
             "id": "NMONDISKCHOICE",
             "collections": ["NMONDISKREAD"],
             "request": "select distinct id as label from NMONDISKREAD order by label"
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)

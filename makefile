@@ -1,5 +1,5 @@
-VERSION=7.2
-PORT=44372
+VERSION=8.0
+PORT=44380
 IMAGE=kairos
 #IMAGE=gdsc/kairos:$(VERSION)
 MACHINE=kairos$(VERSION)
@@ -57,6 +57,7 @@ rm:
 
 boot:
 	docker cp objects $(MACHINE):/tmp
+	docker exec $(MACHINE) su - postgres -c 'pg_ctl stop'
 	docker exec $(MACHINE) sh -c 'python3 -m pykairos --makeboot'
 	docker cp $(MACHINE):/postgres/backups/pgboot.tar .
 
@@ -75,8 +76,8 @@ ressources:
 	rm -fr buildimage; mkdir buildimage
 	rm -fr kairosx; mkdir kairosx
 	cp -r resources  pykairos kairos.key kairos.crt index.html worker.py kairosx
-	cp instantclient-basic-linux.zip instantclient-sdk-linux.zip oracle_fdw-2.1.0.tar.gz buildimage
-	cp pgkairos-1.2-1.noarch.rpm buildimage
+	cp instantclient-basic-linux.zip instantclient-sdk-linux.zip oracle_fdw-2.2.1.tar.gz buildimage
+	cp pgkairos-1.3-1.noarch.rpm buildimage
 	cp pgboot.tar buildimage
 	sed -e 's/@@VERSION@@/$(VERSION)/' client.js > kairosx/client.js
 	sed -e 's/@@VERSION@@/$(VERSION)/' kairos > kairosx/kairos
@@ -90,6 +91,7 @@ clean:
 	docker rmi $$(docker images -f 'dangling=true' -q)
 
 nonreg:
+	cd ../KAIROSTESTS && py.test --capture=fd -v startup.py
 	cd ../KAIROSTESTS && py.test --capture=fd -v test.py
 
 remove:

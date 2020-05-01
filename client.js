@@ -1263,7 +1263,7 @@ dhtmlxEvent(window,"load",function(){
                 var jsongraph = mxg_getjson(context.graph);
                 var source = '\nobject = ' + JSON.stringify(jsongraph, undefined, 4) + '\nsuper(UserObject, s).__init__(**object)';
                 source = '\ndef __init__(s):' + source.replace(/\n/g, '\n    ');
-                source = 'class UserObject(dict):' + source.replace(/\n/g, '\n    ');
+                source = 'null=None\ntrue=True\nfalse=False\n\nclass UserObject(dict):' + source.replace(/\n/g, '\n    ');
                 waterfall([
                     ajax_post_first_in_async_waterfall("setobject", {database: desktop.settings.nodesdb, source: source}),
                     function (x) {
@@ -1669,7 +1669,7 @@ dhtmlxEvent(window,"load",function(){
 
     var postgres_logfile = function () {
 		var prefix = "wss://" + window.location.host;
-        manage_log(prefix + "/get_postgres_logfile", "postgres_logfile", "PostgreSQL log", "/var/lib/pgsql/10/data/$(cut -f 2 -d ' ' /var/lib/pgsql/10/data/current_logfiles)");
+        manage_log(prefix + "/get_postgres_logfile", "postgres_logfile", "PostgreSQL log", "/var/lib/pgsql/data/$(cut -f 2 -d ' ' /var/lib/pgsql/data/current_logfiles)");
     };
 
     var webserver_log = function () {

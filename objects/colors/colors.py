@@ -1,5 +1,5 @@
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "color",
             "id": "COLORS",
@@ -69,4 +69,4 @@ class UserObject(dict):
                 "Response time": "blue",
             }
         }
-        super(UserObject, s).__init__(**object)
+        super(UserObject, self).__init__(**object)

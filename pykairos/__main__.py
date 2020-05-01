@@ -104,6 +104,10 @@ if args.makeboot:
     os.system('echo ' + "===============================================")
     os.system('echo ' + command)
     os.system(command)
+    command = 'su - postgres -c "echo ''log_min_duration_statement = -1'' >> /postgres/boot/data/postgresql.conf"'
+    os.system('echo ' + "===============================================")
+    os.system('echo ' + command)
+    os.system(command)
     print('S', end='', flush=True)
     logging.info("Creating system database...")
     while True:

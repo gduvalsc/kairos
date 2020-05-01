@@ -33,16 +33,7 @@ getresponse = lambda context, d: web.json_response(dict(success=False, message=c
 def trace_call(func):
     def wrapper(*args, **kwargs):
         logging.debug(f'>>> Entering {func.__name__}')
-        loglevel = logging.getLogger().getEffectiveLevel()
-        if loglevel == logging.TRACE:
-            tracef = open(f'/var/log/kairos/postgres_{os.getpid()}.sql', 'a')
-            print(f'-- >>> {func.__name__} {datetime.now()}', file=tracef)
-            tracef.close()
         response = func(*args, **kwargs)
-        if loglevel == logging.TRACE:
-            tracef = open(f'/var/log/kairos/postgres_{os.getpid()}.sql', 'a')
-            print(f'-- <<< {func.__name__} {datetime.now()}', file=tracef)
-            tracef.close()
         logging.debug(f'<<< Leaving {func.__name__}')
         return response
     return wrapper

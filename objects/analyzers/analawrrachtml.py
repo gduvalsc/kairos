@@ -1,52 +1,52 @@
 class UserObject(dict):
-    def __init__(s):
+    def __init__(self):
         object = {
             "type": "analyzer",
             "id": "ANALAWRRACHTML",
             "content": "xml",
-            "begin": s.begin,
-            "end": s.end,
+            "begin": self.begin,
+            "end": self.end,
             "rules": [
-                {"action": s.ah3, "regexp": '', "tag": 'h3'},
-                {"action": s.atable, "regexp": '', "tag": 'table'},
-                {"action": s.atr, "regexp": '', "tag": 'tr'},
-                {"action": s.athd, "regexp": '', "tag": '(th|td)'}
+                {"action": self.ah3, "regexp": r'', "tag": 'h3'},
+                {"action": self.atable, "regexp": r'', "tag": 'table'},
+                {"action": self.atr, "regexp": r'', "tag": 'tr'},
+                {"action": self.athd, "regexp": r'', "tag": '(th|td)'}
             ],
             "contextrules": [
-                {"action": s.atdgetd, "regexp": '', "tag": 'td', "context": "tdgetd"},
+                {"action": self.atdgetd, "regexp": r'', "tag": 'td', "context": "tdgetd"},
             ],
             "outcontextrules": [
-                {"action": s.genstate('tdgetd'), "regexp": 'Complete List of SQL Text', "tag": 'h3', "scope": "DBORARACREQ"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Foreground Wait Classes$', "tag": 'h3', "scope": "DBORARACFWC"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Global Cache Efficiency Percentages', "tag": 'h3', "scope": "DBORARACGCEP"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Global Cache Transfer Stats', "tag": 'h3', "scope": "DBORARACGCTS"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Global Messaging Statistics \(Global\)', "tag": 'h3', "scope": "DBORARACSTA"},
-                {"action": s.genstate('tdgetd'), "regexp": 'OS Statistics By Instance', "tag": 'h3', "scope": "DBORARACOSS"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Ping Statistics', "tag": 'h3', "scope": "DBORARACPING"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Report Summary', "tag": 'h3', "scope": "DBORARACCSIZE"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Segment Statistics \(Global\)', "tag": 'h3', "scope": "DBORARACSEG"},
-                {"action": s.genstate('tdgetd'), "regexp": 'SQL ordered by Elapsed Time .Global.', "tag": 'h3', "scope": "DBORARACSQE"},
-                {"action": s.genstate('tdgetd'), "regexp": 'SQL ordered by CPU Time .Global.', "tag": 'h3', "scope": "DBORARACSQC"},
-                {"action": s.genstate('tdgetd'), "regexp": 'SQL ordered by User I/O Time .Global.', "tag": 'h3', "scope": "DBORARACSQI"},
-                {"action": s.genstate('tdgetd'), "regexp": 'SQL ordered by Gets .Global.', "tag": 'h3', "scope": "DBORARACSQG"},
-                {"action": s.genstate('tdgetd'), "regexp": 'SQL ordered by Reads .Global.', "tag": 'h3', "scope": "DBORARACSQR"},
-                {"action": s.genstate('tdgetd'), "regexp": 'SQL ordered by UnOptimized Read Requests .Global.', "tag": 'h3', "scope": "DBORARACSQU"},
-                {"action": s.genstate('tdgetd'), "regexp": 'SQL ordered by Executions .Global.', "tag": 'h3', "scope": "DBORARACSQX"},
-                {"action": s.genstate('tdgetd'), "regexp": 'SQL ordered by Cluster Wait Time .Global.', "tag": 'h3', "scope": "DBORARACSQW"},
-                {"action": s.genstate('tdgetd'), "regexp": 'SysStat and Global Messaging  - RAC$', "tag": 'h3', "scope": "DBORARACGALPGM"},
-                {"action": s.genstate('tdgetd'), "regexp": 'System Statistics$', "tag": 'h3', "scope": "DBORARACGALPSS"},
-                {"action": s.genstate('tdgetd'), "regexp": 'System Statistics \(Global\)', "tag": 'h3', "scope": "DBORARACSTA"},
-                {"action": s.genstate('tdgetd'), "regexp": 'System Statistics \(Absolute Values\)', "tag": 'h3', "scope": "DBORARACSTAA"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Time Model$', "tag": 'h3', "scope": "DBORARACTM"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Top Timed Background Events', "tag": 'h3', "scope": "DBORARACTTBE"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Top Timed Events', "tag": 'h3', "scope": "DBORARACTTE"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Top Timed Foreground Events', "tag": 'h3', "scope": "DBORARACTTFE"},
-                {"action": s.genstate('tdgetd'), "regexp": 'Snapshot Ids', "tag": 'th'},
-                {"action": s.genstate('tdgetd'), "regexp": 'Begin Snap Time', "tag": 'th'},
+                {"action": self.genstate('tdgetd'), "regexp": r'Complete List of SQL Text', "tag": 'h3', "scope": "DBORARACREQ"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Foreground Wait Classes$', "tag": 'h3', "scope": "DBORARACFWC"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Global Cache Efficiency Percentages', "tag": 'h3', "scope": "DBORARACGCEP"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Global Cache Transfer Stats', "tag": 'h3', "scope": "DBORARACGCTS"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Global Messaging Statistics \(Global\)', "tag": 'h3', "scope": "DBORARACSTA"},
+                {"action": self.genstate('tdgetd'), "regexp": r'OS Statistics By Instance', "tag": 'h3', "scope": "DBORARACOSS"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Ping Statistics', "tag": 'h3', "scope": "DBORARACPING"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Report Summary', "tag": 'h3', "scope": "DBORARACCSIZE"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Segment Statistics \(Global\)', "tag": 'h3', "scope": "DBORARACSEG"},
+                {"action": self.genstate('tdgetd'), "regexp": r'SQL ordered by Elapsed Time .Global.', "tag": 'h3', "scope": "DBORARACSQE"},
+                {"action": self.genstate('tdgetd'), "regexp": r'SQL ordered by CPU Time .Global.', "tag": 'h3', "scope": "DBORARACSQC"},
+                {"action": self.genstate('tdgetd'), "regexp": r'SQL ordered by User I/O Time .Global.', "tag": 'h3', "scope": "DBORARACSQI"},
+                {"action": self.genstate('tdgetd'), "regexp": r'SQL ordered by Gets .Global.', "tag": 'h3', "scope": "DBORARACSQG"},
+                {"action": self.genstate('tdgetd'), "regexp": r'SQL ordered by Reads .Global.', "tag": 'h3', "scope": "DBORARACSQR"},
+                {"action": self.genstate('tdgetd'), "regexp": r'SQL ordered by UnOptimized Read Requests .Global.', "tag": 'h3', "scope": "DBORARACSQU"},
+                {"action": self.genstate('tdgetd'), "regexp": r'SQL ordered by Executions .Global.', "tag": 'h3', "scope": "DBORARACSQX"},
+                {"action": self.genstate('tdgetd'), "regexp": r'SQL ordered by Cluster Wait Time .Global.', "tag": 'h3', "scope": "DBORARACSQW"},
+                {"action": self.genstate('tdgetd'), "regexp": r'SysStat and Global Messaging  - RAC$', "tag": 'h3', "scope": "DBORARACGALPGM"},
+                {"action": self.genstate('tdgetd'), "regexp": r'System Statistics$', "tag": 'h3', "scope": "DBORARACGALPSS"},
+                {"action": self.genstate('tdgetd'), "regexp": r'System Statistics \(Global\)', "tag": 'h3', "scope": "DBORARACSTA"},
+                {"action": self.genstate('tdgetd'), "regexp": r'System Statistics \(Absolute Values\)', "tag": 'h3', "scope": "DBORARACSTAA"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Time Model$', "tag": 'h3', "scope": "DBORARACTM"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Top Timed Background Events', "tag": 'h3', "scope": "DBORARACTTBE"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Top Timed Events', "tag": 'h3', "scope": "DBORARACTTE"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Top Timed Foreground Events', "tag": 'h3', "scope": "DBORARACTTFE"},
+                {"action": self.genstate('tdgetd'), "regexp": r'Snapshot Ids', "tag": 'th'},
+                {"action": self.genstate('tdgetd'), "regexp": r'Begin Snap Time', "tag": 'th'},
             ]
         }
-        super(UserObject, s).__init__(**object)
-    def begin(s, a):
+        super(UserObject, self).__init__(**object)
+    def begin(self, a):
         a.collector = {}
         a.cpt = -1
         a.collected = {}
@@ -54,8 +54,8 @@ class UserObject(dict):
         a.reinit = True
         a.sqlid = {}
         a.month = dict(Jan='01',Feb='02',Fev='02',Mar='03',Apr='04',Avr='04',May='05',Mai='05', Jun='06',Jul='07',Aug='08',Sep='09',Oct='10',Nov='11',Dec='12')
-        a.setContext('');
-    def end(s, a):
+        a.setContext('')
+    def end(self, a):
         tof=lambda x: float(x.replace(',','').replace(u'\xa0','0')) if x!=u'' else 0.0
         toc=lambda x: x.replace('&quot;',"'").replace('&lt;',"<").replace('&gt;',">").replace(u'\xa0','')
         tos=lambda x: x.replace(u'\xa0','')
@@ -360,13 +360,13 @@ class UserObject(dict):
                     stack.append(dict(timestamp=a.date[0],sqlid=sqlid,elapsed=elapsed,cpu=cpu,iowait=iowait,gets=gets,reads=reads,rows=rows,cluster=cluster,execs=execs))
                 a.emit(collection, desc, stack)
 
-    def ah3(s, a, l, g, m):
+    def ah3(self, a, l, g, m):
         context = ''
         a.setContext(context)
         if len(a.row): a.tab.append(a.row)
         a.row = {}
 
-    def atable(s, a, l, g, m):
+    def atable(self, a, l, g, m):
         context = ''
         if a.reinit: a.setContext(context)
         if len(a.scope) < 3:
@@ -399,27 +399,27 @@ class UserObject(dict):
         a.row = {}
         a.collector = {}
 
-    def athget(s, a, l, g, m):
+    def athget(self, a, l, g, m):
         if 0 not in a.collector: a.collector[0] = ''
         a.collector[a.cpt]=a.lxmltext(l)
 
-    def atdget(s, a, l, g, m):
+    def atdget(self, a, l, g, m):
         if a.cpt in a.collector: a.row[a.collector[a.cpt]]=a.lxmltext(l)
 
-    def atdgetd(s, a, l, g, m):
+    def atdgetd(self, a, l, g, m):
         a.row[a.cpt] = a.lxmltext(l)
 
-    def atr(s, a, l, g, m):
+    def atr(self, a, l, g, m):
         a.reinit = True
         a.cpt = -1
         if hasattr(a,'collector') and len(a.collector): a.setContext('td'+a.context[2:])
         if len(a.row): a.tab.append(a.row)
         a.row = {}
 
-    def athd(s, a, l, g, m):
+    def athd(self, a, l, g, m):
         a.cpt+=1
 
-    def genstate(s, c):
+    def genstate(self, c):
         def f(a, l ,g, m):
             a.reinit = False
             a.setContext(c)
