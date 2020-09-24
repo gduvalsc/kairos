@@ -1,0 +1,13 @@
+Metadata-Version: 1.1
+Name: pykairos
+Version: 8.1
+Summary: Python aiohttp server used by Kairos
+Home-page: https://github.com/gduvalsc/kairos
+Author: Gerard Duval
+Author-email: gerard.duval@gdsoftconsulting.com
+License: GPL
+Description: UNKNOWN
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Topic :: Utilities
+Classifier: License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)

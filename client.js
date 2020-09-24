@@ -1982,7 +1982,8 @@ dhtmlxEvent(window,"load",function(){
         var wf = wgc.attachForm();
         wf.cross_and_load(data);
         var cb = wf.getCombo("choice");
-        cb.enableFilteringMode("between");
+        cb.enableFilteringMode(true);
+        cb.unSelectOption();
         wf.attachEvent("onButtonClick", function(){
             var choice = wf.getItemValue("choice");
             wgc.close();
