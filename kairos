@@ -59,7 +59,7 @@ PMT = Parameter('--aggregatormethod', 'aggregatormethod')
 def get_parameters(parser, args, service):
 
     handled_services = ['aggregateaddnode', 'applyaggregator', 'applyliveobject', 'buildallcollectioncaches', 'buildprogenycaches', 'buildcollectioncache', 'changepassword', 'checkserverconfig', 'clearcollectioncache', 'clearprogenycaches', 'compareaddnode', 'creategrant', 'createnode', 'createrole', 'createuser', 'createsystem', 'deletegrant', 'deletenode', 'deleteobject', 'deleterole', 'deleteuser', 'displaycollection', 'dropcollectioncache', 'emptytrash', 'executequery', 'export', 'getcollections', 'getid', 'getmember', 'getmemberlist', 'getmenus', 'getnode', 'getobject', 'getsettings', 'gettree', 'getBchildren', 'import', 'linkfathernode', 'listdatabases', 'listgrants', 'listobjects', 'listnodesdb', 'listroles', 'listsystemdb', 'listusers', 'renamenode', 'runchart', 'unload', 'updatesettings', 'uploadnode', 'uploadobject']
-    admin_services = ['listusers', 'createuser', 'deleteuser', 'listroles', 'createrole', 'deleterole', 'listgrants', 'creategrant', 'deletegrant']
+    admin_services = ['createuser', 'deleteuser', 'createrole', 'deleterole', 'creategrant', 'deletegrant']
 
     if service not in handled_services:
         message = '*** Service: ' + service + ' is not handled!'
@@ -105,13 +105,13 @@ def get_parameters(parser, args, service):
     if service == 'getBchildren': mandatory = [PNO, PID]
     if service == 'import': mandatory = []
     if service == 'linkfathernode': mandatory = [PNO, PFR, PTO]
-    if service == 'listdatabases': mandatory = [PA, PP]
-    if service == 'listgrants': mandatory = [PA, PP]
-    if service == 'listnodesdb': mandatory = [PA, PP]
+    if service == 'listdatabases': mandatory = []
+    if service == 'listgrants': mandatory = []
+    if service == 'listnodesdb': mandatory = []
     if service == 'listobjects': mandatory = [PNO, PSY]
-    if service == 'listroles': mandatory = [PA, PP]
-    if service == 'listsystemdb': mandatory = [PA, PP]
-    if service == 'listusers': mandatory = [PA, PP]
+    if service == 'listroles': mandatory = []
+    if service == 'listsystemdb': mandatory = []
+    if service == 'listusers': mandatory = []
     if service == 'renamenode': mandatory = [PNO, PID, PNE]
     if service == 'runchart': mandatory = [PNO, PSY, PID, PCO, PTE, PCH, PPL, PTP, PWI, PHE]
     if service == 'unload': mandatory = [PNO, PSY, PID]
@@ -192,10 +192,10 @@ def get_parameters(parser, args, service):
     if service == 'linkfathernode': 
         parameters = dict(to=vars(args)[PTO.target], nodesdb=vars(args)[PNO.target])
         parameters['from'] = vars(args)[PFR.target]
-    if service == 'listdatabases': parameters = dict()
+    if service == 'listdatabases': parameters = dict(user=vars(args)[PUS.target] if vars(args)[PUS.target] else 'admin', admin='false' if vars(args)[PUS.target] else 'true')
     if service == 'listgrants': parameters = dict()
     if service == 'listobjects': parameters = dict(nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
-    if service == 'listnodesdb': parameters = dict(user=vars(args)[PA.target])
+    if service == 'listnodesdb': parameters = dict(user=vars(args)[PUS.target] if vars(args)[PUS.target] else 'admin')
     if service == 'listroles': parameters = dict()
     if service == 'listsystemdb': parameters = dict()
     if service == 'listusers': parameters = dict()

@@ -207,7 +207,7 @@ class UserObject(dict):
     def afields(self, a, l, g, m):
         pos=0
         for f in re.split('(-+)',l):
-            if f and f[0]=='-': a.fieldself.append((pos,pos+len(f)))
+            if f and f[0]=='-': a.fields.append((pos,pos+len(f)))
             pos+=len(f)
 
     def apat(self, a, l, g, m):

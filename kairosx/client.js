@@ -18,7 +18,7 @@
 
 dhtmlxEvent(window,"load",function(){
 
-    var VERSION = "8.1";
+    var VERSION = "8.2";
     var ajaxcpt = 0;
     var desktop = {};
     desktop.variables = {};
@@ -976,7 +976,7 @@ dhtmlxEvent(window,"load",function(){
         var data = '';
         ws.onopen = function () {
             uniqueid = _.uniqueId('log');
-            var wml = create_window(id, title);
+            var wml = create_window(id, title, undefined, undefined, ws);
             wml.attachHTMLString('<div id="' + uniqueid + '" style="width:100%;height:100%;overflow:auto"></div>');
             ws.send("tail -f " + file);
         };
@@ -990,13 +990,14 @@ dhtmlxEvent(window,"load",function(){
         };
         ws.onerror = function (e) {
             alertify.error('<div style="font-size:150%;">' + e.data + "</div>", 20000);
+            ws.close();
         };
         ws.onclose = function (e) {
             return;
         }
     }
 
-    var create_window = function(id, title, w, h) {
+    var create_window = function(id, title, w, h, ws) {
         var uid = _.uniqueId(id);
         var width = w === undefined ? desktop.layout.cells("a").getWidth() / 3 * 2 : w;
         var height = h === undefined ? desktop.layout.cells("a").getHeight() / 3 * 2 : h;
@@ -1011,6 +1012,9 @@ dhtmlxEvent(window,"load",function(){
             win.hide();
         });
         win.attachEvent("onClose", function () {
+            if (ws !== undefined) {
+                ws.close()
+            }
             desktop.toolbar.removeListOption("windows", uid);
             return true;
         });

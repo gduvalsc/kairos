@@ -182,16 +182,18 @@ class KairosWorker:
             async for msg in ws:
                 if msg.type == WSMsgType.TEXT:
                     logging.debug(f'Got request : {msg.data}')
-                    alpha = subprocess.Popen(msg.data,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
+                    alpha = subprocess.Popen("exec " + msg.data,stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True)
                     line = alpha.stdout.readline()
                     while line:
+                        if 'WARNING socket.send() raised exception' in line.decode(): break
                         ws.send_str(line.decode())
                         line = alpha.stdout.readline()
                     ws.send_str('__END_OF_PIPE__')
-                    await ws.close()
                 elif msg.type == WSMsgType.ERROR:
                     logging.error(f'Unexpected error, ws connection closed with exception {ws.exception()}')
         finally:
+            await ws.close()
+            alpha.kill()
             request.app['websockets'].remove(ws)
         return ws
 

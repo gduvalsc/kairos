@@ -1159,14 +1159,14 @@ class Context:
         r = self.grepo
         if len(nodesdb) == 0:
             databases = getdatabases(r)
-            nodesdb = [databases[x] for x in databases if 'kairos_user_' in x or 'kairos_group_' in x]
+            nodesdb = [x for x in databases if 'kairos_user_' in x or 'kairos_group_' in x]
         for db in nodesdb:
             with suppress(Exception): shutil.rmtree(f'/export/{db}')
             os.mkdir(f'/export/{db}')
             os.chmod(f'/export/{db}', 0o777)
             command = f'pg_dump -Fd -j {multiprocessing.cpu_count()} -f /export/{db}/database.dump {db}'
             ag = subprocess.run(['su', '-', 'postgres', '-c', command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            if  ag.returncode: self.status.pusherrmessage(f"Unable to export database {db} for an uknown reason!")
+            if  ag.returncode: self.status.pusherrmessage(f"Export database {db} exited with code {ag.returncode}!")
     
     def importdatabases(self, nodesdb):
         r = self.grepo
@@ -1179,16 +1179,16 @@ class Context:
             r.execute(f"select pg_terminate_backend(pid) from pg_stat_activity where datname = '{db}'")
             ag = subprocess.run(['su', '-', 'postgres', '-c', 'psql -c "drop database ' + db + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
-                self.status.pusherrmessage(f"Unable to drop database {db} during import!")
+                self.status.pusherrmessage(f"Drop database {db} exited with code {ag.returncode}!")
                 continue
             ag = subprocess.run(['su', '-', 'postgres', '-c', 'psql -c "create database ' + db + '"'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
-                self.status.pusherrmessage(f"Unable to create database {db} during import!")
+                self.status.pusherrmessage(f"Create database {db} exited with code {ag.returncode}!")
                 continue
             command = f'pg_restore -j {multiprocessing.cpu_count()} -d {db} /export/{db}/database.dump'
             ag = subprocess.run(['su', '-', 'postgres', '-c', command], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             if  ag.returncode:
-                self.status.pusherrmessage(f"Error during import of database: {db}")
+                self.status.pusherrmessage(f"Import of database: {db} exited with code {ag.returncode}!")
 
     def clearprogenycaches(self, id):
         r = self.nrepo

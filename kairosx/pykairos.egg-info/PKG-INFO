@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: pykairos
-Version: 8.1
+Version: 8.2
 Summary: Python aiohttp server used by Kairos
 Home-page: https://github.com/gduvalsc/kairos
 Author: Gerard Duval
