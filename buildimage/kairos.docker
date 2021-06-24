@@ -82,7 +82,7 @@ RUN echo "/var/log/kairos/kairos.log {" > /etc/logrotate.d/kairos && \
     echo "}">> /etc/logrotate.d/kairos
 
 ### KAIROS
-ENV KAIROS_VERSION=8.2
+ENV KAIROS_VERSION=8.3
 RUN mkdir /autoupload
 RUN mkdir /export
 ADD resources.tar.gz /

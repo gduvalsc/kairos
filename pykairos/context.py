@@ -120,23 +120,25 @@ def replaceeval(obj, contextvariables, recursive=False):
 
 def gettimestampdf(d, co, plotorientation):
     converttime = lambda x: datetime.strptime(x, '%Y%m%d%H%M%S%f')
-    if  'timestamp' not in d[0] and plotorientation == 'horizontal':
+    if  len(d) > 0 and 'timestamp' not in d[0] and plotorientation == 'horizontal':
         co['cols'] = len(d)
         co['isarray'] = True
-    if  'timestamp' not in d[0] and plotorientation == 'vertical': 
+    if  len(d) > 0 and 'timestamp' not in d[0] and plotorientation == 'vertical': 
         co['rows'] = len(d)
         co['isarray'] = True
     ret = []
     if co['isarray']:
         for x in d:
             r = pandas.DataFrame(data=x)
-            r['timestamp'] = r['timestamp'].apply(converttime)
-            r = r.set_index('timestamp').sort_index()
+            if 'timestamp' in r:
+                r['timestamp'] = r['timestamp'].apply(converttime)
+                r = r.set_index('timestamp').sort_index()
             ret.append(r)
     else:
         r = pandas.DataFrame(data=d)
-        r['timestamp'] = r['timestamp'].apply(converttime)
-        r = r.set_index('timestamp').sort_index()
+        if 'timestamp' in r: 
+            r['timestamp'] = r['timestamp'].apply(converttime)
+            r = r.set_index('timestamp').sort_index()
         ret.append(r)
     return ret
 
@@ -1797,7 +1799,7 @@ class Context:
                 ckey = hashlib.md5(json.dumps(key).encode('utf-8')).hexdigest()
                 x = self.repository.execute(f"select v from chartcache where k = '{ckey}'")
                 lvalues = [row['v'] for row in x.fetchall()]
-                valueout = json.dumps(dict(timestamp=datetime.now().strftime('%s'), value=valuein))
+                valueout = json.dumps(dict(timestamp=datetime.now().strftime('%s'), value=valuein)).replace("'","''")
                 if len(lvalues) == 0: self.repository.execute(f"insert into chartcache (k, v) values ('{ckey}', '{valueout}')")
                 else:self.repository.execute(f"update chartcache set v = '{valueout}' where k ='{ckey}'")
         
@@ -1867,7 +1869,8 @@ class Context:
                         result = self.queryexecute(id, d['query'], limit)
                         if self.status.errors > 0: return
                         datasetdf = gettimestampdf(result, co, plotorientation)
-                        labeldf = [x.groupby('label')[['value']].sum() for x in datasetdf]
+                        try: labeldf = [x.groupby('label')[['value']].sum() for x in datasetdf]
+                        except: labeldf = []
                         ascending = 0
                         i = 0
                         for e in labeldf:

@@ -35,7 +35,7 @@ def catchrun(*c):
         p.wait()
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--version', action='version', version='KAIROS V8.2')
+parser.add_argument('--version', action='version', version='KAIROS V8.3')
 parser.add_argument('--launcher', action='store_true', dest='launcher', help='The launcher is requested to start')
 parser.add_argument('--monoprocess', action='store_true', dest='monoprocess', help='Only one subprocess required')
 parser.add_argument('--notifier', action='store_true', dest='notifier', help='A notifier is requested to start')

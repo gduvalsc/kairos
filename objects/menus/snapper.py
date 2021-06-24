@@ -19,6 +19,7 @@ class UserObject(dict):
                                     "items": [
                                         { "type": "menuitem", "label": " Top sessions", "action": "dispchoice", "choice": "SNAPPERWEVSES" },
                                         { "type": "menuitem", "label": " Top SQL requests", "action": "dispchoice", "choice": "SNAPPERWEVSQL" },
+                                        { "type": "menuitem", "label": " Top object ids", "action": "dispchoice", "choice": "SNAPPERWEVOID" },
                                     ]
                                 },
                             ]
@@ -34,6 +35,7 @@ class UserObject(dict):
                                     "items": [
                                         { "type": "menuitem", "label": " Top wait events", "action": "dispchoice", "choice": "SNAPPERSESWEV" },
                                         { "type": "menuitem", "label": " Top SQL requests", "action": "dispchoice", "choice": "SNAPPERSESSQL" },
+                                        { "type": "menuitem", "label": " Top object ids", "action": "dispchoice", "choice": "SNAPPERSESOID" },
                                     ]
                                 },
                             ]
@@ -51,6 +53,7 @@ class UserObject(dict):
                                     "items": [
                                         { "type": "menuitem", "label": " Top wait events", "action": "dispchoice", "choice": "SNAPPERSQLWEV" },
                                         { "type": "menuitem", "label": " Top sessions", "action": "dispchoice", "choice": "SNAPPERSQLSES" },
+                                        { "type": "menuitem", "label": " Top object ids", "action": "dispchoice", "choice": "SNAPPERSQLOID" },
                                     ]
                                 },
                             ]

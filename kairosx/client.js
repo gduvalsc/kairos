@@ -18,7 +18,7 @@
 
 dhtmlxEvent(window,"load",function(){
 
-    var VERSION = "8.2";
+    var VERSION = "8.3";
     var ajaxcpt = 0;
     var desktop = {};
     desktop.variables = {};
