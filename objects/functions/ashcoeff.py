@@ -6,7 +6,7 @@ class UserObject(dict):
             "name": "ashcoeff",
             "function": """
                 CREATE OR REPLACE FUNCTION ashcoeff() RETURNS real AS $$
-                    try: method = plpy.execute("select method from aggregator",1)[0]['method']
+                    try: method = plpy.execute("select aggregatormethod from public.nodes where id = (select cast ( substr(current_schema(), 7) as integer))", 1)[0]['aggregatormethod']
                     except: method = '$none'
                     r = 1.0
                     if method == '$minute': r = 6.0

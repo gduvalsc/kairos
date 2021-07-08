@@ -29,7 +29,6 @@ class UserObject(dict):
                                         "SNAPPER"
                                     ],
                                     "userfunctions": [
-                                        "snappercoeff"
                                     ],
                                     "info": null,
                                     "onclick": null,
@@ -37,10 +36,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "SNAPPER, (select snappercoeff() as snappercoeff) as foo",
+                                            "table": "SNAPPER",
                                             "projection": "'on cpu'::text",
                                             "restriction": "event = 'ON CPU'",
-                                            "value": "pthread /100 /snappercoeff"
+                                            "value": "pthread /100"
                                         }
                                     ]
                                 },
@@ -51,7 +50,6 @@ class UserObject(dict):
                                         "SNAPPER"
                                     ],
                                     "userfunctions": [
-                                        "snappercoeff"
                                     ],
                                     "info": null,
                                     "onclick": null,
@@ -59,10 +57,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "SNAPPER, (select snappercoeff() as snappercoeff) as foo",
+                                            "table": "SNAPPER",
                                             "projection": "'waiting'::text",
                                             "restriction": "event != 'ON CPU'",
-                                            "value": "pthread /100 /snappercoeff"
+                                            "value": "pthread /100"
                                         }
                                     ]
                                 }
@@ -78,7 +76,6 @@ class UserObject(dict):
                                         "SNAPPER"
                                     ],
                                     "userfunctions": [
-                                        "snappercoeff"
                                     ],
                                     "info": null,
                                     "onclick": null,
@@ -86,10 +83,10 @@ class UserObject(dict):
                                     "nocache": false,
                                     "pieces": [
                                         {
-                                            "table": "SNAPPER, (select snappercoeff() as snappercoeff) as foo",
+                                            "table": "SNAPPER",
                                             "projection": "'average active sessions'::text",
                                             "restriction": "",
-                                            "value": "aas/snappercoeff"
+                                            "value": "aas"
                                         }
                                     ]
                                 }

@@ -11,9 +11,8 @@ class UserObject(dict):
                 "SNAPPER"
             ],
             "userfunctions": [
-                "snappercoeff"
             ],
-            "request": "select timestamp, label as label, avg(value) as value from (select timestamp, 'average active sessions'::text as label, aas/snappercoeff as value from SNAPPER, (select snappercoeff() as snappercoeff) as foo) as foo group by timestamp, label order by timestamp",
+            "request": "select timestamp, label as label, avg(value) as value from (select timestamp, 'average active sessions'::text as label, aas/snappercoeff as value from SNAPPER) as foo group by timestamp, label order by timestamp",
             "nocache": false,
             "filterable": true
         }

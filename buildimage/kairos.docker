@@ -47,7 +47,7 @@ RUN pip3 install --upgrade pip
 RUN pip3 install --upgrade pip
 RUN pip3 install python-magic
 RUN pip3 install pyinotify
-RUN pip3 install psycopg2-binary
+RUN pip3 install psycopg2-binary===2.8.6
 RUN pip3 install sqlalchemy
 RUN pip3 install plotly
 RUN pip3 install pandas
@@ -82,7 +82,7 @@ RUN echo "/var/log/kairos/kairos.log {" > /etc/logrotate.d/kairos && \
     echo "}">> /etc/logrotate.d/kairos
 
 ### KAIROS
-ENV KAIROS_VERSION=8.3
+ENV KAIROS_VERSION=8.4
 RUN mkdir /autoupload
 RUN mkdir /export
 ADD resources.tar.gz /

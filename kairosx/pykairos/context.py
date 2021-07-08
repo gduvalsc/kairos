@@ -1318,7 +1318,10 @@ class Context:
             if query == None: return
             collections = set(query['collections'])
             operations = self.schedulecacheoperations(id, 'buildcollectioncache', collections, recursive=True)
-            operations.append(dict(operation='buildquerycache', nid=id, qid=name))
+            if ntype in 'C':
+                for p in node['datasource']['producers']:
+                    operations.append(dict(operation='buildquerycache', nid=p['id'], qid=name))
+            else: operations.append(dict(operation='buildquerycache', nid=id, qid=name))
 
         if type == 'chart':
             chart = self.getchart(name)

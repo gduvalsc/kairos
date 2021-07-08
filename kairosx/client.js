@@ -18,7 +18,7 @@
 
 dhtmlxEvent(window,"load",function(){
 
-    var VERSION = "8.3";
+    var VERSION = "8.4";
     var ajaxcpt = 0;
     var desktop = {};
     desktop.variables = {};
@@ -2157,6 +2157,7 @@ dhtmlxEvent(window,"load",function(){
 				{id: "run_chart", text: "Run chart"},
 				{id: "run_choice", text: "Run choice"},
 				{type: "separator"},
+				{id: "clear_cache", text: "Clear cache"},
 				{id: "clear_progeny_caches", text: "Clear progeny caches"},
                 {id: "build_progeny_caches", text: "Build progeny caches"},
 				{type: "separator"},
@@ -2188,6 +2189,7 @@ dhtmlxEvent(window,"load",function(){
         contextmenu.setItemImage("display_collection","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("display_member","fa fa-file-text", "fa fa-file-text");
         contextmenu.setItemImage("unload","fa fa-cloud-download", "fa fa-cloud-download");
+        contextmenu.setItemImage("clear_cache","fas fa-angle-double-down", "fas fa-angle-double-down");
         contextmenu.setItemImage("clear_progeny_caches","fas fa-angle-double-down", "fas fa-angle-double-down");
         contextmenu.setItemImage("build_progeny_caches","fas fa-angle-double-up", "fas fa-angle-double-up");
         contextmenu.setItemImage("export","fa fa-sign-out", "fa fa-sign-out");
@@ -2209,7 +2211,8 @@ dhtmlxEvent(window,"load",function(){
                     contextmenuenabled.export = true;
                     contextmenuenabled.import = true;    
                 }
-                if (_.contains(["N", "B", "A", "L"], type)) {
+                if (_.contains(["N", "B", "A", "C", "D", "L"], type)) {
+                    contextmenuenabled.clear_cache = true;
                     contextmenuenabled.clear_progeny_caches = true;
                     contextmenuenabled.build_progeny_caches = true;
                 }
@@ -2462,6 +2465,15 @@ dhtmlxEvent(window,"load",function(){
                         }
                     ]);
                 }
+                if (fid === "clear_cache") {
+                    log.debug("Clear cache at node: " + id + " (" + tree.getItemText(id) + ")");
+                    waterfall([
+                        ajax_get_first_in_async_waterfall("clearcollectioncache", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: id}),
+                        function (x) {
+                            alertify.success('<div style="font-size:150%;">' + x.msg + "</div>");
+                        }
+                    ]);
+                }
                 if (fid === "clear_progeny_caches") {
                     log.debug("Clear progeny caches at node: " + id + " (" + tree.getItemText(id) + ")");
                     waterfall([
@@ -2529,9 +2541,11 @@ dhtmlxEvent(window,"load",function(){
                                 ajax_get_first_in_async_waterfall("executequery", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, query: x.chart.events[item].info.query, top: desktop.settings.top, variables: JSON.stringify(desktop.variables)}),
                                 function (y) {
                                     alertify.set({ delay: 15000 });
-                                    var key = node.datasource.type === 'C' ? y[0][0].key : y[0].key;
-                                    var value = node.datasource.type === 'C' ? y[0][0].value : y[0].value;
+                                    var key = node.datasource.type === 'C' ? y[0][0] === undefined ?  y[1][0] === undefined ? y[2][0] === undefined ? y[3][0].key : y[2][0].key : y[1][0].key : y[0][0].key : y[0].key;
+                                    var value = node.datasource.type === 'C' ? y[0][0] === undefined ?  y[1][0] === undefined ? y[2][0] === undefined ? y[3][0].value : y[2][0].value : y[1][0].value : y[0][0].value : y[0].value;
                                     alertify.log(key + "<hr/>" + value);
+                                    console.log(key);
+                                    console.log(value);
                                 }
                             ]);
                         }

@@ -29,7 +29,6 @@ class UserObject(dict):
                                         "SNAPPER"
                                     ],
                                     "userfunctions": [
-                                        "snappercoeff"
                                     ],
                                     "info": null,
                                     "onclick": null,
@@ -37,10 +36,10 @@ class UserObject(dict):
                                     "nocache": true,
                                     "pieces": [
                                         {
-                                            "table": "SNAPPER, (select snappercoeff() as snappercoeff) as foo",
+                                            "table": "SNAPPER",
                                             "projection": "sid||' - '||program",
                                             "restriction": "username = '%(SNAPPERSCHSES)s'",
-                                            "value": "pthread / 100 /snappercoeff"
+                                            "value": "pthread / 100"
                                         }
                                     ]
                                 }
