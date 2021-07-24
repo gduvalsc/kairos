@@ -10,6 +10,7 @@ class UserObject(dict):
                     except: method = '$none'
                     r = 1.0
                     if method == '$minute': r = 6.0
+                    if method == '$minute_v$': r = 60.0
                     if method == '$5minutes': r = 30.0
                     if method == '$10minutes': r = 60.0
                     if method == '$15minutes': r = 90.0

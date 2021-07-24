@@ -360,21 +360,23 @@ dhtmlxEvent(window,"load",function(){
         var cpt = 0;
         var previousid = null;
         _.each(items, function (i) {
-            i.tablecondition = i.tablecondition === undefined ? _.keys(node.datasource.collections)[0] : i.tablecondition;
             var id = id = parentid + '_' + cpt;
-            if (_.contains(_.keys(node.datasource.collections), i.tablecondition)) {
+            if (_.contains(_.keys(node.datasource.collections), i.tablecondition) || i.tablecondition === undefined) {
                 if (i.type === 'separator') {
-                    menu.addNewSeparator(previousid, id);
+                    if (previousid !== null) {
+                        menu.addNewSeparator(previousid, id);
+                    }
                 }
                 if (i.type === 'menuitem') {
                     menu.addNewChild(parentid, undefined, id, i.label);
                     menu.actions[id] = {action: i.action, chart: i.chart, choice: i.choice, layout: i.layout, keyfunc: i.keyfunc};
+                    previousid = id;
                 }
                 if (i.type === 'submenu') {
                     menu.addNewChild(parentid, undefined, id, i.label);
                     gensubmenus(menu, i.items, id, node);
+                    previousid = id;
                 }
-                previousid = id;
                 cpt += 1;
             }
         });
@@ -2011,7 +2013,7 @@ dhtmlxEvent(window,"load",function(){
         menu.setOpenMode("win");
         var tree = wexp.attachTreeView({
             dnd: true,
-            multiselect: false,
+            multiselect: true,
             context_menu: true,
             json: "gettree?nodesdb=" + desktop.settings.nodesdb + "&id={id}"
         });
@@ -2071,6 +2073,7 @@ dhtmlxEvent(window,"load",function(){
             return ret;
         });
         tree.attachEvent("onDrop", function (id, pid) {
+
             if (desktop.mouseevent.ctrlKey === false && desktop.mouseevent.shiftKey === false && desktop.mouseevent.altKey === false && desktop.mouseevent.metaKey === false && pid !== startpid) {
                 waterfall([
                     ajax_get_first_in_async_waterfall("movenode", {nodesdb: desktop.settings.nodesdb, from: id, to: pid}),

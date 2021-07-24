@@ -8,7 +8,7 @@ RUN dnf install -y python3 python3-lxml python36-devel
 #RUN dnf install -y postgresql-server  postgresql-contrib postgresql-server-devel
 
 RUN dnf install -y postgresql-server  postgresql-contrib postgresql-server-devel postgresql-devel postgresql-plpython3
-RUN dnf install -y wget make gcc vim zip unzip libaio libnsl crontabs psmisc telnet openssh-clients redhat-rpm-config logrotate
+RUN dnf install -y wget make gcc vim zip unzip libaio libnsl crontabs psmisc telnet openssh-clients redhat-rpm-config logrotate lsof
 
 #### cx_oracle and postgres environement variables
 ADD instantclient-basic-linux.zip /usr/local/lib
@@ -82,7 +82,7 @@ RUN echo "/var/log/kairos/kairos.log {" > /etc/logrotate.d/kairos && \
     echo "}">> /etc/logrotate.d/kairos
 
 ### KAIROS
-ENV KAIROS_VERSION=8.4
+ENV KAIROS_VERSION=8.5
 RUN mkdir /autoupload
 RUN mkdir /export
 ADD resources.tar.gz /

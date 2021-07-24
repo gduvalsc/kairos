@@ -10,20 +10,22 @@ class UserObject(dict):
                 {
                     "type": "submenu",
                     "label": "Summary",
+                    "tablecondition": "DBORAWEV",
                     "items": [
                         { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait", "action": "dispchart", "chart": "DBORASUM"},
                         { "type": "menuitem", "tablecondition": "DBORASTATSPACK", "label": "DB CPU & Wait", "action": "dispchart", "chart": "DBORASUM1"},
                         { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait Classes", "action": "dispchart", "chart": "DBORASUMWC" },
                         { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait Classes (Percentage)", "action": "dispchart", "chart": "DBORASUMWCP" },
                         { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB CPU & Wait Events", "action": "dispchart", "chart": "DBORASUMWE" },
-                        { "type": "menuitem", "label": "DB Time Model", "action": "dispchart", "chart": "DBORASUME" },
+                        { "type": "menuitem", "tablecondition": "DBORAAWR", "label": "DB Time Model", "action": "dispchart", "chart": "DBORASUME" },
                     ]
                 },
                 { "type": "separator", "tablecondition": "DBORAOSS"},
                 { "type": "menuitem", "tablecondition": "DBORAOSS", "label": "System statistics", "action": "dispchart", "chart": "DBORASYS"},
-                { "type": "separator"},
+                { "type": "separator", "tablecondition": "DBORAWEV"},
                 {
                     "type": "submenu",
+                    "tablecondition": "DBORAWEV",
                     "label": "Wait events",
                     "items": [
                         { "type": "menuitem", "tablecondition": "DBORAWEV", "label": "Top wait events", "action": "dispchart", "chart": "DBORAWEV"},
@@ -77,6 +79,7 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
+                    "tablecondition": "DBORASTA",
                     "label": "Advisors",
                     "items": [
                         {
@@ -95,6 +98,7 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
+                    "tablecondition": "DBORASQE",
                     "label": "SQL requests",
                     "items": [
                         { "type": "submenu", "tablecondition": "DBORAPDB", "label": " Choose PDB ...",
@@ -124,6 +128,7 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
+                    "tablecondition": "DBORATBSR",
                     "label": "Tablespaces & Files",
                     "items": [
                         { "type": "menuitem", "label": "Tablespace reads", "action": "dispchart", "chart": "DBORATBSR" },
@@ -188,6 +193,7 @@ class UserObject(dict):
                 { "type": "separator"},
                 {
                     "type": "submenu",
+                    "tablecondition": "DBORASGA",
                     "label": "SGA usage",
                     "items": [
                         { "type": "menuitem", "label": "SGA usage", "action": "dispchart", "chart": "DBORASGA" },
@@ -198,9 +204,10 @@ class UserObject(dict):
                         { "type": "menuitem", "label": "Choose SGA part ...", "action": "dispchoice", "choice": "DBORASGA" },
                     ]
                 },
-                { "type": "menuitem", "label": "PGA usage", "action": "dispchart", "chart": "DBORAPGA" },
+                { "type": "menuitem", "tablecondition": "DBORAPGA", "label": "PGA usage", "action": "dispchart", "chart": "DBORAPGA" },
                 {
                     "type": "submenu",
+                    "tablecondition": "DBORALIBR",
                     "label": "Library cache",
                     "items": [
                         { "type": "menuitem", "label": "Reloads", "action": "dispchart", "chart": "DBORALIBR" },

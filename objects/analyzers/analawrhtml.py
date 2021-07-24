@@ -547,7 +547,7 @@ class UserObject(dict):
                     busytime = tof(y['AvBufWt(ms)'])
                     stack.append(dict(timestamp=a.date, tablespace=tablespace, file=file, reads=reads, readtime=readtime, blocksperread=blocksperread, writes=writes, busy=busy, busytime=busytime))
                 a.emit('DBORAFIL', d, stack)
-            if x == 'SGA breakdown difference':
+            if x == 'SGA breakdown difference' or x == 'SGA breakdown difference by Pool and Name':
                 d = dict(timestamp='text', pool='text', name='text', size='real')
                 stack = []
                 for y in a.collected[x]:
@@ -1035,6 +1035,7 @@ class UserObject(dict):
             if a.scope.issubset({'DBORATBS'}) and 'Tablespace IO Stats' in a.collected and len(a.collected['Tablespace IO Stats']): a.setContext('BREAK')
             if a.scope.issubset({'DBORAFIL'}) and 'File IO Stats' in a.collected and len(a.collected['File IO Stats']): a.setContext('BREAK')
             if a.scope.issubset({'DBORASGA'}) and 'SGA breakdown difference' in a.collected and len(a.collected['SGA breakdown difference']): a.setContext('BREAK')
+            if a.scope.issubset({'DBORASGA'}) and 'SGA breakdown difference by Pool and Name' in a.collected and len(a.collected['SGA breakdown difference by Pool and Name']): a.setContext('BREAK')
             if a.scope.issubset({'DBORAPGB'}) and 'PGA Aggr Summary' in a.collected and len(a.collected['PGA Aggr Summary']): a.setContext('BREAK')
             if a.scope.issubset({'DBORAPGA'}) and 'PGA Aggr Target Stats' in a.collected and len(a.collected['PGA Aggr Target Stats']): a.setContext('BREAK')
             if a.scope.issubset({'DBORAPGC'}) and 'PGA Aggr Target Histogram' in a.collected and len(a.collected['PGA Aggr Target Histogram']): a.setContext('BREAK')
