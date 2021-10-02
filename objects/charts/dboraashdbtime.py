@@ -1,9 +1,5 @@
-null=None
-true=True
-false=False
-
 class UserObject(dict):
-    def __init__(self):
+    def __init__(s):
         object = {
             "id": "DBORAASHDBTIME",
             "title": "DB Time",
@@ -20,7 +16,7 @@ class UserObject(dict):
                     "maxvalue": null,
                     "renderers": [
                         {
-                            "type": "SA",
+                            "type": "WA",
                             "datasets": [
                                 {
                                     "query": "DBORAASHDBTIME$$1",
@@ -33,6 +29,12 @@ class UserObject(dict):
                                     "timestamp": "timestamp",
                                     "label": "label",
                                     "value": "value"
+                                },
+                                {
+                                    "query": "DBORAASHDBTIME$$3",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
                                 }
                             ]
                         }
@@ -40,4 +42,4 @@ class UserObject(dict):
                 }
             ]
         }
-        super(UserObject, self).__init__(**object)
+        super(UserObject, s).__init__(**object)

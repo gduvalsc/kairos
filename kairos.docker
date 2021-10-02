@@ -42,9 +42,6 @@ RUN cd /tmp && rpm --ignoreos --prefix=$(pg_config --sharedir)/extension -i /tmp
 
 #### python & python packages
 RUN pip3 install --upgrade pip
-
-### python3 packages
-RUN pip3 install --upgrade pip
 RUN pip3 install python-magic
 RUN pip3 install pyinotify
 RUN pip3 install psycopg2-binary===2.8.6

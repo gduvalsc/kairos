@@ -1,9 +1,5 @@
-null=None
-true=True
-false=False
-
 class UserObject(dict):
-    def __init__(self):
+    def __init__(s):
         object = {
             "id": "DBORAASHSQLCPU",
             "title": "Top SQL requests on CPU",
@@ -20,7 +16,7 @@ class UserObject(dict):
                     "maxvalue": null,
                     "renderers": [
                         {
-                            "type": "SA",
+                            "type": "WA",
                             "datasets": [
                                 {
                                     "query": "DBORAASHSQLCPU$$1",
@@ -33,9 +29,20 @@ class UserObject(dict):
                                     }
                                 }
                             ]
+                        },
+                        {
+                            "type": "WL",
+                            "datasets": [
+                                {
+                                    "query": "DBORAASHSQLCPU$$2",
+                                    "timestamp": "timestamp",
+                                    "label": "label",
+                                    "value": "value"
+                                }
+                            ]
                         }
                     ]
                 }
             ]
         }
-        super(UserObject, self).__init__(**object)
+        super(UserObject, s).__init__(**object)

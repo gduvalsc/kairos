@@ -207,6 +207,18 @@ def settrace(co, r, dataframe=None, label=None, yaxisindex=0, index=0, alreadyin
     param['legendgroup'] = label
     param['showlegend'] = True if label not in alreadyinlegend else False
     alreadyinlegend[label] = True
+    if r['type'] == 'WM': 
+        param['mode'] = 'markers'
+        param['marker'] = dict(color=(getcolor(colors, label)))
+        trace = plotly.graph_objs.Scattergl(**param)
+    if r['type'] == 'WA': 
+        param['line'] = dict(color=(getcolor(colors, label)), shape='hv')
+        param['fill'] = 'tozeroy'
+        param['fillcolor'] = getcolor(colors, label)
+        trace = plotly.graph_objs.Scattergl(**param)
+    if r['type'] == 'WL': 
+        param['line'] = dict(color=(getcolor(colors, label)), shape='hv')
+        trace = plotly.graph_objs.Scattergl(**param)
     if r['type'] == 'L': 
         param['line'] = dict(color=(getcolor(colors, label)), shape='spline')
         trace = plotly.graph_objs.Scatter(**param)
@@ -1889,7 +1901,8 @@ class Context:
                                     co['pievalues'][i].append(row['value'])
                                     co['piecolors'][i].append(getcolor(colors, label))
                                 else:
-                                    paddeddatasetdf = paddeddf(reftimedf[i], datasetdf[i][datasetdf[i]['label'] == label])
+                                    if r['type'] in ['WM']: paddeddatasetdf = datasetdf[i][datasetdf[i]['label'] == label]
+                                    else: paddeddatasetdf = paddeddf(reftimedf[i], datasetdf[i][datasetdf[i]['label'] == label])
                                     settrace(co, r, dataframe=paddeddatasetdf, label=label, yaxisindex=idxy[i] if co['shared_xaxes'] else idxy[0], index=i, alreadyinlegend=alreadyinlegend, groupname=getcolor(colors, str(r)), plotorientation=plotorientation, colors=colors)
                             i += 1
                 if r['type'] == 'P':

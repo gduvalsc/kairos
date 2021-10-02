@@ -20,7 +20,7 @@ class UserObject(dict):
                     "maxvalue": null,
                     "renderers": [
                         {
-                            "type": "L",
+                            "type": "WL",
                             "datasets": [
                                 {
                                     "groupby": "sum",

@@ -20,7 +20,7 @@ class UserObject(dict):
                     "maxvalue": null,
                     "renderers": [
                         {
-                            "type": "SA",
+                            "type": "WA",
                             "datasets": [
                                 {
                                     "query": "DBORAASHTMP$$1",
@@ -31,7 +31,7 @@ class UserObject(dict):
                             ]
                         },
                         {
-                            "type": "L",
+                            "type": "WL",
                             "datasets": [
                                 {
                                     "query": "DBORAASHTMP$$2",

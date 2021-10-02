@@ -3,7 +3,7 @@ true=True
 false=False
 
 class UserObject(dict):
-    def __init__(self):
+    def __init__(s):
         object = {
             "id": "DBORAASHSQL",
             "title": "Top SQL requests",
@@ -20,7 +20,7 @@ class UserObject(dict):
                     "maxvalue": null,
                     "renderers": [
                         {
-                            "type": "SA",
+                            "type": "WA",
                             "datasets": [
                                 {
                                     "groupby": "sum",
@@ -48,9 +48,36 @@ class UserObject(dict):
                                     ]
                                 }
                             ]
+                        },
+                        {
+                            "type": "WL",
+                            "datasets": [
+                                {
+                                    "groupby": "sum",
+                                    "projection": "label",
+                                    "collections": [
+                                        "ORAHAS"
+                                    ],
+                                    "userfunctions": [
+                                        "ashcoeff"
+                                    ],
+                                    "info": null,
+                                    "onclick": null,
+                                    "filterable": false,
+                                    "nocache": false,
+                                    "pieces": [
+                                        {
+                                            "table": "ORAHAS, (select ashcoeff() as ashcoeff) as foo",
+                                            "projection": "'All requests'",
+                                            "restriction": "session_type = 'FOREGROUND' and sql_id != ''",
+                                            "value": "kairos_count * 1.0 /ashcoeff"
+                                        }
+                                    ]
+                                }
+                            ]
                         }
                     ]
                 }
             ]
         }
-        super(UserObject, self).__init__(**object)
+        super(UserObject, s).__init__(**object)

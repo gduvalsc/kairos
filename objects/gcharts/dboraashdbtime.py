@@ -3,7 +3,7 @@ true=True
 false=False
 
 class UserObject(dict):
-    def __init__(self):
+    def __init__(s):
         object = {
             "id": "DBORAASHDBTIME",
             "title": "DB Time",
@@ -20,7 +20,7 @@ class UserObject(dict):
                     "maxvalue": null,
                     "renderers": [
                         {
-                            "type": "SA",
+                            "type": "WA",
                             "datasets": [
                                 {
                                     "groupby": "sum",
@@ -38,8 +38,8 @@ class UserObject(dict):
                                     "pieces": [
                                         {
                                             "table": "ORAHAS, (select ashcoeff() as ashcoeff) as foo",
-                                            "projection": "'on cpu'::text",
-                                            "restriction": "session_type = 'FOREGROUND' and session_state = 'ON CPU'",
+                                            "projection": "'DB time'::text",
+                                            "restriction": "session_type = 'FOREGROUND'",
                                             "value": "kairos_count * 1.0 /ashcoeff"
                                         }
                                     ]
@@ -65,6 +65,28 @@ class UserObject(dict):
                                             "value": "kairos_count * 1.0 /ashcoeff"
                                         }
                                     ]
+                                },
+                                {
+                                    "groupby": "sum",
+                                    "projection": "label",
+                                    "collections": [
+                                        "ORAHAS"
+                                    ],
+                                    "userfunctions": [
+                                        "ashcoeff"
+                                    ],
+                                    "info": null,
+                                    "onclick": null,
+                                    "filterable": true,
+                                    "nocache": false,
+                                    "pieces": [
+                                        {
+                                            "table": "ORAHAS, (select ashcoeff() as ashcoeff) as foo",
+                                            "projection": "'on cpu'::text",
+                                            "restriction": "session_type = 'FOREGROUND' and session_state = 'ON CPU'",
+                                            "value": "kairos_count * 1.0 /ashcoeff"
+                                        }
+                                    ]
                                 }
                             ]
                         }
@@ -72,4 +94,4 @@ class UserObject(dict):
                 }
             ]
         }
-        super(UserObject, self).__init__(**object)
+        super(UserObject, s).__init__(**object)

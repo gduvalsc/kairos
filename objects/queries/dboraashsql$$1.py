@@ -1,9 +1,5 @@
-null=None
-true=True
-false=False
-
 class UserObject(dict):
-    def __init__(self):
+    def __init__(s):
         object = {
             "type": "query",
             "id": "DBORAASHSQL$$1",
@@ -17,4 +13,4 @@ class UserObject(dict):
             "nocache": false,
             "filterable": true
         }
-        super(UserObject, self).__init__(**object)
+        super(UserObject, s).__init__(**object)
