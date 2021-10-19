@@ -22,6 +22,7 @@ class UserObject(dict):
                 {"action": self.nmon, "regexp": r'^AAA,progname,'},
                 {"action": self.nmon, "regexp": r'^CPU_ALL,'},
                 {"action": self.vmstat, "regexp": r'Collection Module:.+VmstatExaWatcher'},
+                {"action": self.meminfo, "regexp": r'Collection Module:.+MeminfoExaWatcher'},
                 {"action": self.tthtml, "regexp": r'.<[Tt][Ii][Tt][Ll][Ee]>TTSTATS REPORT'},
                 {"action": self.sar, "regexp": r'^(AIX|SunOS|HP-UX|Linux)[ \t]+(.+?)[ \t]+.*[ \t]+[0-9][0-9]/[0-9][0-9]/2?0?[0-9][0-9].*$'},
                 {"action": self.snapper, "regexp": r'^ +ActSes +%Thread'},
@@ -90,6 +91,14 @@ class UserObject(dict):
             "member": m,
             "analyzer": 'ANALVMSTAT',
             "collections": ['VMSTAT']
+        })
+        
+    def meminfo(self, a, l, g, m):
+        a.setContext('BREAK')
+        a.emit(None, None, {
+            "member": m,
+            "analyzer": 'ANALMEMINFO',
+            "collections": ['MEMINFO']
         })
         
     def snapper(self, a, l, g, m):

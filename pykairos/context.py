@@ -1820,7 +1820,7 @@ class Context:
         
         return ChartCache()
 
-    def runchart(self, id, chart, width, height, limit, colors, plotorientation, template):
+    def runchart(self, id, chart, width, height, limit, colors, plotorientation, template, toggle):
         r = self.nrepo
         node = self.getnode(id)
         self.getcache(node)
@@ -1833,7 +1833,7 @@ class Context:
             try: timeout = liveobject['retention']
             except: timeout = 60
         chartcache = self.getchartcache(id, timeout)
-        ckey = dict(chart=chart, limit=limit, colors=colors, plotorientation=plotorientation, template=template)
+        ckey = dict(chart=chart, limit=limit, colors=colors, plotorientation=plotorientation, template=template, toggle=toggle)
         jsonchart = chartcache.get(ckey)
         if jsonchart:
             chartobj = json.loads(jsonchart)
@@ -1876,6 +1876,12 @@ class Context:
                 else:
                     for i in range(co['rows']): idxy.append(getnewaxis(co, reftimedf, template, axistype='y', options=y, index=i))
                 for r in y['renderers']:
+                    if toggle:
+                        a = None
+                        if r['type'] == 'WA': a = 'SA'
+                        if r['type'] == 'SA': a = 'WA'
+                        if a: r['type'] = a
+                    logging.error(r['type'])
                     co['pielabels'] = dict()
                     co['pievalues'] = dict()
                     co['piecolors'] = dict()

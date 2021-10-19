@@ -2521,15 +2521,20 @@ dhtmlxEvent(window,"load",function(){
     var dispchart = function (node, chart) {
         var uniquecid = _.uniqueId('');
         var wchart = null;
+        var toggle = false;
         wchart = create_window("chart", node.name + ' - ' + chart);
         var runchart = function() {
             wchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto;text-align:center;"><img src="resources/ajax-loader.gif" alt="Work in progress..."></div>');
             waterfall([
-                ajax_get_first_in_async_waterfall("runchart", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, chart: chart, width: wchart.cell.clientWidth, height: wchart.cell.clientHeight, top: desktop.settings.top, plotorientation: desktop.settings.plotorientation, colors: desktop.settings.colors, template: desktop.settings.template, variables: JSON.stringify(desktop.variables)}),
+                ajax_get_first_in_async_waterfall("runchart", {nodesdb: desktop.settings.nodesdb, systemdb: desktop.settings.systemdb, id: node.id, chart: chart, width: wchart.cell.clientWidth, height: wchart.cell.clientHeight, top: desktop.settings.top, plotorientation: desktop.settings.plotorientation, colors: desktop.settings.colors, toggle: toggle, template: desktop.settings.template, variables: JSON.stringify(desktop.variables)}),
                 function (x) {
                     wchart.attachHTMLString('<div id="' + uniquecid + '" style="width:100%;height:100%;overflow:auto;text-align:center;"></div>');
                     var chartdiv = document.getElementById(uniquecid);
-                    Plotly.newPlot(chartdiv, x.chart.figure);
+                    var config = {
+                        showEditInChartStudio: true,
+                        plotlyServerURL: "https://chart-studio.plotly.com"
+                      };
+                    Plotly.newPlot(chartdiv, x.chart.figure, config);
                     chartdiv.on('plotly_click', function(data){
                         item = data.points[0].data.legendgroup;
                         if (x.chart.events[item].onclick !== null) {
@@ -2558,6 +2563,8 @@ dhtmlxEvent(window,"load",function(){
                     });
                     chartdiv.on('plotly_doubleclick', function(data){
                         console.log(x.chart.figure);
+                        toggle = !toggle;
+                        runchart();
                     });
                     chartdiv.on('plotly_hover', function(data){
                         item = data.points[0].data.legendgroup;

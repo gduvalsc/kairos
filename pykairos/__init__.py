@@ -1068,9 +1068,10 @@ class KairosWorker:
         colors = params['colors'][0]
         plotorientation = params['plotorientation'][0]
         template = params['template'][0]
+        toggle = True if params['toggle'][0] == 'true' else False
         variables = json.loads(params['variables'][0])
         context = Context(nodesdb=nodesdb, systemdb=systemdb)
         context.variables = variables.copy()
-        chartobj = context.runchart(id, chart, width, height, limit, colors, plotorientation, template)
+        chartobj = context.runchart(id, chart, width, height, limit, colors, plotorientation, template, toggle)
         context.free()
         return getresponse(context, dict(data=dict(chart=chartobj)))

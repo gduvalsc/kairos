@@ -39,6 +39,7 @@ class UserObject(dict):
                 "Workarea (Manual + auto) allocated": "pink",
                 "LOAD": "blue",
                 "Run queue": "blue",
+                "run queue": "blue",
                 "Swap queue": "pink",
                 "IOWAIT_TIME": "darkgreen",
                 "DB time": "purple",
