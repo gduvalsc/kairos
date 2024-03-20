@@ -1,4 +1,6 @@
 FROM centos:centos8
+RUN dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
+RUN dnf -y distro-sync
 RUN dnf module enable -y postgresql:12
 RUN dnf install -y python3 python3-lxml python36-devel
 
@@ -11,16 +13,16 @@ RUN dnf install -y postgresql-server  postgresql-contrib postgresql-server-devel
 RUN dnf install -y wget make gcc vim zip unzip libaio libnsl crontabs psmisc telnet openssh-clients redhat-rpm-config logrotate lsof
 
 #### cx_oracle and postgres environement variables
-ADD instantclient-basic-linux.zip /usr/local/lib
-ADD instantclient-sdk-linux.zip /usr/local/lib 
+ADD instantclient-basic-linux.x64.zip /usr/local/lib
+ADD instantclient-sdk-linux.x64.zip /usr/local/lib 
 WORKDIR /usr/local/lib
-RUN unzip instantclient-basic-linux.zip 
-RUN unzip instantclient-sdk-linux.zip 
-RUN rm instantclient-basic-linux.zip 
-RUN rm instantclient-sdk-linux.zip 
-RUN mv instantclient_12_2 instantclient
+RUN unzip instantclient-basic-linux.x64.zip 
+RUN unzip instantclient-sdk-linux.x64.zip 
+RUN rm instantclient-basic-linux.x64.zip 
+RUN rm instantclient-sdk-linux.x64.zip 
+RUN mv instantclient_19_14 instantclient
 WORKDIR /usr/local/lib/instantclient
-RUN ln -s libclntsh.so.12.1 libclntsh.so
+#RUN ln -s libclntsh.so.19.1 libclntsh.so
 ENV ORACLE_HOME=/usr/local/lib/instantclient
 ENV LD_LIBRARY_PATH=/usr/local/lib/instantclient
 RUN echo ORACLE_HOME=/usr/local/lib/instantclient >> /var/lib/pgsql/.bash_profile
@@ -48,11 +50,14 @@ RUN pip3 install psycopg2-binary===2.8.6
 RUN pip3 install sqlalchemy
 RUN pip3 install plotly
 RUN pip3 install pandas
-RUN pip3 install aiohttp===1.2.0
-RUN pip3 install yarl==0.18.0
+#RUN pip3 install aiohttp===1.2.0
+RUN pip3 install aiohttp
+#RUN pip3 install yarl==0.18.0
+RUN pip3 install yarl
 RUN pip3 install setproctitle
 RUN pip3 install gunicorn
 RUN pip3 install psutil
+RUN pip3 install "dask[complete]"
 
 ### init postgresql db
 RUN ln -s /var/lib/pgsql /postgres

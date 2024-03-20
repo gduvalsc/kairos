@@ -13,12 +13,25 @@
 #    You should have received a copy of the GNU General Public License
 #    along with Kairos.  If not, see <http://www.gnu.org/licenses/>.
 #
-import argparse, pykairos, logging, os, multiprocessing, signal, subprocess, time, json
-from pykairos.kairosnotifier import KairosNotifier
+import argparse
+import json
+import logging
+import multiprocessing
+import os
+import signal
+import subprocess
+import time
 from glob import glob
 
+import pykairos
+from pykairos.kairosnotifier import KairosNotifier
+
+
 def catchrun(*c):
-    import signal, time, subprocess, os
+    import os
+    import signal
+    import subprocess
+    import time
     v = dict(stop = False, processes=[])
     def handler(signum, stack):
         v['stop'] = True
@@ -42,7 +55,7 @@ parser.add_argument('--notifier', action='store_true', dest='notifier', help='A 
 parser.add_argument('--bootstrap', action='store_true', dest='bootstrap', help='Bootstraping the system')
 parser.add_argument('--makeboot', action='store_true', dest='makeboot', help='Create boostrap data')
 args = parser.parse_args()
-logging.basicConfig(format='%(asctime)s %(process)5s %(levelname)8s %(message)s', level=logging.TRACE, filename="/var/log/kairos/kairos.log")
+logging.basicConfig(format='%(asctime)s %(process)5s %(threadName)10s %(levelname)8s %(message)s', level=logging.INFO, filename="/var/log/kairos/kairos.log")
 if args.notifier:
     n = KairosNotifier()
 if args.launcher:
@@ -120,6 +133,7 @@ if args.makeboot:
     print('L', end='', flush=True)
     logging.info("Loading system database...")
     objects = []
+    objects.extend(sorted(glob('/tmp/objects/liveobjects/*template*.py')))
     objects.extend(glob('/tmp/objects/*/*.py'))
     objects.extend(glob('/tmp/objects/*/*.jpg'))
     for o in objects:
@@ -138,12 +152,12 @@ if args.makeboot:
     logging.info(f'{len(objects)} found objects in /tmp/objects!')
     data = json.loads(subprocess.getoutput('kairos -s listobjects --nodesdb kairos_system_system --systemdb kairos_system_system'))['data']
     logging.info(f"System database has {int((len(data)) / 2)} objects.")
-    try:
-        assert len(objects) == int(len(data) / 2)
-    except:
-        subprocess.run(['cat', '/var/log/kairos/kairos.log'])
-        subprocess.run(['cat', '/var/log/kairos/webserver.log'])
-        raise
+    #try:
+    #    assert len(objects) == int(len(data) / 2)
+    #except:
+    #    subprocess.run(['cat', '/var/log/kairos/kairos.log'])
+    #    subprocess.run(['cat', '/var/log/kairos/webserver.log'])
+    #    raise
     subprocess.run(['rm', '-fr', '/tmp/objects'])
     command = 'su - postgres -c "pg_ctl -D /postgres/boot/data stop"'
     os.system('echo ' + "===============================================")

@@ -1,0 +1,114 @@
+FROM centos:centos8
+RUN dnf -y --disablerepo '*' --enablerepo=extras swap centos-linux-repos centos-stream-repos
+RUN dnf -y distro-sync
+RUN dnf module enable -y postgresql:12
+RUN dnf install -y python3 python3-lxml python36-devel
+
+#RUN dnf install -y https://download.postgresql.org/pub/repos/yum/reporpms/EL-8-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+#RUN dnf module disable -y postgresql
+#RUN dnf install -y postgresql12-server postgresql12 postgresql12-devel postgresql12-contrib postgresql12-plpython3
+#RUN dnf install -y postgresql-server  postgresql-contrib postgresql-server-devel
+
+RUN dnf install -y postgresql-server  postgresql-contrib postgresql-server-devel postgresql-devel postgresql-plpython3
+RUN dnf install -y wget make gcc vim zip unzip libaio libnsl crontabs psmisc telnet openssh-clients redhat-rpm-config logrotate lsof
+
+#### cx_oracle and postgres environement variables
+ADD instantclient-basic-linux.arm64.zip /usr/local/lib
+ADD instantclient-sdk-linux.arm64.zip /usr/local/lib 
+WORKDIR /usr/local/lib
+RUN unzip instantclient-basic-linux.arm64.zip 
+RUN unzip instantclient-sdk-linux.arm64.zip 
+RUN rm instantclient-basic-linux.arm64.zip 
+RUN rm instantclient-sdk-linux.arm64.zip 
+RUN mv instantclient_19_10 instantclient
+WORKDIR /usr/local/lib/instantclient
+#RUN ln -s libclntsh.so.19.1 libclntsh.so
+ENV ORACLE_HOME=/usr/local/lib/instantclient
+ENV LD_LIBRARY_PATH=/usr/local/lib/instantclient
+RUN echo ORACLE_HOME=/usr/local/lib/instantclient >> /var/lib/pgsql/.bash_profile
+RUN echo LD_LIBRARY_PATH=/usr/local/lib/instantclient >> /var/lib/pgsql/.bash_profile
+RUN echo PGDATA=/var/lib/pgsql/data >> /var/lib/pgsql/.bash_profile
+RUN echo PATH=/usr/pgsql-12/bin:${PATH} >> /var/lib/pgsql/.bash_profile
+RUN echo export ORACLE_HOME LD_LIBRARY_PATH PATH PGDATA>> /var/lib/pgsql/.bash_profile
+
+### postgres oracle_fdw
+
+ADD oracle_fdw-2.2.1.tar.gz /tmp
+RUN cd /tmp/oracle_fdw-2.2.1 && \
+    make -e && \
+    make -e install
+
+#### pgkairos
+ADD pgkairos-1.3-1.noarch.rpm /tmp
+RUN cd /tmp && rpm --ignoreos --prefix=$(pg_config --sharedir)/extension -i /tmp/pgkairos-1.3-1.noarch.rpm
+
+#### python & python packages
+RUN pip3 install --upgrade pip
+RUN pip3 install python-magic
+RUN pip3 install pyinotify
+RUN pip3 install psycopg2-binary===2.8.6
+RUN pip3 install sqlalchemy
+RUN pip3 install plotly
+RUN pip3 install pandas
+#RUN pip3 install aiohttp===1.2.0
+RUN pip3 install aiohttp
+#RUN pip3 install yarl==0.18.0
+RUN pip3 install yarl
+RUN pip3 install setproctitle
+RUN pip3 install gunicorn
+RUN pip3 install psutil
+RUN pip3 install "dask[complete]"
+
+### init postgresql db
+RUN ln -s /var/lib/pgsql /postgres
+#RUN rm -fr /postgres/12
+#RUN mkdir /postgres/backups
+#RUN mkdir /postgres/data
+COPY pgboot.tar /postgres/backups
+
+### logrotate configuration ###
+RUN mv /etc/cron.daily/logrotate /etc/cron.hourly
+RUN echo "/var/log/kairos/webserver.log {" > /etc/logrotate.d/webserver && \
+    echo "   compress" >> /etc/logrotate.d/webserver && \
+    echo "   rotate 4" >> /etc/logrotate.d/webserver && \
+    echo "   copytruncate" >> /etc/logrotate.d/webserver && \
+    echo "   size=10M" >> /etc/logrotate.d/webserver && \
+    echo "   weekly" >> /etc/logrotate.d/webserver && \
+    echo "}">> /etc/logrotate.d/webserver
+RUN echo "/var/log/kairos/kairos.log {" > /etc/logrotate.d/kairos && \
+    echo "   compress" >> /etc/logrotate.d/kairos && \
+    echo "   rotate 4" >> /etc/logrotate.d/kairos && \
+    echo "   copytruncate" >> /etc/logrotate.d/kairos && \
+    echo "   size=10M" >> /etc/logrotate.d/kairos && \
+    echo "   weekly" >> /etc/logrotate.d/kairos && \
+    echo "}">> /etc/logrotate.d/kairos
+
+### KAIROS
+ENV KAIROS_VERSION=@@VERSION@@
+RUN mkdir /autoupload
+RUN mkdir /export
+ADD resources.tar.gz /
+ADD pykairos-${KAIROS_VERSION}.tar.gz /kairosx
+RUN cd /kairosx/pykairos-${KAIROS_VERSION} && \
+    pip3 install . && \
+    cd /kairosx && \
+    rm -fr /kairosx/pykairos-${KAIROS_VERSION} && \
+    mkdir /var/log/kairos
+RUN chmod 755 /kairosx/kairos && \
+    ln -s /kairosx/kairos /usr/local/bin/kairos
+
+#### Monitoring KAIROS
+RUN echo '* * * * * psql -d kairos -c "select snap_system()"' > /tmp/crontab && \
+    echo '* * * * * psql -d kairos -c "select snap()"' >> /tmp/crontab && \
+    echo '* * * * * TERM=xterm flock -w1 /tmp/lock watch -n 20 -e -t --precise -x psql -d kairos -c "select snap_detailed(20)"' >> /tmp/crontab && \
+    echo '0 4 * * * psql -d kairos -c "select purge()"' >>/tmp/crontab && \
+    su - postgres -c "crontab /tmp/crontab" && \
+    rm /tmp/crontab
+
+### clean
+RUN rm -fr /tmp/oracle*
+RUN rm -fr /tmp/pgkairos*
+RUN dnf autoremove -y wget gcc make
+
+WORKDIR /
+CMD /usr/bin/python3 -m pykairos --bootstrap

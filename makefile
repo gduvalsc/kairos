@@ -1,20 +1,25 @@
-VERSION=8.7
-PORT=44387
-IMAGE=kairos
-#IMAGE=gdsc/kairos:$(VERSION)
+VERSION=8.9
+PORT=44389
+#IMAGE=kairos
+IMAGE=gdsc/kairos:$(VERSION)
 MACHINE=kairos$(VERSION)
 NETWORK=mynetwork
 
 USERNAME=gduvalsc
 PASSWORD=************
 TOKEN=$$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "$(USERNAME)", "password": "$(PASSWORD)"}' https://hub.docker.com/v2/users/login/ | jq -r .token)
+ARCHITECTURE=$(shell docker info|grep Architecture|sed -e 's/^.*: //')
 
 ### Things to do before delivering a new image
 # e) make a new branch under git with version number
 # f) make deliver (suppose that make image has been done before)
 
 image: ressources pydist
-	cd buildimage && docker build -f kairos.docker -t $(IMAGE) .
+ifeq ($(ARCHITECTURE), x86_64)
+	cd buildimage && docker build  -f kairos.docker -t $(IMAGE) .
+else
+	cd buildimage && docker build  -f kairosarm.docker -t $(IMAGE) .
+endif
 	docker images
 
 optimize:
@@ -55,14 +60,17 @@ abort:
 rm:
 	docker rm $(MACHINE)
 
+logs:
+	docker logs $(MACHINE)
+
 boot:
 	docker cp objects $(MACHINE):/tmp
-	docker exec $(MACHINE) su - postgres -c 'pg_ctl stop'
+	#docker exec $(MACHINE) su - postgres -c 'pg_ctl stop'
 	docker exec $(MACHINE) sh -c 'python3 -m pykairos --makeboot'
 	docker cp $(MACHINE):/postgres/backups/pgboot.tar .
 
 pydist:
-	cd kairosx && python setup.py sdist
+	cd kairosx && python3 setup.py sdist
 	cp kairosx/dist/* buildimage
 
 quick: ressources pydist
@@ -76,14 +84,22 @@ ressources:
 	rm -fr buildimage; mkdir buildimage
 	rm -fr kairosx; mkdir kairosx
 	cp -r resources  pykairos kairos.key kairos.crt index.html worker.py kairosx
-	cp instantclient-basic-linux.zip instantclient-sdk-linux.zip oracle_fdw-2.2.1.tar.gz buildimage
+ifeq ($(ARCHITECTURE), x86_64)
+	cp instantclient-basic-linux.x64.zip instantclient-sdk-linux.x64.zip instantclient-basic-linux.arm64.zip oracle_fdw-2.2.1.tar.gz buildimage
+else
+	cp instantclient-basic-linux.arm64.zip instantclient-sdk-linux.arm64.zip oracle_fdw-2.2.1.tar.gz buildimage
+endif
 	cp pgkairos-1.3-1.noarch.rpm buildimage
 	cp pgboot.tar buildimage
 	sed -e 's/@@VERSION@@/$(VERSION)/' client.js > kairosx/client.js
 	sed -e 's/@@VERSION@@/$(VERSION)/' kairos > kairosx/kairos
 	sed -e 's/@@VERSION@@/$(VERSION)/' setup.py > kairosx/setup.py
 	sed -e 's/@@VERSION@@/$(VERSION)/' pykairos/__main__.py > kairosx/pykairos/__main__.py
+ifeq ($(ARCHITECTURE), x86_64)
 	sed -e 's/@@VERSION@@/$(VERSION)/' kairos.docker > buildimage/kairos.docker
+else
+	sed -e 's/@@VERSION@@/$(VERSION)/' kairosarm.docker > buildimage/kairosarm.docker
+endif
 	tar czf buildimage/resources.tar.gz kairosx/kairos.key kairosx/kairos.crt kairosx/resources kairosx/index.html kairosx/client.js kairosx/kairos kairosx/worker.py
 
 clean:
@@ -91,8 +107,8 @@ clean:
 	docker rmi $$(docker images -f 'dangling=true' -q)
 
 nonreg:
-	cd ../KAIROSTESTS && py.test --capture=fd -v startup.py
-	cd ../KAIROSTESTS && py.test --capture=fd -v test.py
+	cd ../KAIROSTESTS && python3 -m venv kairostests && source kairostests/bin/activate && pytest --capture=fd -v startup.py
+	cd ../KAIROSTESTS && python3 -m venv kairostests && source kairostests/bin/activate && pytest --capture=fd -v test.py
 
 remove:
 	curl "https://hub.docker.com/v2/repositories/gdsc/kairos/tags/$(VERSION)/" -X DELETE -H "Authorization: JWT ${TOKEN}"

@@ -204,7 +204,7 @@ def get_parameters(parser, args, service):
         parameters = dict(to=vars(args)[PTO.target], nodesdb=vars(args)[PNO.target])
         parameters['from'] = vars(args)[PFR.target]
     if service == 'renamenode': parameters = dict(nodesdb=vars(args)[PNO.target], id=vars(args)[PID.target], new=vars(args)[PNE.target])
-    if service == 'runchart': parameters = dict(nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target], id=vars(args)[PID.target], colors=vars(args)[PCO.target], top=vars(args)[PTP.target], height=vars(args)[PHE.target], width=vars(args)[PWI.target], plotorientation=vars(args)[PPL.target], template=vars(args)[PTE.target], chart=vars(args)[PCH.target], variables=json.dumps(dict()))
+    if service == 'runchart': parameters = dict(nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target], id=vars(args)[PID.target], toggle='false', colors=vars(args)[PCO.target], top=vars(args)[PTP.target], height=vars(args)[PHE.target], width=vars(args)[PWI.target], plotorientation=vars(args)[PPL.target], template=vars(args)[PTE.target], chart=vars(args)[PCH.target], variables=json.dumps(dict()))
     if service == 'unload': parameters = dict(id=vars(args)[PID.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target])
     if service == 'updatesettings': parameters = dict(user=vars(args)[PA.target], nodesdb=vars(args)[PNO.target], systemdb=vars(args)[PSY.target], template=vars(args)[PTE.target], colors=vars(args)[PCO.target], wallpaper=vars(args)[PWA.target], top=vars(args)[PTP.target], plotorientation=vars(args)[PPL.target], logging=vars(args)[PLG.target])
     if service == 'uploadnode':

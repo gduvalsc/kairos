@@ -21,7 +21,7 @@
 #   E/20070227183245,SCOTT,CLERK,1500
 #   D/20070227183246;;NEW YORK;;ACCOUNTING
 
-import datetime
+import datetime, logging
 
 class UserObject(dict):
     def __init__(self):
@@ -132,13 +132,15 @@ class UserObject(dict):
 
     def ageneric(self, a, l ,g, m):
         tname = g(7)
-        d = dict(timestamp = g(1) + g(2) + g(3) + g(4) + g(5) + g(6) + "000", kairos_count = 1)
-        for p in g(8).split(a.sep1):
-            [k, v] = p.split(a.sep2)
-            d[k] = a.transform[tname][k](v)
-        for k in a.desctable[tname]:
-            if k not in d: d[k] = ''
-        a.emit(tname, a.desctable[tname], d)
+        try:
+            d = dict(timestamp = g(1) + g(2) + g(3) + g(4) + g(5) + g(6) + "000", kairos_count = 1)
+            for p in g(8).split(a.sep1):
+                [k, v] = p.split(a.sep2)
+                d[k] = a.transform[tname][k](v)
+            for k in a.desctable[tname]:
+                if k not in d: d[k] = ''
+            a.emit(tname, a.desctable[tname], d)
+        except: logging.error(f'Exception when parsing the line containing {l}')
 
     def acompact(self, a, l ,g, m):
         alias = g(1)

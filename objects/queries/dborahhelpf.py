@@ -9,6 +9,6 @@ class UserObject(dict):
             "id": "DBORAHHELPF",
             "collections": ["ORAHQT", "ORAHQS"],
             "nocache": True,
-            "request": "select distinct '%(DBORAHELPF)s' key, sql_text value from ORAHQT where sql_id in (select sql_id from ORAHQS where force_matching_signature = '%(DBORAHELPF)s')"
+            "request": "select distinct '%(DBORAHELPF)s' as key, sql_text as value from ORAHQT where sql_id in (select sql_id from ORAHQS where force_matching_signature = '%(DBORAHELPF)s')"
         }
         super(UserObject, self).__init__(**object)
